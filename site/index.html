@@ -1210,7 +1210,7 @@
               </div>
             </div>
             <div class="helper" id="diceHint">
-              Two long dice · bonus on 1, 5, 6, 12
+              Two long dice · bonus chance falls each chain
             </div>
             <div class="divider"></div>
             <div class="helper">
@@ -1418,11 +1418,26 @@
         const v = new Uint32Array(1);
         crypto.getRandomValues(v);
         return v[0] % 4;
-      } // modulo bias negligible for demo; production should use unbiased rejection sampling
+      } // Exact: the 2^32 possible values divide evenly into four faces.
       function rollDice() {
         const a = rand4(),
           b = rand4();
         return { a, b, value: a === 0 && b === 0 ? 12 : a + b };
+      }
+      function randomUnit() {
+        const value = new Uint32Array(1);
+        crypto.getRandomValues(value);
+        return value[0] / 2 ** 32;
+      }
+      function bonusDecision(value) {
+        // Fair dice choose the value. Each previous bonus halves the chance
+        // that another special value extends the same turn.
+        const specialRoll = BONUS_VALUES.has(value),
+          bonusDepth = Math.max(0, game.history.length - 1),
+          bonusChance = specialRoll ? 0.5 ** bonusDepth : 0,
+          bonusDraw = specialRoll && bonusChance < 1 ? randomUnit() : null,
+          bonus = specialRoll && (bonusChance === 1 || bonusDraw < bonusChance);
+        return { specialRoll, bonusDepth, bonusChance, bonusDraw, bonus };
       }
       function stopDemo() {
         if (demoTimer) clearTimeout(demoTimer);
@@ -1791,18 +1806,23 @@
       }
       function finishRoll(d) {
         const player = active();
-        game.last = d;
         game.pool.push(d.value);
         game.history.push(d.value);
         rolling = false;
-        const bonus = BONUS_VALUES.has(d.value);
+        const bonusResult = bonusDecision(d.value),
+          { specialRoll, bonus } = bonusResult;
+        game.last = { ...d, ...bonusResult };
         if (!bonus) game.phase = "move";
         const legalMoveCount = game.phase === "move" ? options().length : null;
         recordAudit("ROLL", {
           firstFace: d.a,
           secondFace: d.b,
           value: d.value,
+          specialRoll,
           bonus,
+          bonusDepth: bonusResult.bonusDepth,
+          bonusChance: bonusResult.bonusChance,
+          bonusDraw: bonusResult.bonusDraw,
           rollNumberInTurn: game.history.length,
           legalMoveCount,
         });
@@ -1825,7 +1845,11 @@
             " rolled " +
             d.value +
             "." +
-            (bonus ? " That earns another roll." : " Now choose a legal move."),
+            (bonus
+              ? " That earns another roll."
+              : specialRoll
+                ? " Its reduced bonus chance did not extend this turn, so now choose a legal move."
+                : " Now choose a legal move."),
         );
         render();
       }
@@ -2318,8 +2342,12 @@
           ? "Last roll: " +
             game.last.value +
             " · " +
-            ([1, 5, 6, 12].includes(game.last.value) ? "bonus!" : "no bonus")
-          : "Two long dice · bonus on 1, 5, 6, 12";
+            (game.last.bonus
+              ? "bonus throw"
+              : game.last.specialRoll
+                ? "bonus chain ended"
+                : "no bonus")
+          : "Two long dice · bonus chance falls each chain";
         updateAudioToggle();
         scheduleComputerIfNeeded();
       }
@@ -2340,7 +2368,13 @@
           demoScene(
             "Maya rolls a 1. A roll of 1 can bring a piece onto the starting square and also earns a bonus roll.",
             () => {
-              game.last = { a: 0, b: 1, value: 1 };
+              game.last = {
+                a: 0,
+                b: 1,
+                value: 1,
+                bonus: true,
+                specialRoll: true,
+              };
               game.pool = [1];
               game.history = [1];
               game.phase = "move";
@@ -2363,7 +2397,13 @@
           demoScene(
             "The bonus roll is 2. The gold outline shows which piece can move.",
             () => {
-              game.last = { a: 0, b: 2, value: 2 };
+              game.last = {
+                a: 0,
+                b: 2,
+                value: 2,
+                bonus: false,
+                specialRoll: false,
+              };
               game.pool = [2];
               game.history = [1, 2];
               game.phase = "move";
@@ -2392,7 +2432,13 @@
           ),
         () =>
           demoScene("Leo rolls a 1, so the tiger can enter the board.", () => {
-            game.last = { a: 0, b: 1, value: 1 };
+            game.last = {
+              a: 0,
+              b: 1,
+              value: 1,
+              bonus: true,
+              specialRoll: true,
+            };
             game.pool = [1];
             game.history = [1];
             game.phase = "move";
@@ -2419,7 +2465,13 @@
               game.turn = 3;
               game.players[0].pieces[0].progress = 0;
               game.players[1].pieces[0].progress = 13;
-              game.last = { a: 0, b: 1, value: 1 };
+              game.last = {
+                a: 0,
+                b: 1,
+                value: 1,
+                bonus: false,
+                specialRoll: true,
+              };
               game.pool = [1];
               game.history = [1];
               game.phase = "move";
@@ -2505,28 +2557,19 @@
         if (message.toLowerCase().includes("roll")) triggerDiceAnimation();
       }
       function findBonusRolls(total) {
-        // Build a legal sum from bonus rolls; recursion is bounded by the small
-        // 44-square route and tries larger rolls first to keep the demo moving.
-        if (total === 0) return [];
-        for (const value of [12, 6, 5, 1])
-          if (value <= total) {
-            const rest = findBonusRolls(total - value);
-            if (rest) return [value, ...rest];
-          }
-        return null;
+        return [12, 6, 5, 1].find((value) => value <= total) ?? null;
       }
       function planDemoTurn(piece) {
-        // End every planned sequence with a non-bonus roll. This closes the roll
-        // phase while still reaching the exact remaining distance to the goal.
+        // A planned demo turn uses one special roll plus one ordinary roll so
+        // it remains predictable while normal games use diminishing bonuses.
         const reserve = piece.progress < 0,
           remaining = reserve ? 43 : 43 - piece.progress;
         if (remaining === 1) return [1, 2];
-        for (const finalRoll of [4, 3, 2]) {
-          if (finalRoll > remaining) continue;
-          const bonuses = findBonusRolls(remaining - finalRoll);
-          if (bonuses) return [...(reserve ? [1] : []), ...bonuses, finalRoll];
-        }
-        return [1, 2];
+        if (reserve) return [1, 4];
+        const ordinaryRoll = [4, 3, 2].find((value) => value <= remaining);
+        if (!ordinaryRoll) return [1, 2];
+        const bonusRoll = findBonusRolls(remaining - ordinaryRoll);
+        return bonusRoll ? [bonusRoll, ordinaryRoll] : [ordinaryRoll];
       }
       function chooseDemoMove() {
         return bestAutomaticMove();
@@ -2539,22 +2582,32 @@
         }
         const value = demoRollQueue.shift(),
           faces = DEMO_FACES[value];
-        game.last = { a: faces[0], b: faces[1], value };
         game.pool.push(value);
         game.history.push(value);
-        if (!BONUS_VALUES.has(value)) game.phase = "move";
+        const bonusResult = bonusDecision(value),
+          { specialRoll, bonus } = bonusResult;
+        game.last = { a: faces[0], b: faces[1], value, ...bonusResult };
+        if (!bonus) game.phase = "move";
         recordAudit("ROLL", {
           firstFace: faces[0],
           secondFace: faces[1],
           value,
-          bonus: BONUS_VALUES.has(value),
+          specialRoll,
+          bonus,
+          bonusDepth: bonusResult.bonusDepth,
+          bonusChance: bonusResult.bonusChance,
+          bonusDraw: bonusResult.bonusDraw,
           rollNumberInTurn: game.history.length,
           legalMoveCount: game.phase === "move" ? options().length : null,
           plannedDemoRoll: true,
         });
         render();
-        const bonus = BONUS_VALUES.has(value) ? " It earns another roll." : "";
-        const message = player.name + " rolls " + value + "." + bonus;
+        const bonusMessage = bonus
+          ? " It earns another roll."
+          : specialRoll
+            ? " Its reduced bonus chance ends the chain, so it is time to move."
+            : "";
+        const message = player.name + " rolls " + value + "." + bonusMessage;
         $("statusTitle").textContent = "Full guided game · Turn " + game.turn;
         $("statusText").textContent = message;
         speakDemo(message);
