@@ -1197,6 +1197,14 @@
                 />
                 <output id="demoSpeedValue" for="demoSpeed">1×</output>
               </label>
+              <button
+                class="demobtn"
+                id="demoSuperSpeed"
+                type="button"
+                aria-pressed="false"
+              >
+                ⚡ Super speed
+              </button>
               <button class="demobtn" id="demoPause" type="button">Pause</button
               ><button
                 class="demobtn"
@@ -1411,6 +1419,9 @@
         demoPaused = false,
         demoStep = 0,
         demoSpeed = 1,
+        superSpeed = false,
+        savedDemoSpeed = 1,
+        savedAudioEnabled = true,
         audioEnabled = true,
         demoRollQueue = [],
         rolling = false,
@@ -1424,7 +1435,9 @@
         audit = null,
         availableVoices = [];
       const DEMO_DELAY = 5000,
-        MOVE_STEP_DELAY = 650;
+        MOVE_STEP_DELAY = 650,
+        SUPER_DEMO_SPEED = 3,
+        MIN_SUPER_MOVE_DELAY = 220;
       function scaledDemoDelay(milliseconds) {
         return demo ? milliseconds / demoSpeed : milliseconds;
       }
@@ -1496,9 +1509,15 @@
         demoSpeechId++;
         demoWaitingForSpeech = false;
         if ("speechSynthesis" in window) speechSynthesis.cancel();
+        if (superSpeed) {
+          demoSpeed = savedDemoSpeed;
+          audioEnabled = savedAudioEnabled;
+        }
         demo = false;
         demoPaused = false;
         demoStep = 0;
+        superSpeed = false;
+        demoSpeed = 1;
         demoRollQueue = [];
         if ($("demoBar")) $("demoBar").hidden = true;
       }
@@ -1941,7 +1960,12 @@
       }
       function waitForMoveStep() {
         return new Promise((resolve) =>
-          setTimeout(resolve, scaledDemoDelay(MOVE_STEP_DELAY)),
+          setTimeout(
+            resolve,
+            superSpeed
+              ? Math.max(MIN_SUPER_MOVE_DELAY, scaledDemoDelay(MOVE_STEP_DELAY))
+              : scaledDemoDelay(MOVE_STEP_DELAY),
+          ),
         );
       }
       function waitForCaptureAnimation() {
@@ -2763,18 +2787,25 @@
                 Math.max(1, demoStep) +
                 " of " +
                 DEMO_STEPS.length
-              : "Full game · Turn " + game.turn);
+              : "Full game · Turn " + game.turn) +
+            (superSpeed ? " · Super 3× · Audio off" : "");
         $("demoPause").textContent = demoPaused ? "Resume" : "Pause";
         $("demoPause").disabled = complete;
-        $("demoSpeed").value = String(demoSpeed);
-        $("demoSpeedValue").value = demoSpeed + "×";
+        $("demoSpeed").value = String(Math.min(demoSpeed, 2));
+        $("demoSpeed").disabled = superSpeed;
+        $("demoSpeedValue").value = superSpeed ? "Super 3×" : demoSpeed + "×";
+        $("demoSuperSpeed").textContent = superSpeed
+          ? "⚡ Super speed on"
+          : "⚡ Super speed";
+        $("demoSuperSpeed").setAttribute("aria-pressed", String(superSpeed));
+        $("demoSuperSpeed").disabled = complete;
         $("demoAudioToggle").textContent = available
           ? audioEnabled
             ? "🔊 Audio on"
             : "🔇 Audio off"
           : "Audio unavailable";
         $("demoAudioToggle").setAttribute("aria-pressed", String(audioEnabled));
-        $("demoAudioToggle").disabled = !available;
+        $("demoAudioToggle").disabled = !available || superSpeed;
       }
       function scheduleDemo(delay = DEMO_DELAY) {
         if (!demo || demoPaused || game.phase === "done") return;
@@ -2831,6 +2862,31 @@
         }
         updateDemoControls();
       }
+      function toggleSuperSpeed() {
+        if (!demo || game.phase === "done") return;
+        if (!superSpeed) {
+          savedDemoSpeed = demoSpeed;
+          savedAudioEnabled = audioEnabled;
+          superSpeed = true;
+          demoSpeed = SUPER_DEMO_SPEED;
+          audioEnabled = false;
+          if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
+          demoSpeechTimer = null;
+          demoSpeechId++;
+          demoWaitingForSpeech = false;
+          if ("speechSynthesis" in window) speechSynthesis.cancel();
+        } else {
+          superSpeed = false;
+          demoSpeed = savedDemoSpeed;
+          audioEnabled = savedAudioEnabled;
+          if (audioEnabled) speakDemo($("statusText").textContent);
+        }
+        if (demoTimer) clearTimeout(demoTimer);
+        demoTimer = null;
+        if (!demoPaused) scheduleDemo(450);
+        updateAudioToggle();
+        updateDemoControls();
+      }
       function updateAudioToggle() {
         const available = "speechSynthesis" in window;
         if (!$("audioToggle")) return;
@@ -2842,9 +2898,10 @@
         $("audioToggle").setAttribute("aria-pressed", String(audioEnabled));
         $("audioToggle").title =
           "Players alternate between available feminine and masculine voices";
-        $("audioToggle").disabled = !available;
+        $("audioToggle").disabled = !available || (demo && superSpeed);
       }
       function toggleAudio() {
+        if (demo && superSpeed) return;
         audioEnabled = !audioEnabled;
         commentaryUntil = 0;
         if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
@@ -2872,6 +2929,7 @@
         $("modalback").classList.remove("open");
       }
       $("demoPause").onclick = toggleDemoPause;
+      $("demoSuperSpeed").onclick = toggleSuperSpeed;
       $("demoSpeed").oninput = (event) => {
         demoSpeed = Number(event.target.value);
         updateDemoControls();
