@@ -20,7 +20,7 @@ The static browser prototype is published from `site/` through GitHub Pages whil
 
 - The north-facing 44-position route is rotated for each seat, so every player follows the same movement algorithm from a different starting point.
 - Move validation applies stored rolls in order. It checks entry, exact finishing, the capture prerequisite, safe squares, and captures after each value.
-- The browser animates movement by advancing the piece state one square every 420 milliseconds, then commits captures and turn changes at the destination. Guided-demo viewers can scale the complete pace from 0.5× to 2×.
+- The browser animates movement by advancing the piece state one square every 650 milliseconds, then commits captures and turn changes at the destination. Guided-demo viewers can scale the complete pace from 0.5× to 2×.
 - Computer players score legal moves by finish, capture, board entry, combined-roll use, and distance. A short delay after narration keeps automated play readable.
 - The guided demo plans bonus-roll sequences that end with a non-bonus value, waits for spoken commentary to finish, and continues until every player is ranked or the viewer pauses it.
 - Commentary alternates available feminine and masculine browser voices by player. The game audit can be copied as plain text and includes dice distributions by player, every move and capture, passes, rankings, timestamps, and compact board snapshots for fairness and stuck-game analysis.
