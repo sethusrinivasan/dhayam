@@ -3,6 +3,7 @@
 [![Node.js](https://img.shields.io/badge/node-%E2%89%A522.18-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Tests](https://github.com/sethusrinivasan/dhayam/actions/workflows/test.yml/badge.svg)](https://github.com/sethusrinivasan/dhayam/actions/workflows/test.yml)
 [![Deploy](https://img.shields.io/badge/deploy-GitHub%20Pages-222222?logo=githubpages&logoColor=white)](#deployment)
+[![Play Dhayam](https://img.shields.io/badge/play-Live%20Dhayam-d88a3e?logo=githubpages&logoColor=white)](https://sethusrinivasan.github.io/dhayam/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-8a2be2)](LICENSE)
 
 Dhayam is a static browser board game for local pass-and-play or one human against 1–5 computer opponents. It is a playable 7×7 house variant with six numbered pieces per player, guided play, narrated commentary, and an exportable game audit.
