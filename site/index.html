@@ -1782,15 +1782,16 @@
           finished: 0,
           computerCount,
           paused: false,
-          // Dice remain fair throughout the match.  This flag records whether
-          // the one-time opening safety net has already been satisfied.
-          openingEntryResolved: false,
+          // Each player may use one first-round entry allowance. The turn
+          // marker prevents an adaptive assist from repeating after a bonus.
+          openingEntryPlayers: [],
+          pacingAssistTurn: null,
         };
         audit = createAudit(computerCount ? "solo" : "local");
         recordAudit("GAME_START", {
           playerCount: count,
           computerCount,
-          rules: "Heritage 7x7 house variant; guaranteed opening entry",
+          rules: "Heritage 7x7 house variant; first-round entry allowances",
         });
         selectedRoll = 0;
         selectedPieceId = null;
@@ -1899,7 +1900,7 @@
           "Exported: " + new Date().toISOString(),
           "Mode: " + audit.mode,
           "Status: " + game.phase,
-          "Rules: Heritage 7x7 house variant; guaranteed opening entry; exact finish; capture required for inner track",
+          "Rules: Heritage 7x7 house variant; first-round entry allowances; exact finish; capture required for inner track",
           "Players: " +
             game.players
               .map(
@@ -2007,14 +2008,12 @@
       }
       function openingEntryAvailable(p, piece, values) {
         // A roll of 1 is always the normal way to enter.  Fair dice make a 1
-        // only 12.5% likely, so a whole first round can otherwise pass with no
-        // piece on the board.  The last player of that first round receives a
-        // one-roll entry allowance only if nobody has entered yet.  This makes
-        // the opening reliable without changing dice probabilities.
+        // only 12.5% likely, so an opening can otherwise leave most players
+        // waiting in reserve. Each player receives one first-round allowance,
+        // which makes the launch lively without changing dice probabilities.
         return (
-          !game.openingEntryResolved &&
           game.turn <= game.players.length &&
-          game.current === game.players.length - 1 &&
+          !game.openingEntryPlayers.includes(p.id) &&
           piece.progress === -1 &&
           values.length === 1
         );
@@ -2118,7 +2117,8 @@
         if (
           !isRoundCloser ||
           hasActionInThisRound() ||
-          !game.openingEntryResolved
+          game.turn <= game.players.length ||
+          game.pacingAssistTurn === game.turn
         ) return null;
         const player = active();
         const useful = DICE_OUTCOMES.filter((outcome) =>
@@ -2133,6 +2133,7 @@
           eligibleOutcomes: useful.map((outcome) => outcome.value),
           selectedValue: selected.value,
         });
+        game.pacingAssistTurn = game.turn;
         return { ...selected, pacingAssist: true };
       }
       function setDieFace(id, value, label) {
@@ -2351,7 +2352,12 @@
         movingPieceId = piece.id;
         speakGame(commentary);
         await animatePiece(player, piece, opt.test.progress);
-        if (wasReserve) game.openingEntryResolved = true;
+        if (
+          wasReserve &&
+          game.turn <= game.players.length &&
+          !game.openingEntryPlayers.includes(player.id)
+        )
+          game.openingEntryPlayers.push(player.id);
         player.captured = opt.test.captured;
         if (captureCount) {
           capturedPieceIds = opt.test.targets.map((hit) => hit.q.id);
@@ -2752,7 +2758,7 @@
                 : " · Follow the glowing route around the board.")
             : game.phase === "move"
               ? openingEntryRequired
-                ? "No player entered in the first round. Choose a piece to use the opening entry allowance."
+                ? "Use this player’s first-round entry allowance to put a piece on the board."
                 : "Choose a roll, then tap a gold-outlined " +
                   p.avatar +
                   " piece. " +
@@ -3366,7 +3372,7 @@
       $("guideBtn").onclick = () =>
         showModal(
           "How to play",
-          "<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. If nobody enters during the first round, the last player may use any one roll to enter a piece, so every game starts moving.</p><p><strong>3.</strong> The game uses its live audit to keep rounds active. If a whole round would have no move, its final roll is selected from playable outcomes and marked in the audit.</p><p><strong>4.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>5.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p>",
+          "<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. During the first round, every player may use any one roll to enter a piece, so the board becomes active immediately.</p><p><strong>3.</strong> The game uses its live audit to keep rounds active. If a whole round would have no move, its final roll is selected from playable outcomes and marked in the audit.</p><p><strong>4.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>5.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p>",
           "Got it",
           () => {},
         );
