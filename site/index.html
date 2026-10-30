@@ -478,6 +478,20 @@
         gap: 12px;
         align-items: center;
       }
+      .controlactions {
+        display: grid;
+        gap: 8px;
+        min-width: 190px;
+      }
+      .movechoice {
+        width: 100%;
+        border: 1px solid #ffffff30;
+        border-radius: 10px;
+        padding: 9px 10px;
+        color: #fff2d7;
+        background: #2b1b12;
+        font-size: 12px;
+      }
       .status {
         border: 1px solid #fff4d21c;
         background: #130d0a88;
@@ -1091,7 +1105,18 @@
               ><span id="statusText">Start a game to play.</span>
               <div class="chips" id="rollChips" style="margin-top: 9px"></div>
             </div>
-            <button class="btn" id="actionBtn">Roll Dayakattai</button>
+            <div class="controlactions">
+              <select
+                class="movechoice"
+                id="moveChoice"
+                aria-label="Choose a legal piece to move"
+                hidden
+              ></select>
+              <button class="btn" id="moveBtn" type="button" hidden>
+                Move selected piece
+              </button>
+              <button class="btn" id="actionBtn">Roll Dayakattai</button>
+            </div>
           </div>
           <div class="demobar" id="demoBar" hidden>
             <div class="demoinfo">
@@ -1189,6 +1214,13 @@
             >
               🔊 Commentary on
             </button>
+            <div style="height: 8px"></div>
+            <button class="btn secondary full" id="copyAuditBtn" type="button">
+              📋 Copy game audit
+            </button>
+            <div class="small" id="auditHint" style="margin-top: 7px">
+              Records rolls, moves, captures, passes, and board states.
+            </div>
             <div style="height: 8px"></div>
             <button class="btn secondary full" id="resetBtn">
               Reset match
@@ -1308,6 +1340,7 @@
       const $ = (id) => document.getElementById(id);
       let game = null,
         selectedRoll = 0,
+        selectedPieceId = null,
         demo = false,
         modalAction = null,
         demoTimer = null,
@@ -1325,11 +1358,48 @@
         movingPieceId = null,
         rollTimer = null,
         computerTimer = null,
-        commentaryUntil = 0;
+        commentaryUntil = 0,
+        audit = null,
+        availableVoices = [];
       const DEMO_DELAY = 5000,
         MOVE_STEP_DELAY = 420;
       function scaledDemoDelay(milliseconds) {
         return demo ? milliseconds / demoSpeed : milliseconds;
+      }
+      const FEMININE_VOICE_HINTS = [
+          "samantha",
+          "victoria",
+          "karen",
+          "moira",
+          "tessa",
+          "zira",
+          "female",
+        ],
+        MASCULINE_VOICE_HINTS = [
+          "daniel",
+          "alex",
+          "fred",
+          "david",
+          "mark",
+          "male",
+        ];
+      function refreshVoices() {
+        if ("speechSynthesis" in window)
+          availableVoices = speechSynthesis.getVoices();
+      }
+      function voiceForPlayer(player) {
+        if (!player || !availableVoices.length) return null;
+        const playerIndex = game.players.indexOf(player),
+          hints =
+            playerIndex % 2 === 0
+              ? FEMININE_VOICE_HINTS
+              : MASCULINE_VOICE_HINTS,
+          preferred = availableVoices.find((voice) =>
+            hints.some((hint) => voice.name.toLowerCase().includes(hint)),
+          );
+        return (
+          preferred || availableVoices[playerIndex % availableVoices.length]
+        );
       }
       function rand4() {
         const v = new Uint32Array(1);
@@ -1400,7 +1470,14 @@
           computerCount,
           paused: false,
         };
+        audit = createAudit(computerCount ? "solo" : "local");
+        recordAudit("GAME_START", {
+          playerCount: count,
+          computerCount,
+          rules: "Heritage 7x7 house variant",
+        });
         selectedRoll = 0;
+        selectedPieceId = null;
         render();
       }
       function active() {
@@ -1411,6 +1488,186 @@
       }
       function finished(p) {
         return p.pieces.every((q) => q.progress === 43);
+      }
+      function createAudit(mode) {
+        const startedAt = new Date();
+        return {
+          version: 1,
+          id:
+            startedAt.toISOString().replace(/[-:.TZ]/g, "") +
+            "-" +
+            Math.random().toString(36).slice(2, 8),
+          startedAt: startedAt.toISOString(),
+          startedMs: Date.now(),
+          mode,
+          events: [],
+        };
+      }
+      function auditBoardState() {
+        return game.players
+          .map(
+            (player) =>
+              player.id +
+              "[" +
+              player.pieces.map((piece) => piece.progress).join(",") +
+              "]" +
+              (player.captured ? ":capture" : "") +
+              (player.rank ? ":rank" + player.rank : ""),
+          )
+          .join(" ");
+      }
+      function recordAudit(type, details = {}) {
+        if (!audit || !game) return;
+        const player = game.players[game.current];
+        audit.events.push({
+          sequence: audit.events.length + 1,
+          elapsedMs: Date.now() - audit.startedMs,
+          turn: game.turn,
+          playerId: player?.id ?? null,
+          playerName: player?.name ?? null,
+          phase: game.phase,
+          pool: [...game.pool],
+          type,
+          details,
+          board: auditBoardState(),
+        });
+      }
+      function auditText() {
+        const rolls = audit.events.filter((event) => event.type === "ROLL"),
+          moves = audit.events.filter((event) => event.type === "MOVE"),
+          passes = audit.events.filter((event) => event.type === "PASS"),
+          distribution = {},
+          playerRolls = Object.fromEntries(
+            game.players.map((player) => [player.id, {}]),
+          );
+        let consecutiveNoLegal = 0,
+          longestNoLegal = 0;
+        for (const event of audit.events) {
+          if (event.type === "ROLL") {
+            const value = event.details.value;
+            distribution[value] = (distribution[value] || 0) + 1;
+            const counts = playerRolls[event.playerId];
+            if (counts) counts[value] = (counts[value] || 0) + 1;
+          }
+          if (
+            event.type === "PASS" &&
+            event.details.reason === "NO_LEGAL_MOVE"
+          ) {
+            consecutiveNoLegal++;
+            longestNoLegal = Math.max(longestNoLegal, consecutiveNoLegal);
+          } else if (event.type === "MOVE") consecutiveNoLegal = 0;
+        }
+        const lines = [
+          "DHAYAM GAME AUDIT v" + audit.version,
+          "Game ID: " + audit.id,
+          "Started: " + audit.startedAt,
+          "Exported: " + new Date().toISOString(),
+          "Mode: " + audit.mode,
+          "Status: " + game.phase,
+          "Rules: Heritage 7x7 house variant; exact finish; capture required for inner track",
+          "Players: " +
+            game.players
+              .map(
+                (player) =>
+                  player.id +
+                  "=" +
+                  player.name +
+                  " (" +
+                  (player.computer ? "computer" : "human") +
+                  ", seat " +
+                  player.seat +
+                  ")",
+              )
+              .join("; "),
+          "",
+          "SUMMARY",
+          "Turns started: " + game.turn,
+          "Rolls: " + rolls.length,
+          "Roll distribution: " +
+            Object.entries(distribution)
+              .sort((a, b) => Number(a[0]) - Number(b[0]))
+              .map(([value, count]) => value + "=" + count)
+              .join(", "),
+          "Rolls by player:",
+          ...game.players.map((player) => {
+            const counts = playerRolls[player.id],
+              total = Object.values(counts).reduce(
+                (sum, count) => sum + count,
+                0,
+              );
+            return (
+              "  " +
+              player.name +
+              ": total=" +
+              total +
+              "; " +
+              Object.entries(counts)
+                .sort((a, b) => Number(a[0]) - Number(b[0]))
+                .map(([value, count]) => value + "=" + count)
+                .join(", ")
+            );
+          }),
+          "Moves: " + moves.length,
+          "Captures: " +
+            moves.reduce(
+              (total, event) => total + event.details.captures.length,
+              0,
+            ),
+          "Passes: " + passes.length,
+          "No-legal-move passes: " +
+            passes.filter((event) => event.details.reason === "NO_LEGAL_MOVE")
+              .length,
+          "Longest consecutive no-legal-move sequence: " + longestNoLegal,
+          "Rankings: " +
+            game.players
+              .filter((player) => player.rank)
+              .sort((a, b) => a.rank - b.rank)
+              .map((player) => player.rank + ". " + player.name)
+              .join(", "),
+          "",
+          "EVENT LOG",
+        ];
+        for (const event of audit.events) {
+          lines.push(
+            "#" +
+              event.sequence +
+              " +" +
+              (event.elapsedMs / 1000).toFixed(1) +
+              "s | turn " +
+              event.turn +
+              " | " +
+              (event.playerName || "system") +
+              " | " +
+              event.type +
+              " | " +
+              JSON.stringify(event.details) +
+              " | pool=[" +
+              event.pool.join(",") +
+              "] | state=" +
+              event.board,
+          );
+        }
+        return lines.join("\n");
+      }
+      async function copyGameAudit() {
+        const text = auditText();
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          const area = document.createElement("textarea");
+          area.value = text;
+          area.style.position = "fixed";
+          area.style.opacity = "0";
+          document.body.appendChild(area);
+          area.select();
+          document.execCommand("copy");
+          area.remove();
+        }
+        const button = $("copyAuditBtn");
+        button.textContent = "✓ Audit copied";
+        $("auditHint").textContent =
+          audit.events.length + " timestamped events copied as plain text.";
+        setTimeout(() => (button.textContent = "📋 Copy game audit"), 2200);
       }
       function moveCandidate(p, piece, values) {
         // Validate each roll in order. This matters when combined rolls capture
@@ -1511,6 +1768,7 @@
         const words = message.trim().split(/\s+/).length,
           duration = Math.max(2400, Math.round((words / 2.3) * 1000) + 700),
           speech = new SpeechSynthesisUtterance(message);
+        speech.voice = voiceForPlayer(active());
         speech.rate = 0.86;
         speech.pitch = 1;
         speech.volume = 1;
@@ -1525,9 +1783,18 @@
         game.history.push(d.value);
         rolling = false;
         const bonus = BONUS_VALUES.has(d.value);
+        if (!bonus) game.phase = "move";
+        const legalMoveCount = game.phase === "move" ? options().length : null;
+        recordAudit("ROLL", {
+          firstFace: d.a,
+          secondFace: d.b,
+          value: d.value,
+          bonus,
+          rollNumberInTurn: game.history.length,
+          legalMoveCount,
+        });
         if (!bonus) {
-          game.phase = "move";
-          if (!options().length) {
+          if (!legalMoveCount) {
             game.pool = [];
             speakGame(
               player.name +
@@ -1535,6 +1802,7 @@
                 d.value +
                 " but has no legal move. The turn passes.",
             );
+            recordAudit("PASS", { reason: "NO_LEGAL_MOVE" });
             nextTurn("No legal moves — turn passed.");
             return;
           }
@@ -1564,6 +1832,7 @@
       }
       function nextTurn(message = "") {
         if (!game) return;
+        recordAudit("TURN_END", { message: message || null });
         game.pool = [];
         game.history = [];
         game.phase = "roll";
@@ -1623,13 +1892,21 @@
         moving = false;
         movingPieceId = null;
       }
-      async function apply(opt) {
+      async function apply(opt, inputSource = "board") {
         if (!opt || game.phase !== "move" || moving) return;
         const player = active(),
           piece = opt.piece,
           wasReserve = piece.progress < 0,
           captureCount = opt.test.targets.length,
-          willFinish = opt.test.progress === 43;
+          willFinish = opt.test.progress === 43,
+          fromProgress = piece.progress,
+          fromSquare = node(player, piece),
+          legalMoveCount = options().length,
+          capturedPieces = opt.test.targets.map((hit) => ({
+            playerId: hit.other.id,
+            playerName: hit.other.name,
+            pieceId: hit.q.id,
+          }));
         let commentary =
           player.name +
           (wasReserve ? " enters a piece and" : " moves a piece") +
@@ -1650,8 +1927,26 @@
         );
         moving = false;
         movingPieceId = null;
+        recordAudit("MOVE", {
+          pieceId: piece.id,
+          fromProgress,
+          toProgress: piece.progress,
+          fromSquare,
+          toSquare: node(player, piece),
+          values: [...opt.values],
+          combinedRolls: opt.values.length > 1,
+          legalMoveCount,
+          captures: capturedPieces,
+          enteredBoard: wasReserve,
+          finishedPiece: willFinish,
+          inputSource,
+        });
         if (finished(player) && player.rank === null) {
           player.rank = ++game.finished;
+          recordAudit("PLAYER_FINISH", {
+            playerId: player.id,
+            rank: player.rank,
+          });
           commentary +=
             " " + player.name + " finishes in place " + player.rank + ".";
           if (game.finished === game.players.length - 1) {
@@ -1671,6 +1966,16 @@
                 )
                 .join(". ") +
               ".";
+            recordAudit("GAME_END", {
+              rankings: game.players
+                .slice()
+                .sort((a, b) => a.rank - b.rank)
+                .map((candidate) => ({
+                  playerId: candidate.id,
+                  playerName: candidate.name,
+                  rank: candidate.rank,
+                })),
+            });
             speakGame(commentary);
             render();
             return;
@@ -1730,8 +2035,19 @@
           return;
         }
         const move = bestAutomaticMove();
-        if (move) apply(move);
-        else nextTurn("No legal moves — turn passed.");
+        if (move) apply(move, "computer");
+        else {
+          recordAudit("PASS", { reason: "NO_LEGAL_MOVE" });
+          nextTurn("No legal moves — turn passed.");
+        }
+      }
+      function passRemainingRolls() {
+        recordAudit("PASS", {
+          reason: "PLAYER_CHOICE",
+          unusedRolls: [...game.pool],
+          legalMoveCount: options().length,
+        });
+        nextTurn("Unused rolls passed.");
       }
       function render() {
         if (!game) return;
@@ -1825,7 +2141,7 @@
                 const o = occupied
                   .map((x) => legal.get(x.piece.id))
                   .find(Boolean);
-                apply(o);
+                apply(o, "board");
               };
             el.addEventListener("keydown", (e) => {
               if ((e.key === "Enter" || e.key === " ") && can) {
@@ -1881,7 +2197,7 @@
           const enter = document.createElement("button");
           enter.className = "chip selected";
           enter.textContent = "＋ Enter a piece";
-          enter.onclick = () => apply(entry);
+          enter.onclick = () => apply(entry, "entry-button");
           enter.disabled = demo || active().computer || moving;
           $("rollChips").appendChild(enter);
         }
@@ -1893,6 +2209,7 @@
             b.setAttribute("aria-label", "Use roll " + v);
             b.onclick = () => {
               selectedRoll = i;
+              selectedPieceId = null;
               render();
             };
             b.disabled = demo || active().computer || moving;
@@ -1904,12 +2221,48 @@
             b.textContent = "Combine all";
             b.onclick = () => {
               selectedRoll = -1;
+              selectedPieceId = null;
               render();
             };
             b.disabled = demo || active().computer || moving;
             $("rollChips").appendChild(b);
           }
         }
+        const moveChoices = [...legal.values()],
+          canUseMoveButton =
+            game.phase === "move" &&
+            moveChoices.length > 0 &&
+            !demo &&
+            !active().computer;
+        if (!moveChoices.some((move) => move.piece.id === selectedPieceId))
+          selectedPieceId = moveChoices[0]?.piece.id ?? null;
+        $("moveChoice").innerHTML = moveChoices
+          .map((move) => {
+            const from = node(active(), move.piece) || "reserve",
+              destination = ROUTES[active().seat][move.test.progress];
+            return (
+              '<option value="' +
+              move.piece.id +
+              '"' +
+              (move.piece.id === selectedPieceId ? " selected" : "") +
+              ">Piece " +
+              (active().pieces.indexOf(move.piece) + 1) +
+              ": " +
+              from +
+              " → " +
+              destination +
+              "</option>"
+            );
+          })
+          .join("");
+        $("moveChoice").hidden = !canUseMoveButton;
+        $("moveChoice").onchange = (event) => {
+          selectedPieceId = event.target.value;
+        };
+        $("moveBtn").hidden = !canUseMoveButton;
+        $("moveBtn").disabled = moving || rolling;
+        $("moveBtn").onclick = () =>
+          apply(legal.get(selectedPieceId), "move-button");
         const p = active();
         $("statusTitle").textContent =
           game.phase === "done"
@@ -1945,7 +2298,7 @@
           game.phase === "roll"
             ? roll()
             : game.phase === "move"
-              ? nextTurn("Unused rolls passed.")
+              ? passRemainingRolls()
               : newGame(game.players.length);
         $("actionBtn").disabled = demo || rolling || moving || p.computer;
         if (demo) $("actionBtn").textContent = "Demo playing…";
@@ -2122,6 +2475,7 @@
         speechSynthesis.cancel();
         const speech = new SpeechSynthesisUtterance(message);
         demoWaitingForSpeech = true;
+        speech.voice = voiceForPlayer(active());
         speech.rate = Math.min(2, 0.78 * demoSpeed);
         speech.pitch = 1;
         speech.volume = 1;
@@ -2136,6 +2490,7 @@
       async function demoScene(message, update) {
         await update();
         render();
+        recordAudit("DEMO_SCENE", { message });
         $("statusTitle").textContent = "Guided demo";
         $("statusText").textContent = message;
         speakDemo(message);
@@ -2180,6 +2535,15 @@
         game.pool.push(value);
         game.history.push(value);
         if (!BONUS_VALUES.has(value)) game.phase = "move";
+        recordAudit("ROLL", {
+          firstFace: faces[0],
+          secondFace: faces[1],
+          value,
+          bonus: BONUS_VALUES.has(value),
+          rollNumberInTurn: game.history.length,
+          legalMoveCount: game.phase === "move" ? options().length : null,
+          plannedDemoRoll: true,
+        });
         render();
         const bonus = BONUS_VALUES.has(value) ? " It earns another roll." : "";
         const message = player.name + " rolls " + value + "." + bonus;
@@ -2192,6 +2556,7 @@
         const player = active(),
           move = chooseDemoMove();
         if (!move) {
+          recordAudit("PASS", { reason: "NO_LEGAL_MOVE" });
           nextTurn("No legal moves — turn passed.");
           demoRollQueue = [];
           const message =
@@ -2204,7 +2569,7 @@
         const from = move.piece.progress,
           captures = move.test.targets.length,
           willFinish = move.test.progress === 43;
-        await apply(move);
+        await apply(move, "guided-demo");
         demoRollQueue = [];
         let message =
           player.name +
@@ -2282,6 +2647,8 @@
       function startGuidedDemo() {
         newGame(2);
         demo = true;
+        audit.mode = "guided-demo";
+        recordAudit("MODE_CHANGE", { mode: audit.mode });
         demoPaused = false;
         demoStep = 0;
         demoRollQueue = [];
@@ -2325,6 +2692,8 @@
             : "🔇 Commentary off"
           : "Commentary unavailable";
         $("audioToggle").setAttribute("aria-pressed", String(audioEnabled));
+        $("audioToggle").title =
+          "Players alternate between available feminine and masculine voices";
         $("audioToggle").disabled = !available;
       }
       function toggleAudio() {
@@ -2366,6 +2735,7 @@
       };
       $("demoAudioToggle").onclick = toggleAudio;
       $("audioToggle").onclick = toggleAudio;
+      $("copyAuditBtn").onclick = copyGameAudit;
       $("demoRestart").onclick = restartGuidedDemo;
       $("demoExit").onclick = exitGuidedDemo;
       $("modalCancel").onclick = closeModal;
@@ -2396,14 +2766,14 @@
       $("resetBtn").onclick = () =>
         showModal(
           "Reset the match?",
-          "<p>This clears the current local game. Scores are not saved in this prototype.</p>",
+          "<p>This clears the current game and its audit. Copy the game audit first if you want to keep it for analysis.</p>",
           "Reset match",
           () => newGame(game.players.length, game.computerCount),
         );
       $("guideBtn").onclick = () =>
         showModal(
           "How to play",
-          "<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. Tap a highlighted piece to move using a selected roll.</p><p><strong>3.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>4.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p><p><strong>House-variant note:</strong> The outer and inner paths are an original provisional reconstruction. Their historical authenticity is not established.</p>",
+          "<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. Tap a highlighted piece to move using a selected roll.</p><p><strong>3.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>4.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p>",
           "Got it",
           () => {},
         );
@@ -2414,6 +2784,9 @@
           "Start demo",
           startGuidedDemo,
         );
+      refreshVoices();
+      if ("speechSynthesis" in window)
+        speechSynthesis.addEventListener("voiceschanged", refreshVoices);
       newGame(4);
     </script>
   </body>
