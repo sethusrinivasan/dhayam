@@ -1942,46 +1942,23 @@
           inputSource,
         });
         if (finished(player) && player.rank === null) {
-          player.rank = ++game.finished;
+          player.rank = 1;
+          game.finished = 1;
+          game.phase = "done";
           recordAudit("PLAYER_FINISH", {
             playerId: player.id,
-            rank: player.rank,
+            rank: 1,
           });
           commentary +=
-            " " + player.name + " finishes in place " + player.rank + ".";
-          if (game.finished === game.players.length - 1) {
-            const remaining = game.players.find(
-              (candidate) => candidate.rank === null,
-            );
-            if (remaining) remaining.rank = ++game.finished;
-            game.phase = "done";
-            commentary +=
-              " Match complete. " +
-              game.players
-                .slice()
-                .sort((a, b) => a.rank - b.rank)
-                .map(
-                  (candidate) =>
-                    candidate.name + " is number " + candidate.rank,
-                )
-                .join(". ") +
-              ".";
-            recordAudit("GAME_END", {
-              rankings: game.players
-                .slice()
-                .sort((a, b) => a.rank - b.rank)
-                .map((candidate) => ({
-                  playerId: candidate.id,
-                  playerName: candidate.name,
-                  rank: candidate.rank,
-                })),
-            });
-            speakGame(commentary);
-            render();
-            return;
-          }
+            " " + player.name + " finishes all six pieces and wins the game!";
+          recordAudit("GAME_END", {
+            winner: {
+              playerId: player.id,
+              playerName: player.name,
+            },
+          });
           speakGame(commentary);
-          nextTurn(player.name + " finished in place #" + player.rank + "!");
+          render();
           return;
         }
         if (!game.pool.length || !options().length) {
@@ -2263,10 +2240,11 @@
         $("moveBtn").disabled = moving || rolling;
         $("moveBtn").onclick = () =>
           apply(legal.get(selectedPieceId), "move-button");
-        const p = active();
+        const p = active(),
+          winner = game.players.find((player) => player.rank === 1);
         $("statusTitle").textContent =
           game.phase === "done"
-            ? "Match complete!"
+            ? "🏆 " + winner.name + " wins!"
             : p.avatar + " " + p.name + "’s turn";
         $("statusText").textContent =
           game.phase === "roll"
@@ -2282,12 +2260,8 @@
                 " move" +
                 (chosen.length === 1 ? " is" : "s are") +
                 " available."
-              : "Rankings: " +
-                game.players
-                  .slice()
-                  .sort((a, b) => a.rank - b.rank)
-                  .map((p) => p.name + " #" + p.rank)
-                  .join(" · ");
+              : winner.name +
+                " brought all six pieces to the center. The game is complete.";
         $("actionBtn").textContent =
           game.phase === "roll"
             ? "🎲 Roll Dayakattai"
@@ -2301,7 +2275,8 @@
               ? passRemainingRolls()
               : newGame(game.players.length);
         $("actionBtn").disabled = demo || rolling || moving || p.computer;
-        if (demo) $("actionBtn").textContent = "Demo playing…";
+        if (game.phase === "done") $("actionBtn").textContent = "Game complete";
+        else if (demo) $("actionBtn").textContent = "Demo playing…";
         else if (rolling) $("actionBtn").textContent = "Rolling…";
         else if (moving) $("actionBtn").textContent = "Moving…";
         else if (p.computer)
@@ -2435,7 +2410,7 @@
           ),
         () =>
           demoScene(
-            "Leo also completes a capture. Both players can now follow the inner route, so the automatic match will continue until the rankings are decided or you interrupt it.",
+            "Leo also completes a capture. Both players can now follow the inner route, so the automatic match will continue until one player finishes all six pieces and wins, or you interrupt it.",
             () => {
               game.players[1].captured = true;
               game.current = 0;
@@ -2583,13 +2558,8 @@
           message += " That piece reaches the center and finishes.";
         if (game.phase === "done")
           message =
-            "Match complete. " +
-            game.players
-              .slice()
-              .sort((a, b) => a.rank - b.rank)
-              .map((item) => item.name + " finishes #" + item.rank)
-              .join(", ") +
-            ".";
+            player.name +
+            " finishes all six pieces, wins the game, and play stops.";
         $("statusTitle").textContent =
           game.phase === "done"
             ? "Full guided game complete"
@@ -2780,7 +2750,7 @@
       $("demoBtn").onclick = () =>
         showModal(
           "Automatic guided demo",
-          "<p>Watch a complete two-player match play automatically. The opening explains entry and capture, then the game keeps rolling and moving until final rankings are decided.</p><p>You can pause, resume, or restart at any time.</p>",
+          "<p>Watch a complete two-player match play automatically. The opening explains entry and capture, then the game keeps rolling and moving until one player finishes all six pieces and wins.</p><p>The match stops as soon as the winner is declared. You can pause, resume, or restart at any time.</p>",
           "Start demo",
           startGuidedDemo,
         );
