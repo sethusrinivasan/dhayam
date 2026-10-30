@@ -24,4 +24,5 @@ The static browser prototype is published from `site/` through GitHub Pages whil
 - Computer players score legal moves by finish, capture, board entry, combined-roll use, and distance. A short delay after narration keeps automated play readable.
 - The guided demo plans bonus-roll sequences that end with a non-bonus value, waits for spoken commentary to finish, and continues until a player wins or the viewer pauses it.
 - The first player to move all six pieces to the center wins. The game announces that player and stops immediately; no later turns are played.
-- Commentary alternates available feminine and masculine browser voices by player. The game audit can be copied as plain text and includes dice distributions by player, every move and capture, passes, rankings, timestamps, and compact board snapshots for fairness and stuck-game analysis.
+- Commentary alternates available feminine and masculine browser voices by player. The game audit can be copied as plain text and includes dice distributions by player, every move and capture, passes, the winner, timestamps, and compact board snapshots for fairness and stuck-game analysis.
+- Each player’s pieces are numbered 1–6. Board stacks show the numbers sharing a square, while the family table lists which pieces are waiting, on the board, or home.

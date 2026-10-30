@@ -344,7 +344,7 @@
           inset 0 3px 7px #fff9;
       }
       .token.moving {
-        animation: pieceStep 0.42s ease-in-out;
+        animation: pieceStep 0.6s ease-in-out;
         filter: brightness(1.2);
       }
       @keyframes pieceStep {
@@ -377,20 +377,21 @@
           0 6px 10px #160b07a0;
         cursor: pointer;
       }
-      .tokencount {
+      .tokenids {
         position: absolute;
-        right: -5px;
-        top: -6px;
-        min-width: 17px;
-        height: 17px;
-        padding: 0 4px;
-        border-radius: 9px;
+        right: -6px;
+        bottom: -7px;
+        min-width: 16px;
+        min-height: 16px;
+        padding: 2px 4px;
+        border-radius: 8px;
         display: grid;
         place-items: center;
         background: #21140f;
         color: #fffbe6;
         border: 2px solid white;
-        font: 800 10px/1 ui-sans-serif;
+        font: 800 9px/1 ui-sans-serif;
+        white-space: nowrap;
         box-shadow: 0 2px 4px #0008;
       }
       .side {
@@ -443,6 +444,18 @@
         font-size: 11px;
         color: #c8b49d;
         margin-top: 2px;
+      }
+      .piecestatus {
+        display: grid;
+        gap: 2px;
+        margin-top: 5px;
+        color: #e6d3ba;
+        font-size: 10px;
+        line-height: 1.35;
+      }
+      .piecestatus b {
+        color: #ffe3a6;
+        font-weight: 750;
       }
       .turn {
         color: #f2d18d;
@@ -1906,6 +1919,7 @@
             playerId: hit.other.id,
             playerName: hit.other.name,
             pieceId: hit.q.id,
+            pieceNumber: hit.other.pieces.indexOf(hit.q) + 1,
           }));
         let commentary =
           player.name +
@@ -1929,6 +1943,7 @@
         movingPieceId = null;
         recordAudit("MOVE", {
           pieceId: piece.id,
+          pieceNumber: player.pieces.indexOf(piece) + 1,
           fromProgress,
           toProgress: piece.progress,
           fromSquare,
@@ -2072,8 +2087,8 @@
                   ? '<span class="motif">✿</span>'
                   : "";
             if (occupied.length) {
-              // Group a player's stacked pieces under one large avatar and show
-              // a count badge, preserving cell space when many players meet.
+              // Group a player's stacked pieces under one large avatar. The
+              // suffix lists the exact piece numbers sharing this square.
               const holder = document.createElement("span"),
                 groups = game.players
                   .map((p) => ({
@@ -2096,19 +2111,17 @@
                   (selectable ? " selectable" : "");
                 t.style.background = p.color;
                 t.textContent = p.avatar;
+                const pieceNumbers = pieces.map(
+                  (piece) => p.pieces.indexOf(piece) + 1,
+                );
                 t.setAttribute(
                   "aria-label",
-                  p.name +
-                    ", " +
-                    pieces.length +
-                    (pieces.length === 1 ? " piece" : " pieces"),
+                  p.name + ", piece " + pieceNumbers.join(", piece "),
                 );
-                if (pieces.length > 1) {
-                  const count = document.createElement("span");
-                  count.className = "tokencount";
-                  count.textContent = pieces.length;
-                  t.appendChild(count);
-                }
+                const ids = document.createElement("span");
+                ids.className = "tokenids";
+                ids.textContent = pieceNumbers.join("·");
+                t.appendChild(ids);
                 holder.appendChild(t);
               }
               el.appendChild(holder);
@@ -2129,8 +2142,21 @@
             $("board").appendChild(el);
           }
         $("players").innerHTML = game.players
-          .map(
-            (p) =>
+          .map((p) => {
+            const numbersFor = (test) => {
+                const numbers = p.pieces
+                  .map((piece, index) => (test(piece) ? index + 1 : null))
+                  .filter(Boolean);
+                return numbers.length
+                  ? numbers.map((number) => "#" + number).join(", ")
+                  : "—";
+              },
+              waiting = numbersFor((piece) => piece.progress < 0),
+              onBoard = numbersFor(
+                (piece) => piece.progress >= 0 && piece.progress < 43,
+              ),
+              home = numbersFor((piece) => piece.progress === 43);
+            return (
               '<div class="player ' +
               (active() === p && game.phase !== "done" ? "active" : "") +
               '"><div class="avatar" aria-hidden="true" style="background:' +
@@ -2144,12 +2170,19 @@
               p.pieces.filter((q) => q.progress === 43).length +
               "/6 finished · " +
               (p.captured ? "capture earned" : "capture needed") +
-              "</div></div>" +
+              '</div><div class="piecestatus"><span><b>Waiting:</b> ' +
+              waiting +
+              "</span><span><b>On board:</b> " +
+              onBoard +
+              "</span><span><b>Home:</b> " +
+              home +
+              "</span></div></div>" +
               (active() === p && game.phase !== "done"
                 ? '<div class="turn">● Turn</div>'
                 : "") +
-              "</div>",
-          )
+              "</div>"
+            );
+          })
           .join("");
         $("gameInfo").textContent = game.computerCount
           ? "1 human · " +
