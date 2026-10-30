@@ -1,6 +1,6 @@
 # Dhayam
 
-Dhayam is a local pass-and-play board-game prototype based on a provisional 7×7 house variant. The route is an original playable reconstruction and has not been historically verified as a traditional Tamil Nadu path.
+Dhayam is a board-game prototype for local pass-and-play or one human against 1–5 computer opponents. It uses a provisional 7×7 house variant; the route is an original playable reconstruction and has not been historically verified as a traditional Tamil Nadu path.
 
 Play the browser version at <https://sethusrinivasan.github.io/dhayam/>.
 

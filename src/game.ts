@@ -6,7 +6,7 @@ export type Piece = {
 };
 
 export type Player = {
-  id: Seat;
+  id: string;
   name: string;
   seat: Seat;
   captured: boolean;
@@ -24,7 +24,7 @@ export type Game = {
 };
 
 export type Capture = {
-  playerId: Seat;
+  playerId: string;
   pieceId: string;
 };
 
@@ -72,18 +72,22 @@ export const ROUTES: Record<Seat, string[]> = Object.fromEntries(
 ) as Record<Seat, string[]>;
 
 export function createGame(playerCount = 4): Game {
-  if (![2, 3, 4].includes(playerCount)) {
-    throw new RangeError("Dhayam requires 2, 3, or 4 players");
+  if (!Number.isInteger(playerCount) || playerCount < 2 || playerCount > 6) {
+    throw new RangeError("Dhayam requires 2 to 6 players");
   }
-  const seats: Seat[] = playerCount === 2 ? ["N", "S"] : playerCount === 3 ? ["N", "E", "S"] : [...SEATS];
+  const seats: Seat[] = playerCount === 2
+    ? ["N", "S"]
+    : playerCount === 3
+      ? ["N", "E", "S"]
+      : Array.from({ length: playerCount }, (_, index) => SEATS[index % SEATS.length]);
   return {
     players: seats.map((seat, playerIndex) => ({
-      id: seat,
-      name: NAMES[playerIndex],
+      id: `P${playerIndex}`,
+      name: NAMES[playerIndex] ?? `Player ${playerIndex + 1}`,
       seat,
       captured: false,
       rank: null,
-      pieces: Array.from({ length: 6 }, (_, pieceIndex) => ({ id: `${seat}${pieceIndex}`, progress: -1 })),
+      pieces: Array.from({ length: 6 }, (_, pieceIndex) => ({ id: `P${playerIndex}-${pieceIndex}`, progress: -1 })),
     })),
     current: 0,
     phase: "roll",
