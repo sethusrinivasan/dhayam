@@ -347,6 +347,10 @@
         animation: pieceStep 0.6s ease-in-out;
         filter: brightness(1.2);
       }
+      .token.captured {
+        animation: capturedPiece 0.75s ease-in forwards;
+        pointer-events: none;
+      }
       @keyframes pieceStep {
         0% {
           transform: translateY(0) scale(1);
@@ -356,6 +360,20 @@
         }
         100% {
           transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes capturedPiece {
+        0% {
+          opacity: 1;
+          transform: translate(0, 0) scale(1);
+        }
+        45% {
+          opacity: 1;
+          transform: translate(18px, -18px) scale(1.18) rotate(10deg);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(46px, -42px) scale(0.35) rotate(28deg);
         }
       }
       .token.N {
@@ -422,6 +440,20 @@
         background: #fff8d921;
         border-color: #f6d588;
         box-shadow: 0 0 0 2px #f6d58822;
+      }
+      .player.captureloss {
+        animation: captureLoss 0.75s ease-in-out;
+        border-color: #ffbf72;
+      }
+      @keyframes captureLoss {
+        0%,
+        100% {
+          background: transparent;
+        }
+        45% {
+          background: #c050353d;
+          box-shadow: 0 0 0 3px #ffb26b42;
+        }
       }
       .avatar {
         width: 42px;
@@ -868,6 +900,21 @@
         align-items: center;
         gap: 5px;
       }
+      .legendplayers {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .legendplayer {
+        display: inline-grid;
+        place-items: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        border: 1px solid #fff7;
+        font-size: 11px;
+        color: #28170f;
+      }
       .legendarrow {
         font-size: 18px;
         color: #f7cf8b;
@@ -1109,7 +1156,7 @@
                 ><span class="legendmove"></span> Available piece</span
               ><span class="legenditem"
                 ><span class="legendsafe">✿</span> Safe square</span
-              >
+              ><span class="legenditem" id="playerLegend">Player colors</span>
             </div>
           </div>
           <div class="controls">
@@ -1369,6 +1416,8 @@
         rolling = false,
         moving = false,
         movingPieceId = null,
+        capturedPieceIds = [],
+        capturedPlayerIds = [],
         rollTimer = null,
         computerTimer = null,
         commentaryUntil = 0,
@@ -1462,6 +1511,8 @@
         rolling = false;
         moving = false;
         movingPieceId = null;
+        capturedPieceIds = [];
+        capturedPlayerIds = [];
         if (count < 2 || count > 6)
           throw new RangeError("Dhayam supports 2 to 6 total players");
         const seats =
@@ -1893,6 +1944,11 @@
           setTimeout(resolve, scaledDemoDelay(MOVE_STEP_DELAY)),
         );
       }
+      function waitForCaptureAnimation() {
+        return new Promise((resolve) =>
+          setTimeout(resolve, scaledDemoDelay(750)),
+        );
+      }
       async function animatePiece(player, piece, targetProgress) {
         // Update progress one square at a time so the avatar visibly traces the
         // route. The final game state (including captures) is committed by apply.
@@ -1959,7 +2015,24 @@
         speakGame(commentary);
         await animatePiece(player, piece, opt.test.progress);
         player.captured = opt.test.captured;
-        for (const hit of opt.test.targets) hit.q.progress = -1;
+        if (captureCount) {
+          capturedPieceIds = opt.test.targets.map((hit) => hit.q.id);
+          capturedPlayerIds = opt.test.targets.map((hit) => hit.other.id);
+          render();
+          const capturedLabels = capturedPieces
+            .map((hit) => hit.playerName + "’s piece #" + hit.pieceNumber)
+            .join(" and ");
+          $("statusTitle").textContent = "Capture!";
+          $("statusText").textContent =
+            player.name +
+            " sends " +
+            capturedLabels +
+            " from the board back to the family table.";
+          await waitForCaptureAnimation();
+          for (const hit of opt.test.targets) hit.q.progress = -1;
+          capturedPieceIds = [];
+          capturedPlayerIds = [];
+        }
         game.pool = game.pool.filter(
           (_, index) => !opt.indices.includes(index),
         );
@@ -2132,6 +2205,9 @@
                   (pieces.some((piece) => piece.id === movingPieceId)
                     ? " moving"
                     : "") +
+                  (pieces.some((piece) => capturedPieceIds.includes(piece.id))
+                    ? " captured"
+                    : "") +
                   (selectable ? " selectable" : "");
                 t.style.background = p.color;
                 t.textContent = p.avatar;
@@ -2183,6 +2259,7 @@
             return (
               '<div class="player ' +
               (active() === p && game.phase !== "done" ? "active" : "") +
+              (capturedPlayerIds.includes(p.id) ? " captureloss" : "") +
               '"><div class="avatar" aria-hidden="true" style="background:' +
               p.color +
               '">' +
@@ -2208,6 +2285,21 @@
             );
           })
           .join("");
+        $("playerLegend").innerHTML =
+          '<span class="legendplayers" aria-label="Player color and avatar legend">' +
+          game.players
+            .map(
+              (player) =>
+                '<span class="legendplayer" style="background:' +
+                player.color +
+                '" title="' +
+                player.name +
+                '">' +
+                player.avatar +
+                "</span>",
+            )
+            .join("") +
+          "</span> Player colors";
         $("gameInfo").textContent = game.computerCount
           ? "1 human · " +
             game.computerCount +
