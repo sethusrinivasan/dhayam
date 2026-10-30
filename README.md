@@ -1,6 +1,6 @@
 # Dhayam
 
-Dhayam is a board-game prototype for local pass-and-play or one human against 1–5 computer opponents. It uses a provisional 7×7 house variant; the route is an original playable reconstruction and has not been historically verified as a traditional Tamil Nadu path.
+Dhayam is a browser board game for local pass-and-play or one human against 1–5 computer opponents.
 
 Play the browser version at <https://sethusrinivasan.github.io/dhayam/>.
 
@@ -15,3 +15,11 @@ npm test
 ```
 
 The static browser prototype is published from `site/` through GitHub Pages while its UI is migrated to the tested engine.
+
+## Implementation notes
+
+- The north-facing 44-position route is rotated for each seat, so every player follows the same movement algorithm from a different starting point.
+- Move validation applies stored rolls in order. It checks entry, exact finishing, the capture prerequisite, safe squares, and captures after each value.
+- The browser animates movement by advancing the piece state one square every 420 milliseconds, then commits captures and turn changes at the destination. Guided-demo viewers can scale the complete pace from 0.5× to 2×.
+- Computer players score legal moves by finish, capture, board entry, combined-roll use, and distance. A short delay after narration keeps automated play readable.
+- The guided demo plans bonus-roll sequences that end with a non-bonus value, waits for spoken commentary to finish, and continues until every player is ranked or the viewer pauses it.

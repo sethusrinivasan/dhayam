@@ -1,79 +1,2420 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><meta name="theme-color" content="#251a14"/><title>Dhayam · Heritage Edition</title>
-<style>
-:root{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff7e9;background:#211912;font-synthesis:none}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#57402c 0%,#271c15 55%,#1b1410 100%)}button,select,input{font:inherit}button{cursor:pointer}button:disabled{opacity:.43;cursor:not-allowed}.shell{max-width:1250px;margin:auto;padding:22px 20px 35px}.top{display:flex;gap:16px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.logo{display:grid;place-items:center;width:49px;height:49px;border-radius:15px;background:#d8a05d;color:#402716;font-size:27px}.brand h1{font-family:Georgia,serif;font-size:31px;line-height:1;margin:0;letter-spacing:-.6px}.sub{color:#cdbda8;font-size:12px;margin-top:6px}.topnav{display:flex;gap:9px;flex-wrap:wrap}.pill{border:1px solid #ffffff24;background:#ffffff0b;color:#fff1db;border-radius:14px;padding:11px 14px;font-size:13px}.pill:hover{background:#ffffff18}.layout{display:grid;grid-template-columns:minmax(0,1fr) 265px;gap:22px;align-items:start}.boardcard{background:linear-gradient(140deg,#925b2e,#4b2918 17%,#6b3c22 70%,#9b6536);border:7px solid #4c2b19;border-radius:28px;padding:clamp(10px,2vw,23px);box-shadow:0 24px 70px #08050280,inset 0 0 0 2px #d4a66d80;position:relative}.boardcard:before{content:'✺';position:absolute;top:5px;left:13px;color:#e6b777;font-size:21px}.boardcard:after{content:'✺';position:absolute;bottom:5px;right:13px;color:#e6b777;font-size:21px}.board{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;aspect-ratio:1;background:#7c4c2c;border:4px solid #c38d50;border-radius:12px;padding:4px;box-shadow:inset 0 0 0 3px #4b2d1b}.boardwrap{position:relative}.pathoverlay{position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);z-index:1;pointer-events:none;overflow:visible}.pathbase{fill:none;stroke:#7b421f;stroke-width:20;stroke-linecap:round;stroke-linejoin:round;opacity:.26}.pathflow{fill:none;stroke:#fff0ad;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:18 22;opacity:.72;animation:pathFlow 2.4s linear infinite}.pathapproach{stroke-width:15}.pathflow.pathapproach{stroke-width:4}@keyframes pathFlow{to{stroke-dashoffset:-40}}.cell{position:relative;min-width:0;display:grid;place-items:center;aspect-ratio:1;background:linear-gradient(145deg,#f5d8a4,#e6bf80);border:1px solid #b48a55;border-radius:4px;color:#8d5d34;transition:filter .2s,outline .2s}.cell.inner{background:linear-gradient(140deg,#e8c68f,#dcb67b)}.cell.safe{background:linear-gradient(140deg,#a97647,#754527);color:#f4d59d}.cell.goal{background:radial-gradient(circle,#f2c775,#8e552f);color:#422613}.cell.startN{box-shadow:inset 0 0 0 5px #e74c3c}.cell.startE{box-shadow:inset 0 0 0 5px #2389da}.cell.startS{box-shadow:inset 0 0 0 5px #f4b400}.cell.startW{box-shadow:inset 0 0 0 5px #2e9d57}.cell.legal{outline:4px solid #fff8a5;outline-offset:-5px;cursor:pointer;z-index:2;animation:pulse 1.3s infinite;filter:brightness(1.12)}.cell.legal:after{content:'MOVE';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:clamp(5px,.7vw,8px);font-weight:900;letter-spacing:.08em;color:#4b2b17;background:#fff5a6;border-radius:5px;padding:1px 3px;z-index:4}.cell.legal:hover{filter:brightness(1.22)}@keyframes pulse{50%{outline-color:#fff8a560}}.direction{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(13px,2.2vw,27px);font-weight:900;color:#784b29;opacity:.4;pointer-events:none}.cell.safe .direction{color:#ffe3a7;opacity:.45}.motif{font-size:clamp(25px,4.8vw,48px);opacity:.96;z-index:1;line-height:1;filter:drop-shadow(0 2px 2px #3b1d1280)}.cell.safe .motif{color:#ffe09a}.tokens{position:absolute;inset:4px;display:flex;align-items:center;justify-content:center;align-content:center;flex-wrap:wrap;gap:clamp(2px,.4vw,5px);z-index:2;pointer-events:none}.token{position:relative;width:clamp(21px,3.5vw,38px);height:clamp(21px,3.5vw,38px);flex:0 0 clamp(21px,3.5vw,38px);border-radius:11px;border:3px solid #fff9df;box-shadow:0 0 0 2px #32180dcc,0 5px 8px #160b0780,inset 0 2px 5px #fff8;display:grid;place-items:center;font-size:clamp(12px,2.2vw,22px);color:#21130d;font-weight:900;line-height:1}.token.N{background:#e74c3c}.token.E{background:#2389da}.token.S{background:#f4b400}.token.W{background:#2e9d57}.token.selectable{box-shadow:0 0 0 3px #fff58a,0 0 0 6px #2b160dbb,0 6px 10px #160b07a0;cursor:pointer}.tokencount{position:absolute;right:-5px;top:-6px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;display:grid;place-items:center;background:#21140f;color:#fffbe6;border:2px solid white;font:800 10px/1 ui-sans-serif;box-shadow:0 2px 4px #0008}.side{display:grid;gap:14px}.panel{border:1px solid #f8dfb124;background:#ffffff0b;backdrop-filter:blur(12px);border-radius:20px;padding:18px}.panel h2{font-size:15px;margin:0 0 14px}.player{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;border:1px solid transparent;margin-bottom:5px}.player.active{background:#fff8d921;border-color:#f6d588;box-shadow:0 0 0 2px #f6d58822}.avatar{width:42px;height:42px;flex:0 0 42px;border-radius:14px;display:grid;place-items:center;color:#1d130f;font-size:23px;font-weight:800;border:2px solid #fff5ce80;box-shadow:0 3px 8px #0005}.pname{font-size:14px;font-weight:650}.pmeta{font-size:11px;color:#c8b49d;margin-top:2px}.turn{color:#f2d18d;font-size:12px}.btn{border:0;border-radius:15px;padding:15px 19px;font-weight:750;color:#fff;background:linear-gradient(120deg,#dc7554,#b94342);box-shadow:0 6px 15px #140b0840}.btn.secondary{background:#ffffff16;box-shadow:none;border:1px solid #ffffff24}.btn:focus-visible,.pill:focus-visible,.cell:focus-visible{outline:3px solid #ffe6a3;outline-offset:3px}.btn.full{width:100%}.controls{margin-top:16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}.status{border:1px solid #fff4d21c;background:#130d0a88;border-radius:18px;padding:16px}.status strong{display:block;font-size:15px}.status span{font-size:12px;color:#d6c1a9;display:block;margin-top:5px;line-height:1.5}.dice{display:flex;gap:18px;margin:16px 0 20px;padding:8px 5px 12px;perspective:800px;perspective-origin:50% 20%}.die{position:relative;width:58px;height:58px;perspective:520px;filter:drop-shadow(0 9px 7px #0008)}.die:after{content:'';position:absolute;left:7px;right:7px;bottom:-13px;height:9px;border-radius:50%;background:#0905038c;filter:blur(5px);transform:scale(.9)}.diecube{position:absolute;inset:4px;width:50px;height:50px;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.2,.8,.3,1);will-change:transform}.dieface{position:absolute;width:50px;height:50px;display:grid;place-items:center;border:1px solid #ffe6baaa;border-radius:9px;background:linear-gradient(145deg,#ffdaa5 0%,#d88745 52%,#955027 100%);box-shadow:inset 5px 5px 9px #fff7,inset -6px -7px 10px #6d321f77;color:#4c2413;font-size:23px;font-weight:950;line-height:1;backface-visibility:hidden}.dieface:after{content:'';position:absolute;inset:4px;border-radius:6px;border-top:2px solid #fff7;border-left:1px solid #fff4}.diefront{transform:rotateY(0deg) translateZ(25px)}.dieback{transform:rotateY(180deg) translateZ(25px)}.dieright{transform:rotateY(90deg) translateZ(25px)}.dieleft{transform:rotateY(-90deg) translateZ(25px)}.dietop{transform:rotateX(90deg) translateZ(25px)}.diebottom{transform:rotateX(-90deg) translateZ(25px)}.diecube.show-0{transform:rotateX(-8deg) rotateY(-10deg)}.diecube.show-1{transform:rotateX(-8deg) rotateY(170deg)}.diecube.show-2{transform:rotateX(-8deg) rotateY(-100deg)}.diecube.show-3{transform:rotateX(-8deg) rotateY(80deg)}.diecube.rolling{transition:none;animation-duration:1.15s;animation-timing-function:cubic-bezier(.18,.72,.25,1);animation-fill-mode:forwards}.diecube.rolling.show-0{animation-name:cubeRoll0}.diecube.rolling.show-1{animation-name:cubeRoll1}.diecube.rolling.show-2{animation-name:cubeRoll2}.diecube.rolling.show-3{animation-name:cubeRoll3}.die:nth-child(2) .diecube.rolling{animation-delay:.07s}.die.tumbling{animation:dieHop 1.15s cubic-bezier(.22,.72,.3,1)}.die:nth-child(2).tumbling{animation-delay:.07s}.die.tumbling:after{animation:dieShadow 1.15s ease-out}.die:nth-child(2).tumbling:after{animation-delay:.07s}@keyframes cubeRoll0{0%{transform:rotateX(-8deg) rotateY(-10deg) rotateZ(0)}22%{transform:rotateX(180deg) rotateY(145deg) rotateZ(55deg)}52%{transform:rotateX(455deg) rotateY(390deg) rotateZ(185deg)}78%{transform:rotateX(650deg) rotateY(625deg) rotateZ(310deg)}100%{transform:rotateX(712deg) rotateY(710deg) rotateZ(360deg)}}@keyframes cubeRoll1{0%{transform:rotateX(-8deg) rotateY(-10deg) rotateZ(0)}22%{transform:rotateX(205deg) rotateY(120deg) rotateZ(80deg)}52%{transform:rotateX(470deg) rotateY(410deg) rotateZ(205deg)}78%{transform:rotateX(675deg) rotateY(660deg) rotateZ(325deg)}100%{transform:rotateX(712deg) rotateY(890deg) rotateZ(360deg)}}@keyframes cubeRoll2{0%{transform:rotateX(-8deg) rotateY(-10deg) rotateZ(0)}22%{transform:rotateX(155deg) rotateY(175deg) rotateZ(45deg)}52%{transform:rotateX(430deg) rotateY(435deg) rotateZ(170deg)}78%{transform:rotateX(630deg) rotateY(705deg) rotateZ(295deg)}100%{transform:rotateX(712deg) rotateY(980deg) rotateZ(360deg)}}@keyframes cubeRoll3{0%{transform:rotateX(-8deg) rotateY(-10deg) rotateZ(0)}22%{transform:rotateX(195deg) rotateY(155deg) rotateZ(70deg)}52%{transform:rotateX(450deg) rotateY(455deg) rotateZ(195deg)}78%{transform:rotateX(665deg) rotateY(690deg) rotateZ(315deg)}100%{transform:rotateX(712deg) rotateY(800deg) rotateZ(360deg)}}@keyframes dieHop{0%,100%{transform:translateY(0) rotateZ(0)}18%{transform:translateY(-22px) rotateZ(4deg)}48%{transform:translateY(-7px) rotateZ(-3deg)}68%{transform:translateY(-13px) rotateZ(2deg)}86%{transform:translateY(2px) rotateZ(-1deg)}}@keyframes dieShadow{0%,100%{transform:scale(.9);opacity:1}18%{transform:scale(.45);opacity:.35}48%{transform:scale(.72);opacity:.65}68%{transform:scale(.55);opacity:.45}86%{transform:scale(1);opacity:1}}.chips{display:flex;gap:7px;flex-wrap:wrap}.chip{background:#ffffff16;border:1px solid #ffffff30;color:#fff2d7;padding:8px 11px;border-radius:12px;font-size:13px}.chip.selected{background:#d5a65a;color:#21150e}.helper{font-size:12px;color:#d2c1aa;line-height:1.5}.small{font-size:11px;color:#c5b097}.boardlegend{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:12px 5px 0;color:#f8e6c9;font-size:11px;font-weight:650}.demobar[hidden]{display:none}.demobar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;padding:12px 14px;border:1px solid #f4cf7c66;background:#2b1b12;border-radius:16px}.demoinfo{display:grid;gap:3px}.demoinfo strong{font-size:13px;color:#ffe6ac}.demoinfo span{font-size:11px;color:#cdbb9f}.demoactions{display:flex;gap:7px;flex-wrap:wrap}.demobtn{border:1px solid #ffffff2e;background:#ffffff12;color:#fff1d7;border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700}.demobtn:hover{background:#ffffff20}.demobtn:disabled{opacity:.5}.legenditem{display:flex;align-items:center;gap:5px}.legendarrow{font-size:18px;color:#f7cf8b}.legendmove{width:17px;height:17px;border:3px solid #fff8a5;border-radius:5px}.legendsafe{font-size:16px;color:#ffd995}.divider{height:1px;background:#ffffff20;margin:14px 0}.modalback{position:fixed;inset:0;background:#080604bd;display:none;place-items:center;padding:20px;z-index:10}.modalback.open{display:grid}.modal{max-width:530px;width:100%;background:#332319;border:1px solid #b8895b88;border-radius:24px;padding:25px;box-shadow:0 25px 70px #000a}.modal h2{margin:0 0 8px;font-family:Georgia,serif}.modal p{color:#d8c4ab;line-height:1.6}.modal label{display:block;margin:13px 0 6px;color:#e6d0b3;font-size:13px}.modal select,.modal input{width:100%;border:1px solid #ffffff38;background:#201710;color:white;padding:12px;border-radius:10px}.modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}.notice{margin-top:14px;font-size:12px;color:#d2bd9d}.footer{font-size:11px;color:#bba88f;margin-top:18px;text-align:center}@media(max-width:860px){.layout{grid-template-columns:1fr}.side{grid-template-columns:repeat(2,minmax(0,1fr))}.boardcard{max-width:720px;margin:auto}.controls{max-width:720px;margin:14px auto}}@media(max-width:520px){.shell{padding:13px 9px}.brand h1{font-size:25px}.topnav{gap:6px}.pill{padding:9px;font-size:11px}.boardcard{border-width:4px;border-radius:19px;padding:8px}.board{gap:2px;padding:2px;border-width:2px}.side{grid-template-columns:1fr}.controls{grid-template-columns:1fr}.direction{font-size:17px}.demobar{align-items:flex-start;flex-direction:column}.demoactions{width:100%}.demobtn{flex:1}.cell.legal:after{display:none}.token{border-width:1px}.panel{padding:13px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
-</style></head><body><main class="shell"><header class="top"><div class="brand"><div class="logo" aria-hidden="true">✺</div><div><h1>Dhayam</h1><div class="sub">Heritage Edition · Play · Connect · Celebrate</div></div></div><nav class="topnav"><button class="pill" id="newBtn">＋ New game</button><button class="pill" id="guideBtn">? How to play</button><button class="pill" id="demoBtn">✦ Guided demo</button></nav></header><div class="layout"><section aria-label="Game board and controls"><div class="boardcard"><div class="boardwrap"><div class="board" id="board" role="grid" aria-label="Dhayam 7 by 7 game board"></div><svg class="pathoverlay" viewBox="0 0 700 700" preserveAspectRatio="none" aria-hidden="true"><path class="pathbase" d="M350 50 L650 50 L650 650 L50 650 L50 50 Z"/><path class="pathflow" d="M350 50 L650 50 L650 650 L50 650 L50 50 Z"/><path class="pathbase" d="M350 150 L150 150 L150 550 L550 550 L550 150 Z"/><path class="pathflow" d="M350 150 L150 150 L150 550 L550 550 L550 150 Z"/><path class="pathbase pathapproach" d="M350 250 L350 350 M450 350 L350 350 M350 450 L350 350 M250 350 L350 350"/><path class="pathflow pathapproach" d="M350 250 L350 350 M450 350 L350 350 M350 450 L350 350 M250 350 L350 350"/></svg></div><div class="boardlegend" aria-label="Board legend"><span class="legenditem"><span class="legendarrow">〰</span> Flowing travel path</span><span class="legenditem"><span class="legendmove"></span> Available piece</span><span class="legenditem"><span class="legendsafe">✿</span> Safe square</span></div></div><div class="controls"><div class="status" aria-live="polite"><strong id="statusTitle">Welcome to Dhayam</strong><span id="statusText">Start a game to play.</span><div class="chips" id="rollChips" style="margin-top:9px"></div></div><button class="btn" id="actionBtn">Roll Dayakattai</button></div><div class="demobar" id="demoBar" hidden><div class="demoinfo"><strong>Guided demo is playing</strong><span id="demoProgress">Preparing…</span></div><div class="demoactions"><button class="demobtn" id="demoPause" type="button">Pause</button><button class="demobtn" id="demoAudio" type="button" aria-pressed="true">🔊 Audio on</button><button class="demobtn" id="demoRestart" type="button">Restart</button><button class="demobtn" id="demoExit" type="button">Exit demo</button></div></div></section><aside class="side"><div class="panel"><h2>Family table</h2><div id="players"></div><div class="divider"></div><div class="small" id="gameInfo">Local pass-and-play · House variant</div></div><div class="panel"><h2>Dayakattai dice</h2><div class="dice"><div class="die" id="dieA" role="img" aria-label="First die not rolled"><div class="diecube show-0"><span class="dieface diefront">0</span><span class="dieface dieback">1</span><span class="dieface dieright">2</span><span class="dieface dieleft">3</span><span class="dieface dietop">✦</span><span class="dieface diebottom">✦</span></div></div><div class="die" id="dieB" role="img" aria-label="Second die not rolled"><div class="diecube show-0"><span class="dieface diefront">0</span><span class="dieface dieback">1</span><span class="dieface dieright">2</span><span class="dieface dieleft">3</span><span class="dieface dietop">✦</span><span class="dieface diebottom">✦</span></div></div></div><div class="helper" id="diceHint">Two long dice · bonus on 1, 5, 6, 12</div><div class="divider"></div><div class="helper"><strong>Ruleset:</strong> Heritage 7×7 house variant.<br/>Six pieces per player. Capture once before entering home. Exact finish. Safe floral squares protect pieces.</div><div class="divider"></div><button class="btn secondary full" id="resetBtn">Reset match</button></div></aside></div></main>
-<div class="modalback" id="modalback" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h2 id="modalTitle">New family game</h2><div id="modalContent"></div><div class="actions"><button class="btn secondary" id="modalCancel">Close</button><button class="btn" id="modalConfirm">Start game</button></div></div></div>
-<script>
-'use strict';
-const OUTER=['A4','A5','A6','A7','B7','C7','D7','E7','F7','G7','G6','G5','G4','G3','G2','G1','F1','E1','D1','C1','B1','A1','A2','A3'];
-const INNER=['B4','B3','B2','C2','D2','E2','F2','F3','F4','F5','F6','E6','D6','C6','B6','B5'];
-const SAFE=new Set(['A4','B2','B6','D1','D7','F2','F6','G4']), BONUS_VALUES=new Set([1,5,6,12]);
-const SEATS=['N','E','S','W'], START={N:'A4',E:'D7',S:'G4',W:'D1'}, ENTRY={N:'B4',E:'D6',S:'F4',W:'D2'}, APPROACH={N:'C4',E:'D5',S:'E4',W:'D3'};
-const THEMES=[{name:'Maya',avatar:'🐘',color:'#e74c3c'},{name:'Leo',avatar:'🐯',color:'#2389da'},{name:'Amina',avatar:'🦚',color:'#f4b400'},{name:'Kai',avatar:'🦁',color:'#2e9d57'},{name:'Sofia',avatar:'🦊',color:'#8e5bd9'},{name:'Noah',avatar:'🦉',color:'#00a6a6'}];
-function rotate(coord,n){let r=coord.charCodeAt(0)-65,c=Number(coord[1])-1;for(let i=0;i<n;i++){[r,c]=[c,6-r]}return String.fromCharCode(65+r)+(c+1)}
-function route(seat){const turns=SEATS.indexOf(seat);const outer=OUTER.map(p=>rotate(p,turns));const inner=INNER.map(p=>rotate(p,turns));return [...outer,outer[0],...inner,inner[0],APPROACH[seat],'D4']}
-const ROUTES=Object.fromEntries(SEATS.map(s=>[s,route(s)]));
-function arrowBetween(from,to){const r1=from.charCodeAt(0),c1=Number(from[1]),r2=to.charCodeAt(0),c2=Number(to[1]);return r2>r1?'↓':r2<r1?'↑':c2>c1?'→':'←'}
-function directionFor(sq){for(const path of [OUTER,INNER]){const i=path.indexOf(sq);if(i>=0)return arrowBetween(sq,path[(i+1)%path.length])}for(const seat of SEATS)if(APPROACH[seat]===sq)return arrowBetween(sq,'D4');return ''}
-const $=id=>document.getElementById(id);let game=null,selectedRoll=0,demo=false,modalAction=null,demoTimer=null,demoPaused=false,demoStep=0,demoAudio=true,demoRollQueue=[],rolling=false,rollTimer=null,computerTimer=null;
-const DEMO_DELAY=2800;
-function rand4(){const v=new Uint32Array(1);crypto.getRandomValues(v);return v[0]%4} // modulo bias negligible for demo; production should use unbiased rejection sampling
-function rollDice(){const a=rand4(),b=rand4();return {a,b,value:a===0&&b===0?12:a+b}}
-function stopDemo(){if(demoTimer)clearTimeout(demoTimer);demoTimer=null;if('speechSynthesis' in window)speechSynthesis.cancel();demo=false;demoPaused=false;demoStep=0;demoRollQueue=[];if($('demoBar'))$('demoBar').hidden=true}
-function newGame(count=4,computerCount=0){stopDemo();if(rollTimer)clearTimeout(rollTimer);if(computerTimer)clearTimeout(computerTimer);rollTimer=null;computerTimer=null;rolling=false;if(count<2||count>6)throw new RangeError('Dhayam supports 2 to 6 total players');const seats=count===2?['N','S']:count===3?['N','E','S']:Array.from({length:count},(_,i)=>SEATS[i%4]);game={players:seats.map((seat,i)=>{const theme=THEMES[i];return{id:'P'+i,name:computerCount?(i===0?'You':theme.name):theme.name,avatar:theme.avatar,color:theme.color,computer:i>0&&i<=computerCount,seat,captured:false,rank:null,pieces:Array.from({length:6},(_,j)=>({id:'P'+i+'-'+j,progress:-1}))}}),current:0,phase:'roll',pool:[],history:[],last:null,turn:1,finished:0,computerCount,paused:false};selectedRoll=0;render();}
-function active(){return game.players[game.current]}
-function node(player,piece){return piece.progress<0?null:ROUTES[player.seat][piece.progress]}
-function finished(p){return p.pieces.every(q=>q.progress===43)}
-function moveCandidate(p,piece,values){let pos=piece.progress,captured=p.captured,targets=[];for(const value of values){if(pos===43)return null;if(pos===-1){if(value!==1)return null;pos=0}else{const next=pos+value;if(next>43)return null;if(next>=25&&!captured)return null;pos=next}const sq=ROUTES[p.seat][pos];const enemies=game.players.filter(other=>other!==p).flatMap(other=>other.pieces.filter(q=>q.progress>=0&&q.progress<43&&node(other,q)===sq).map(q=>({other,q})));if(!SAFE.has(sq)&&sq!=='D4'){if(enemies.length>1)return null;if(enemies.length===1){captured=true;targets.push(enemies[0])}}}return {progress:pos,captured,targets}}
-function options(){if(!game||game.phase!=='move')return [];const p=active(),result=[];const subsets=[];for(let i=0;i<game.pool.length;i++)subsets.push({indices:[i],values:[game.pool[i]]});if(game.pool.length>1&&game.pool.length<=12)subsets.push({indices:game.pool.map((_,i)=>i),values:[...game.pool]});for(const piece of p.pieces)for(const s of subsets){const test=moveCandidate(p,piece,s.values);if(test)result.push({piece,indices:s.indices,values:s.values,test})}return result}
-function setDieFace(id,value,label){const die=$(id),cube=die.querySelector('.diecube');cube.classList.remove('show-0','show-1','show-2','show-3');cube.classList.add('show-'+value);die.setAttribute('aria-label',label)}
-function triggerDiceAnimation(){for(const id of ['dieA','dieB']){const die=$(id),cube=die.querySelector('.diecube');die.classList.remove('tumbling');cube.classList.remove('rolling');void cube.offsetWidth;die.classList.add('tumbling');cube.classList.add('rolling');setTimeout(()=>{die.classList.remove('tumbling');cube.classList.remove('rolling')},1240)}}
-function finishRoll(d){game.last=d;game.pool.push(d.value);game.history.push(d.value);rolling=false;if(![1,5,6,12].includes(d.value)){game.phase='move';if(!options().length){game.pool=[];nextTurn('No legal moves — turn passed.');return}}render()}
-function roll(){if(!game||game.phase!=='roll'||rolling||demo)return;const d=rollDice();rolling=true;setDieFace('dieA',d.a,'First die rolling');setDieFace('dieB',d.b,'Second die rolling');$('actionBtn').textContent='Rolling…';$('actionBtn').disabled=true;triggerDiceAnimation();rollTimer=setTimeout(()=>{rollTimer=null;finishRoll(d)},1220)}
-function nextTurn(message=''){if(!game)return;game.pool=[];game.history=[];game.phase='roll';selectedRoll=0;if(game.players.every(p=>p.rank!==null)){game.phase='done';render();return}let i=game.current;do{i=(i+1)%game.players.length}while(game.players[i].rank!==null&&i!==game.current);game.current=i;game.turn++;game.message=message;render()}
-function apply(opt){if(!opt||game.phase!=='move')return;const p=active();opt.piece.progress=opt.test.progress;p.captured=opt.test.captured;for(const hit of opt.test.targets)hit.q.progress=-1;game.pool=game.pool.filter((_,i)=>!opt.indices.includes(i));if(finished(p)&&p.rank===null){p.rank=++game.finished;if(game.finished===game.players.length-1){const remaining=game.players.find(q=>q.rank===null);if(remaining)remaining.rank=++game.finished;game.phase='done';render();return}nextTurn(p.name+' finished in place #'+p.rank+'!');return}if(!game.pool.length||!options().length){nextTurn();return}selectedRoll=0;render()}
-function bestAutomaticMove(){const moves=options();return moves.sort((a,b)=>{const score=m=>(m.test.progress===43?100000:0)+(m.test.targets.length?50000:0)+(m.piece.progress<0?8000:0)+(m.indices.length>1?1000:0)+m.test.progress;return score(b)-score(a)})[0]||null}
-function scheduleComputerIfNeeded(){if(computerTimer)clearTimeout(computerTimer);computerTimer=null;if(!game||demo||rolling||game.phase==='done'||!active().computer)return;computerTimer=setTimeout(runComputerAction,1200+Math.floor(Math.random()*700))}
-function runComputerAction(){computerTimer=null;if(!game||demo||game.phase==='done'||!active().computer)return;if(game.phase==='roll'){roll();return}const move=bestAutomaticMove();if(move)apply(move);else nextTurn('No legal moves — turn passed.')}
-function render(){if(!game)return;const opts=options();const chosen=opts.filter(o=>selectedRoll===-1?o.indices.length===game.pool.length:o.indices.length===1&&o.indices[0]===selectedRoll);const entry=chosen.find(o=>o.piece.progress===-1);const legal=new Map();for(const o of chosen){if(!legal.has(o.piece.id))legal.set(o.piece.id,o)}$('board').innerHTML='';for(const row of 'ABCDEFG')for(let col=1;col<=7;col++){const sq=row+col,el=document.createElement('button');el.type='button';el.className='cell'+(SAFE.has(sq)?' safe':'')+(sq==='D4'?' goal':'')+(INNER.includes(sq)?' inner':'');for(const seat of SEATS)if(START[seat]===sq)el.classList.add('start'+seat);const occupied=game.players.flatMap(p=>p.pieces.filter(piece=>node(p,piece)===sq).map(piece=>({p,piece})));const can=occupied.some(o=>legal.has(o.piece.id));if(can)el.classList.add('legal');el.setAttribute('aria-label',sq+(SAFE.has(sq)?', safe square':'')+(occupied.length?', '+occupied.length+' pieces':''));el.innerHTML=sq==='D4'?'<span class="motif">✺</span>':SAFE.has(sq)?'<span class="motif">✿</span>':'';if(occupied.length){const holder=document.createElement('span');holder.className='tokens';for(const p of game.players){const pieces=occupied.filter(item=>item.p===p).map(item=>item.piece);if(!pieces.length)continue;const selectable=pieces.some(piece=>legal.has(piece.id)),t=document.createElement('span');t.className='token'+(selectable?' selectable':'');t.style.background=p.color;t.textContent=p.avatar;t.setAttribute('aria-label',p.name+', '+pieces.length+(pieces.length===1?' piece':' pieces'));if(pieces.length>1){const count=document.createElement('span');count.className='tokencount';count.textContent=pieces.length;t.appendChild(count)}holder.appendChild(t)}el.appendChild(holder)}if(can&&!demo&&!active().computer)el.onclick=()=>{const o=occupied.map(x=>legal.get(x.piece.id)).find(Boolean);apply(o)};el.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&can){e.preventDefault();el.click()}});$('board').appendChild(el)}$('players').innerHTML=game.players.map(p=>'<div class="player '+(active()===p&&game.phase!=='done'?'active':'')+'"><div class="avatar" aria-hidden="true" style="background:'+p.color+'">'+p.avatar+'</div><div style="flex:1"><div class="pname">'+p.name+(p.rank?' · #'+p.rank:'')+'</div><div class="pmeta">'+p.pieces.filter(q=>q.progress===43).length+'/6 finished · '+(p.captured?'capture earned':'capture needed')+'</div></div>'+(active()===p&&game.phase!=='done'?'<div class="turn">● Turn</div>':'')+'</div>').join('');$('gameInfo').textContent=game.computerCount?'1 human · '+game.computerCount+' computer'+(game.computerCount===1?'':'s')+' · House variant':game.players.length+' players · Local pass-and-play · House variant';setDieFace('dieA',game.last?game.last.a:0,game.last?'First die: '+game.last.a:'First die not rolled');setDieFace('dieB',game.last?game.last.b:0,game.last?'Second die: '+game.last.b:'Second die not rolled');$('rollChips').innerHTML='';if(entry){const enter=document.createElement('button');enter.className='chip selected';enter.textContent='＋ Enter a piece';enter.onclick=()=>apply(entry);enter.disabled=demo||active().computer;$('rollChips').appendChild(enter)}if(game.phase==='move'){game.pool.forEach((v,i)=>{const b=document.createElement('button');b.className='chip'+(selectedRoll===i?' selected':'');b.textContent=v;b.setAttribute('aria-label','Use roll '+v);b.onclick=()=>{selectedRoll=i;render()};b.disabled=demo||active().computer;$('rollChips').appendChild(b)});if(game.pool.length>1){const b=document.createElement('button');b.className='chip'+(selectedRoll===-1?' selected':'');b.textContent='Combine all';b.onclick=()=>{selectedRoll=-1;render()};b.disabled=demo||active().computer;$('rollChips').appendChild(b)}}const p=active();$('statusTitle').textContent=game.phase==='done'?'Match complete!':p.avatar+' '+p.name+'’s turn';$('statusText').textContent=game.phase==='roll'?'Roll the Dayakattai'+(game.history.length?' · bonus throw! Follow the glowing route around the board.':' · Follow the glowing route around the board.'):(game.phase==='move'?'Choose a roll, then tap a gold-outlined '+p.avatar+' piece. '+chosen.length+' move'+(chosen.length===1?' is':'s are')+' available.':'Rankings: '+game.players.slice().sort((a,b)=>a.rank-b.rank).map(p=>p.name+' #'+p.rank).join(' · '));$('actionBtn').textContent=game.phase==='roll'?'🎲 Roll Dayakattai':game.phase==='move'?'Pass remaining rolls':'New match';$('actionBtn').onclick=()=>game.phase==='roll'?roll():game.phase==='move'?nextTurn('Unused rolls passed.'):newGame(game.players.length);$('actionBtn').disabled=demo||rolling||p.computer;if(demo)$('actionBtn').textContent='Demo playing…';else if(rolling)$('actionBtn').textContent='Rolling…';else if(p.computer)$('actionBtn').textContent=p.name+' is thinking…';$('diceHint').textContent=game.last?'Last roll: '+game.last.value+' · '+([1,5,6,12].includes(game.last.value)?'bonus!':'no bonus'):'Two long dice · bonus on 1, 5, 6, 12';scheduleComputerIfNeeded()}
-const DEMO_STEPS=[
-()=>demoScene('Maya starts. Each player has six pieces waiting off the board.',()=>{game.current=0;game.turn=1;game.phase='roll';game.pool=[];game.history=[];game.last=null}),
-()=>demoScene('Maya rolls a 1. A roll of 1 can bring a piece onto the starting square and also earns a bonus roll.',()=>{game.last={a:0,b:1,value:1};game.pool=[1];game.history=[1];game.phase='move'}),
-()=>demoScene('The elephant enters on its colored starting square.',()=>{game.players[0].pieces[0].progress=0;game.pool=[];game.phase='roll'}),
-()=>demoScene('The bonus roll is 2. The gold outline shows which piece can move.',()=>{game.last={a:0,b:2,value:2};game.pool=[2];game.history=[1,2];game.phase='move'}),
-()=>demoScene('The elephant moves two spaces along the glowing route. Maya’s turn is over.',()=>{game.players[0].pieces[0].progress=2;game.pool=[];game.history=[];game.current=1;game.turn=2;game.phase='roll'}),
-()=>demoScene('Now it is Leo’s turn. The highlighted player card always shows whose turn it is.',()=>{}),
-()=>demoScene('Leo rolls a 1, so the tiger can enter the board.',()=>{game.last={a:0,b:1,value:1};game.pool=[1];game.history=[1];game.phase='move'}),
-()=>demoScene('The tiger enters on Leo’s colored starting square.',()=>{game.players[1].pieces[0].progress=0;game.pool=[];game.history=[];game.phase='roll'}),
-()=>demoScene('Capture example: Maya rolls 1 while Leo’s tiger is one space ahead on an unprotected square.',()=>{game.current=0;game.turn=3;game.players[0].pieces[0].progress=0;game.players[1].pieces[0].progress=13;game.last={a:0,b:1,value:1};game.pool=[1];game.history=[1];game.phase='move'}),
-()=>demoScene('The elephant lands on the tiger. Leo’s piece returns to reserve, and Maya earns the capture needed to enter the inner track.',()=>{game.players[0].pieces[0].progress=1;game.players[0].captured=true;game.players[1].pieces[0].progress=-1;game.pool=[];game.history=[];game.phase='roll'}),
-()=>demoScene('Leo also completes a capture. Both players can now follow the inner route, so the automatic match will continue until the rankings are decided or you interrupt it.',()=>{game.players[1].captured=true;game.current=0;game.pool=[];game.history=[];game.phase='roll'})
-];
-const DEMO_FACES={1:[0,1],2:[0,2],3:[0,3],4:[1,3],5:[2,3],6:[3,3],12:[0,0]};
-function speakDemo(message){if(!demoAudio||!('speechSynthesis' in window))return;speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(message);speech.rate=.92;speech.pitch=1;speech.volume=1;speechSynthesis.speak(speech)}
-function demoScene(message,update){update();render();$('statusTitle').textContent='Guided demo';$('statusText').textContent=message;speakDemo(message);if(message.toLowerCase().includes('roll'))triggerDiceAnimation()}
-function findBonusRolls(total){if(total===0)return[];for(const value of [12,6,5,1])if(value<=total){const rest=findBonusRolls(total-value);if(rest)return[value,...rest]}return null}
-function planDemoTurn(piece){const reserve=piece.progress<0,remaining=reserve?43:43-piece.progress;if(remaining===1)return[1,2];for(const finalRoll of [4,3,2]){if(finalRoll>remaining)continue;const bonuses=findBonusRolls(remaining-finalRoll);if(bonuses)return[...(reserve?[1]:[]),...bonuses,finalRoll]}return[1,2]}
-function chooseDemoMove(){return bestAutomaticMove()}
-function demoRollAction(){const player=active();if(!demoRollQueue.length){const piece=player.pieces.find(item=>item.progress<43);demoRollQueue=planDemoTurn(piece)}const value=demoRollQueue.shift(),faces=DEMO_FACES[value];game.last={a:faces[0],b:faces[1],value};game.pool.push(value);game.history.push(value);if(!BONUS_VALUES.has(value))game.phase='move';render();const bonus=BONUS_VALUES.has(value)?' It earns another roll.':'';const message=player.name+' rolls '+value+'.'+bonus;$('statusTitle').textContent='Full guided game · Turn '+game.turn;$('statusText').textContent=message;speakDemo(message);triggerDiceAnimation()}
-function demoMoveAction(){const player=active(),move=chooseDemoMove();if(!move){nextTurn('No legal moves — turn passed.');demoRollQueue=[];const message=player.name+' has no legal move, so the turn passes.';$('statusTitle').textContent='Full guided game · Turn '+game.turn;$('statusText').textContent=message;speakDemo(message);return}const from=move.piece.progress,captures=move.test.targets.length,willFinish=move.test.progress===43;apply(move);demoRollQueue=[];let message=player.name+(from<0?' enters a piece and ':' moves a piece ')+'using '+move.values.join(' + ')+'.';if(captures)message+=' An opponent is captured and returns to reserve.';if(willFinish)message+=' That piece reaches the center and finishes.';if(game.phase==='done')message='Match complete. '+game.players.slice().sort((a,b)=>a.rank-b.rank).map(item=>item.name+' finishes #'+item.rank).join(', ')+'.';$('statusTitle').textContent=game.phase==='done'?'Full guided game complete':'Full guided game · Turn '+game.turn;$('statusText').textContent=message;speakDemo(message)}
-function runDemoGameStep(){if(game.phase==='done')return;if(game.phase==='roll')demoRollAction();else demoMoveAction()}
-function updateDemoControls(){const complete=game&&game.phase==='done',available='speechSynthesis' in window,opening=demoStep<DEMO_STEPS.length;$('demoBar').hidden=!demo;$('demoProgress').textContent=complete?'Full match complete':(demoPaused?'Paused · ':'')+(opening?'Opening lesson '+Math.max(1,demoStep)+' of '+DEMO_STEPS.length:'Full game · Turn '+game.turn);$('demoPause').textContent=demoPaused?'Resume':'Pause';$('demoPause').disabled=complete;$('demoAudio').textContent=available?(demoAudio?'🔊 Audio on':'🔇 Audio off'):'Audio unavailable';$('demoAudio').setAttribute('aria-pressed',String(demoAudio));$('demoAudio').disabled=!available}
-function scheduleDemo(delay=DEMO_DELAY){if(!demo||demoPaused||game.phase==='done')return;if(demoTimer)clearTimeout(demoTimer);demoTimer=setTimeout(runDemoStep,delay)}
-function runDemoStep(){demoTimer=null;if(!demo||demoPaused)return;if(demoStep<DEMO_STEPS.length){DEMO_STEPS[demoStep]();demoStep++}else runDemoGameStep();updateDemoControls();if(game.phase!=='done')scheduleDemo()}
-function startGuidedDemo(){newGame(2);demo=true;demoPaused=false;demoStep=0;demoRollQueue=[];$('demoBar').hidden=false;runDemoStep()}
-function restartGuidedDemo(){startGuidedDemo()}
-function toggleDemoPause(){if(!demo)return;demoPaused=!demoPaused;if(demoPaused){if(demoTimer){clearTimeout(demoTimer);demoTimer=null}if('speechSynthesis' in window)speechSynthesis.pause()}else{if('speechSynthesis' in window)speechSynthesis.resume();scheduleDemo(350)}updateDemoControls()}
-function toggleDemoAudio(){demoAudio=!demoAudio;if('speechSynthesis' in window){speechSynthesis.cancel();if(demoAudio&&demo)speakDemo($('statusText').textContent)}updateDemoControls()}
-function exitGuidedDemo(){newGame(4)}
-function showModal(title,html,actionLabel,action){$('modalTitle').textContent=title;$('modalContent').innerHTML=html;$('modalConfirm').textContent=actionLabel;modalAction=action;$('modalback').classList.add('open')}
-function closeModal(){$('modalback').classList.remove('open')}
-$('demoPause').onclick=toggleDemoPause;$('demoAudio').onclick=toggleDemoAudio;$('demoRestart').onclick=restartGuidedDemo;$('demoExit').onclick=exitGuidedDemo;
-$('modalCancel').onclick=closeModal;$('modalConfirm').onclick=()=>{if(modalAction)modalAction();closeModal()};$('modalback').addEventListener('click',e=>{if(e.target===$('modalback'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-$('newBtn').onclick=()=>showModal('Start a new game','<label for="gameMode">Game type</label><select id="gameMode"><option value="solo" selected>Solo vs computers</option><option value="local">Local pass-and-play</option></select><p><strong>Solo:</strong> You play manually. Computer turns roll and move automatically with a natural pause.</p><label for="computerCount">Computer opponents</label><select id="computerCount"><option value="1">1 computer</option><option value="2" selected>2 computers</option><option value="3">3 computers</option><option value="4">4 computers</option><option value="5">5 computers</option></select><div class="divider"></div><label for="localCount">Local players</label><select id="localCount"><option value="2">2 people</option><option value="3">3 people</option><option value="4">4 people</option></select>','Start game',()=>{if($('gameMode').value==='local')newGame(Number($('localCount').value));else{const computers=Number($('computerCount').value);newGame(computers+1,computers)}});
-$('resetBtn').onclick=()=>showModal('Reset the match?','<p>This clears the current local game. Scores are not saved in this prototype.</p>','Reset match',()=>newGame(game.players.length,game.computerCount));
-$('guideBtn').onclick=()=>showModal('How to play','<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. Tap a highlighted piece to move using a selected roll.</p><p><strong>3.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>4.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p><p><strong>House-variant note:</strong> The outer and inner paths are an original provisional reconstruction. Their historical authenticity is not established.</p>','Got it',()=>{});
-$('demoBtn').onclick=()=>showModal('Automatic guided demo','<p>Watch a complete two-player match play automatically. The opening explains entry and capture, then the game keeps rolling and moving until final rankings are decided.</p><p>You can pause, resume, or restart at any time.</p>','Start demo',startGuidedDemo);
-newGame(4);
-</script></body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#251a14" />
+    <title>Dhayam · Heritage Edition</title>
+    <style>
+      :root {
+        font-family:
+          ui-sans-serif,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: #fff7e9;
+        background: #211912;
+        font-synthesis: none;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(
+          ellipse at 50% 0%,
+          #57402c 0%,
+          #271c15 55%,
+          #1b1410 100%
+        );
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.43;
+        cursor: not-allowed;
+      }
+      .shell {
+        max-width: 1250px;
+        margin: auto;
+        padding: 22px 20px 35px;
+      }
+      .top {
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 22px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo {
+        display: grid;
+        place-items: center;
+        width: 49px;
+        height: 49px;
+        border-radius: 15px;
+        background: #d8a05d;
+        color: #402716;
+        font-size: 27px;
+      }
+      .brand h1 {
+        font-family: Georgia, serif;
+        font-size: 31px;
+        line-height: 1;
+        margin: 0;
+        letter-spacing: -0.6px;
+      }
+      .sub {
+        color: #cdbda8;
+        font-size: 12px;
+        margin-top: 6px;
+      }
+      .topnav {
+        display: flex;
+        gap: 9px;
+        flex-wrap: wrap;
+      }
+      .pill {
+        border: 1px solid #ffffff24;
+        background: #ffffff0b;
+        color: #fff1db;
+        border-radius: 14px;
+        padding: 11px 14px;
+        font-size: 13px;
+      }
+      .pill:hover {
+        background: #ffffff18;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 265px;
+        gap: 22px;
+        align-items: start;
+      }
+      .boardcard {
+        background: linear-gradient(
+          140deg,
+          #925b2e,
+          #4b2918 17%,
+          #6b3c22 70%,
+          #9b6536
+        );
+        border: 7px solid #4c2b19;
+        border-radius: 28px;
+        padding: clamp(10px, 2vw, 23px);
+        box-shadow:
+          0 24px 70px #08050280,
+          inset 0 0 0 2px #d4a66d80;
+        position: relative;
+      }
+      .boardcard:before {
+        content: "✺";
+        position: absolute;
+        top: 5px;
+        left: 13px;
+        color: #e6b777;
+        font-size: 21px;
+      }
+      .boardcard:after {
+        content: "✺";
+        position: absolute;
+        bottom: 5px;
+        right: 13px;
+        color: #e6b777;
+        font-size: 21px;
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 3px;
+        aspect-ratio: 1;
+        background: #7c4c2c;
+        border: 4px solid #c38d50;
+        border-radius: 12px;
+        padding: 4px;
+        box-shadow: inset 0 0 0 3px #4b2d1b;
+      }
+      .boardwrap {
+        position: relative;
+      }
+      .pathoverlay {
+        position: absolute;
+        inset: 8px;
+        width: calc(100% - 16px);
+        height: calc(100% - 16px);
+        z-index: 1;
+        pointer-events: none;
+        overflow: visible;
+      }
+      .pathbase {
+        fill: none;
+        stroke: #7b421f;
+        stroke-width: 20;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.26;
+      }
+      .pathflow {
+        fill: none;
+        stroke: #fff0ad;
+        stroke-width: 5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 18 22;
+        opacity: 0.72;
+        animation: pathFlow 2.4s linear infinite;
+      }
+      .pathapproach {
+        stroke-width: 15;
+      }
+      .pathflow.pathapproach {
+        stroke-width: 4;
+      }
+      .patharrows {
+        fill: none;
+        stroke: #fff8c9;
+        stroke-width: 4;
+        stroke-linecap: round;
+        opacity: 0.9;
+        marker-end: url(#routeArrow);
+        filter: drop-shadow(0 1px 1px #4b2815);
+      }
+      @keyframes pathFlow {
+        to {
+          stroke-dashoffset: -40;
+        }
+      }
+      .cell {
+        position: relative;
+        min-width: 0;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 1;
+        background: linear-gradient(145deg, #f5d8a4, #e6bf80);
+        border: 1px solid #b48a55;
+        border-radius: 4px;
+        color: #8d5d34;
+        transition:
+          filter 0.2s,
+          outline 0.2s;
+      }
+      .cell.inner {
+        background: linear-gradient(140deg, #e8c68f, #dcb67b);
+      }
+      .cell.safe {
+        background: linear-gradient(140deg, #a97647, #754527);
+        color: #f4d59d;
+      }
+      .cell.goal {
+        background: radial-gradient(circle, #f2c775, #8e552f);
+        color: #422613;
+      }
+      .cell.startN {
+        box-shadow: inset 0 0 0 5px #e74c3c;
+      }
+      .cell.startE {
+        box-shadow: inset 0 0 0 5px #2389da;
+      }
+      .cell.startS {
+        box-shadow: inset 0 0 0 5px #f4b400;
+      }
+      .cell.startW {
+        box-shadow: inset 0 0 0 5px #2e9d57;
+      }
+      .cell.legal {
+        outline: 4px solid #fff8a5;
+        outline-offset: -5px;
+        cursor: pointer;
+        z-index: 2;
+        animation: pulse 1.3s infinite;
+        filter: brightness(1.12);
+      }
+      .cell.legal:after {
+        content: "MOVE";
+        position: absolute;
+        bottom: 3px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: clamp(5px, 0.7vw, 8px);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        color: #4b2b17;
+        background: #fff5a6;
+        border-radius: 5px;
+        padding: 1px 3px;
+        z-index: 4;
+      }
+      .cell.legal:hover {
+        filter: brightness(1.22);
+      }
+      @keyframes pulse {
+        50% {
+          outline-color: #fff8a560;
+        }
+      }
+      .direction {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: clamp(13px, 2.2vw, 27px);
+        font-weight: 900;
+        color: #784b29;
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      .cell.safe .direction {
+        color: #ffe3a7;
+        opacity: 0.45;
+      }
+      .motif {
+        font-size: clamp(25px, 4.8vw, 48px);
+        opacity: 0.96;
+        z-index: 1;
+        line-height: 1;
+        filter: drop-shadow(0 2px 2px #3b1d1280);
+      }
+      .cell.safe .motif {
+        color: #ffe09a;
+      }
+      .tokens {
+        position: absolute;
+        inset: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        align-content: center;
+        flex-wrap: wrap;
+        gap: clamp(2px, 0.35vw, 4px);
+        z-index: 2;
+        pointer-events: none;
+      }
+      .token {
+        position: relative;
+        width: clamp(22px, 4vw, 50px);
+        height: clamp(22px, 4vw, 50px);
+        flex: 0 0 clamp(22px, 4vw, 50px);
+        border-radius: 13px;
+        border: 3px solid #fff9df;
+        box-shadow:
+          0 0 0 2px #32180ddd,
+          0 7px 11px #160b0799,
+          inset 0 3px 7px #fff9;
+        display: grid;
+        place-items: center;
+        font-size: clamp(14px, 2.6vw, 28px);
+        color: #21130d;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .tokens.count-1 .token {
+        width: clamp(36px, 5.8vw, 68px);
+        height: clamp(36px, 5.8vw, 68px);
+        flex-basis: clamp(36px, 5.8vw, 68px);
+        font-size: clamp(23px, 3.8vw, 40px);
+        border-radius: 17px;
+      }
+      .tokens.count-2 .token {
+        width: clamp(28px, 4.7vw, 57px);
+        height: clamp(28px, 4.7vw, 57px);
+        flex-basis: clamp(28px, 4.7vw, 57px);
+        font-size: clamp(18px, 3vw, 32px);
+      }
+      .token.current {
+        box-shadow:
+          0 0 0 3px #fff58a,
+          0 0 0 7px #35200ed9,
+          0 8px 14px #160b07b3,
+          inset 0 3px 7px #fff9;
+      }
+      .token.moving {
+        animation: pieceStep 0.42s ease-in-out;
+        filter: brightness(1.2);
+      }
+      @keyframes pieceStep {
+        0% {
+          transform: translateY(0) scale(1);
+        }
+        45% {
+          transform: translateY(-9px) scale(1.12);
+        }
+        100% {
+          transform: translateY(0) scale(1);
+        }
+      }
+      .token.N {
+        background: #e74c3c;
+      }
+      .token.E {
+        background: #2389da;
+      }
+      .token.S {
+        background: #f4b400;
+      }
+      .token.W {
+        background: #2e9d57;
+      }
+      .token.selectable {
+        box-shadow:
+          0 0 0 3px #fff58a,
+          0 0 0 6px #2b160dbb,
+          0 6px 10px #160b07a0;
+        cursor: pointer;
+      }
+      .tokencount {
+        position: absolute;
+        right: -5px;
+        top: -6px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        background: #21140f;
+        color: #fffbe6;
+        border: 2px solid white;
+        font: 800 10px/1 ui-sans-serif;
+        box-shadow: 0 2px 4px #0008;
+      }
+      .side {
+        display: grid;
+        gap: 14px;
+      }
+      .panel {
+        border: 1px solid #f8dfb124;
+        background: #ffffff0b;
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        padding: 18px;
+      }
+      .panel h2 {
+        font-size: 15px;
+        margin: 0 0 14px;
+      }
+      .player {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        margin-bottom: 5px;
+      }
+      .player.active {
+        background: #fff8d921;
+        border-color: #f6d588;
+        box-shadow: 0 0 0 2px #f6d58822;
+      }
+      .avatar {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        color: #1d130f;
+        font-size: 23px;
+        font-weight: 800;
+        border: 2px solid #fff5ce80;
+        box-shadow: 0 3px 8px #0005;
+      }
+      .pname {
+        font-size: 14px;
+        font-weight: 650;
+      }
+      .pmeta {
+        font-size: 11px;
+        color: #c8b49d;
+        margin-top: 2px;
+      }
+      .turn {
+        color: #f2d18d;
+        font-size: 12px;
+      }
+      .btn {
+        border: 0;
+        border-radius: 15px;
+        padding: 15px 19px;
+        font-weight: 750;
+        color: #fff;
+        background: linear-gradient(120deg, #dc7554, #b94342);
+        box-shadow: 0 6px 15px #140b0840;
+      }
+      .btn.secondary {
+        background: #ffffff16;
+        box-shadow: none;
+        border: 1px solid #ffffff24;
+      }
+      .btn:focus-visible,
+      .pill:focus-visible,
+      .cell:focus-visible {
+        outline: 3px solid #ffe6a3;
+        outline-offset: 3px;
+      }
+      .btn.full {
+        width: 100%;
+      }
+      .controls {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+      }
+      .status {
+        border: 1px solid #fff4d21c;
+        background: #130d0a88;
+        border-radius: 18px;
+        padding: 16px;
+      }
+      .status strong {
+        display: block;
+        font-size: 15px;
+      }
+      .status span {
+        font-size: 12px;
+        color: #d6c1a9;
+        display: block;
+        margin-top: 5px;
+        line-height: 1.5;
+      }
+      .dice {
+        display: flex;
+        gap: 18px;
+        margin: 16px 0 20px;
+        padding: 8px 5px 12px;
+        perspective: 800px;
+        perspective-origin: 50% 20%;
+      }
+      .die {
+        position: relative;
+        width: 58px;
+        height: 58px;
+        perspective: 520px;
+        filter: drop-shadow(0 9px 7px #0008);
+      }
+      .die:after {
+        content: "";
+        position: absolute;
+        left: 7px;
+        right: 7px;
+        bottom: -13px;
+        height: 9px;
+        border-radius: 50%;
+        background: #0905038c;
+        filter: blur(5px);
+        transform: scale(0.9);
+      }
+      .diecube {
+        position: absolute;
+        inset: 4px;
+        width: 50px;
+        height: 50px;
+        transform-style: preserve-3d;
+        transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+        will-change: transform;
+      }
+      .dieface {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        display: grid;
+        place-items: center;
+        border: 1px solid #ffe6baaa;
+        border-radius: 9px;
+        background: linear-gradient(
+          145deg,
+          #ffdaa5 0%,
+          #d88745 52%,
+          #955027 100%
+        );
+        box-shadow:
+          inset 5px 5px 9px #fff7,
+          inset -6px -7px 10px #6d321f77;
+        color: #4c2413;
+        font-size: 23px;
+        font-weight: 950;
+        line-height: 1;
+        backface-visibility: hidden;
+      }
+      .dieface:after {
+        content: "";
+        position: absolute;
+        inset: 4px;
+        border-radius: 6px;
+        border-top: 2px solid #fff7;
+        border-left: 1px solid #fff4;
+      }
+      .diefront {
+        transform: rotateY(0deg) translateZ(25px);
+      }
+      .dieback {
+        transform: rotateY(180deg) translateZ(25px);
+      }
+      .dieright {
+        transform: rotateY(90deg) translateZ(25px);
+      }
+      .dieleft {
+        transform: rotateY(-90deg) translateZ(25px);
+      }
+      .dietop {
+        transform: rotateX(90deg) translateZ(25px);
+      }
+      .diebottom {
+        transform: rotateX(-90deg) translateZ(25px);
+      }
+      .diecube.show-0 {
+        transform: rotateX(-8deg) rotateY(-10deg);
+      }
+      .diecube.show-1 {
+        transform: rotateX(-8deg) rotateY(170deg);
+      }
+      .diecube.show-2 {
+        transform: rotateX(-8deg) rotateY(-100deg);
+      }
+      .diecube.show-3 {
+        transform: rotateX(-8deg) rotateY(80deg);
+      }
+      .diecube.rolling {
+        transition: none;
+        animation-duration: 1.15s;
+        animation-timing-function: cubic-bezier(0.18, 0.72, 0.25, 1);
+        animation-fill-mode: forwards;
+      }
+      .diecube.rolling.show-0 {
+        animation-name: cubeRoll0;
+      }
+      .diecube.rolling.show-1 {
+        animation-name: cubeRoll1;
+      }
+      .diecube.rolling.show-2 {
+        animation-name: cubeRoll2;
+      }
+      .diecube.rolling.show-3 {
+        animation-name: cubeRoll3;
+      }
+      .die:nth-child(2) .diecube.rolling {
+        animation-delay: 0.07s;
+      }
+      .die.tumbling {
+        animation: dieHop 1.15s cubic-bezier(0.22, 0.72, 0.3, 1);
+      }
+      .die:nth-child(2).tumbling {
+        animation-delay: 0.07s;
+      }
+      .die.tumbling:after {
+        animation: dieShadow 1.15s ease-out;
+      }
+      .die:nth-child(2).tumbling:after {
+        animation-delay: 0.07s;
+      }
+      @keyframes cubeRoll0 {
+        0% {
+          transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0);
+        }
+        22% {
+          transform: rotateX(180deg) rotateY(145deg) rotateZ(55deg);
+        }
+        52% {
+          transform: rotateX(455deg) rotateY(390deg) rotateZ(185deg);
+        }
+        78% {
+          transform: rotateX(650deg) rotateY(625deg) rotateZ(310deg);
+        }
+        100% {
+          transform: rotateX(712deg) rotateY(710deg) rotateZ(360deg);
+        }
+      }
+      @keyframes cubeRoll1 {
+        0% {
+          transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0);
+        }
+        22% {
+          transform: rotateX(205deg) rotateY(120deg) rotateZ(80deg);
+        }
+        52% {
+          transform: rotateX(470deg) rotateY(410deg) rotateZ(205deg);
+        }
+        78% {
+          transform: rotateX(675deg) rotateY(660deg) rotateZ(325deg);
+        }
+        100% {
+          transform: rotateX(712deg) rotateY(890deg) rotateZ(360deg);
+        }
+      }
+      @keyframes cubeRoll2 {
+        0% {
+          transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0);
+        }
+        22% {
+          transform: rotateX(155deg) rotateY(175deg) rotateZ(45deg);
+        }
+        52% {
+          transform: rotateX(430deg) rotateY(435deg) rotateZ(170deg);
+        }
+        78% {
+          transform: rotateX(630deg) rotateY(705deg) rotateZ(295deg);
+        }
+        100% {
+          transform: rotateX(712deg) rotateY(980deg) rotateZ(360deg);
+        }
+      }
+      @keyframes cubeRoll3 {
+        0% {
+          transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0);
+        }
+        22% {
+          transform: rotateX(195deg) rotateY(155deg) rotateZ(70deg);
+        }
+        52% {
+          transform: rotateX(450deg) rotateY(455deg) rotateZ(195deg);
+        }
+        78% {
+          transform: rotateX(665deg) rotateY(690deg) rotateZ(315deg);
+        }
+        100% {
+          transform: rotateX(712deg) rotateY(800deg) rotateZ(360deg);
+        }
+      }
+      @keyframes dieHop {
+        0%,
+        100% {
+          transform: translateY(0) rotateZ(0);
+        }
+        18% {
+          transform: translateY(-22px) rotateZ(4deg);
+        }
+        48% {
+          transform: translateY(-7px) rotateZ(-3deg);
+        }
+        68% {
+          transform: translateY(-13px) rotateZ(2deg);
+        }
+        86% {
+          transform: translateY(2px) rotateZ(-1deg);
+        }
+      }
+      @keyframes dieShadow {
+        0%,
+        100% {
+          transform: scale(0.9);
+          opacity: 1;
+        }
+        18% {
+          transform: scale(0.45);
+          opacity: 0.35;
+        }
+        48% {
+          transform: scale(0.72);
+          opacity: 0.65;
+        }
+        68% {
+          transform: scale(0.55);
+          opacity: 0.45;
+        }
+        86% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .chips {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        background: #ffffff16;
+        border: 1px solid #ffffff30;
+        color: #fff2d7;
+        padding: 8px 11px;
+        border-radius: 12px;
+        font-size: 13px;
+      }
+      .chip.selected {
+        background: #d5a65a;
+        color: #21150e;
+      }
+      .helper {
+        font-size: 12px;
+        color: #d2c1aa;
+        line-height: 1.5;
+      }
+      .small {
+        font-size: 11px;
+        color: #c5b097;
+      }
+      .boardlegend {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin: 12px 5px 0;
+        color: #f8e6c9;
+        font-size: 11px;
+        font-weight: 650;
+      }
+      .demobar[hidden] {
+        display: none;
+      }
+      .demobar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 12px;
+        padding: 12px 14px;
+        border: 1px solid #f4cf7c66;
+        background: #2b1b12;
+        border-radius: 16px;
+      }
+      .demoinfo {
+        display: grid;
+        gap: 3px;
+      }
+      .demoinfo strong {
+        font-size: 13px;
+        color: #ffe6ac;
+      }
+      .demoinfo span {
+        font-size: 11px;
+        color: #cdbb9f;
+      }
+      .demoactions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+      }
+      .demospeed {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 9px;
+        border: 1px solid #ffffff2e;
+        border-radius: 10px;
+        color: #fff1d7;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .demospeed input {
+        width: 92px;
+        accent-color: #e1b45e;
+      }
+      .demospeed output {
+        min-width: 28px;
+        color: #ffe6ac;
+      }
+      .demobtn {
+        border: 1px solid #ffffff2e;
+        background: #ffffff12;
+        color: #fff1d7;
+        border-radius: 10px;
+        padding: 8px 11px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .demobtn:hover {
+        background: #ffffff20;
+      }
+      .demobtn:disabled {
+        opacity: 0.5;
+      }
+      .legenditem {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .legendarrow {
+        font-size: 18px;
+        color: #f7cf8b;
+      }
+      .legendmove {
+        width: 17px;
+        height: 17px;
+        border: 3px solid #fff8a5;
+        border-radius: 5px;
+      }
+      .legendsafe {
+        font-size: 16px;
+        color: #ffd995;
+      }
+      .divider {
+        height: 1px;
+        background: #ffffff20;
+        margin: 14px 0;
+      }
+      .modalback {
+        position: fixed;
+        inset: 0;
+        background: #080604bd;
+        display: none;
+        place-items: center;
+        padding: 20px;
+        z-index: 10;
+      }
+      .modalback.open {
+        display: grid;
+      }
+      .modal {
+        max-width: 530px;
+        width: 100%;
+        background: #332319;
+        border: 1px solid #b8895b88;
+        border-radius: 24px;
+        padding: 25px;
+        box-shadow: 0 25px 70px #000a;
+      }
+      .modal h2 {
+        margin: 0 0 8px;
+        font-family: Georgia, serif;
+      }
+      .modal p {
+        color: #d8c4ab;
+        line-height: 1.6;
+      }
+      .modal label {
+        display: block;
+        margin: 13px 0 6px;
+        color: #e6d0b3;
+        font-size: 13px;
+      }
+      .modal select,
+      .modal input {
+        width: 100%;
+        border: 1px solid #ffffff38;
+        background: #201710;
+        color: white;
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .modal .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+      }
+      .notice {
+        margin-top: 14px;
+        font-size: 12px;
+        color: #d2bd9d;
+      }
+      .footer {
+        font-size: 11px;
+        color: #bba88f;
+        margin-top: 18px;
+        text-align: center;
+      }
+      @media (max-width: 860px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .side {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .boardcard {
+          max-width: 720px;
+          margin: auto;
+        }
+        .controls {
+          max-width: 720px;
+          margin: 14px auto;
+        }
+      }
+      @media (max-width: 520px) {
+        .shell {
+          padding: 13px 9px;
+        }
+        .brand h1 {
+          font-size: 25px;
+        }
+        .topnav {
+          gap: 6px;
+        }
+        .pill {
+          padding: 9px;
+          font-size: 11px;
+        }
+        .boardcard {
+          border-width: 4px;
+          border-radius: 19px;
+          padding: 8px;
+        }
+        .board {
+          gap: 2px;
+          padding: 2px;
+          border-width: 2px;
+        }
+        .side {
+          grid-template-columns: 1fr;
+        }
+        .controls {
+          grid-template-columns: 1fr;
+        }
+        .direction {
+          font-size: 17px;
+        }
+        .demobar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .demoactions {
+          width: 100%;
+        }
+        .demobtn {
+          flex: 1;
+        }
+        .cell.legal:after {
+          display: none;
+        }
+        .token {
+          border-width: 1px;
+        }
+        .panel {
+          padding: 13px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *:before,
+        *:after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">✺</div>
+          <div>
+            <h1>Dhayam</h1>
+            <div class="sub">Heritage Edition · Play · Connect · Celebrate</div>
+          </div>
+        </div>
+        <nav class="topnav">
+          <button class="pill" id="newBtn">＋ New game</button
+          ><button class="pill" id="guideBtn">? How to play</button
+          ><button class="pill" id="demoBtn">✦ Guided demo</button>
+        </nav>
+      </header>
+      <div class="layout">
+        <section aria-label="Game board and controls">
+          <div class="boardcard">
+            <div class="boardwrap">
+              <div
+                class="board"
+                id="board"
+                role="grid"
+                aria-label="Dhayam 7 by 7 game board"
+              ></div>
+              <svg
+                class="pathoverlay"
+                viewBox="0 0 700 700"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <defs>
+                  <marker
+                    id="routeArrow"
+                    viewBox="0 0 10 10"
+                    refX="8"
+                    refY="5"
+                    markerWidth="8"
+                    markerHeight="8"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#fff8c9" />
+                  </marker>
+                </defs>
+                <path
+                  class="pathbase"
+                  d="M350 50 L650 50 L650 650 L50 650 L50 50 Z"
+                />
+                <path
+                  class="pathflow"
+                  d="M350 50 L650 50 L650 650 L50 650 L50 50 Z"
+                />
+                <path
+                  class="pathbase"
+                  d="M350 150 L150 150 L150 550 L550 550 L550 150 Z"
+                />
+                <path
+                  class="pathflow"
+                  d="M350 150 L150 150 L150 550 L550 550 L550 150 Z"
+                />
+                <path
+                  class="pathbase pathapproach"
+                  d="M350 250 L350 350 M450 350 L350 350 M350 450 L350 350 M250 350 L350 350"
+                />
+                <path
+                  class="pathflow pathapproach"
+                  d="M350 250 L350 350 M450 350 L350 350 M350 450 L350 350 M250 350 L350 350"
+                />
+                <path
+                  class="patharrows"
+                  d="M350 50 L600 50 M650 100 L650 600 M600 650 L100 650 M50 600 L50 100 M100 50 L320 50 M350 150 L180 150 M150 180 L150 520 M180 550 L520 550 M550 520 L550 180 M520 150 L380 150 M350 250 L350 330 M450 350 L370 350 M350 450 L350 370 M250 350 L330 350"
+                />
+              </svg>
+            </div>
+            <div class="boardlegend" aria-label="Board legend">
+              <span class="legenditem"
+                ><span class="legendarrow">〰</span> Flowing travel path</span
+              ><span class="legenditem"
+                ><span class="legendmove"></span> Available piece</span
+              ><span class="legenditem"
+                ><span class="legendsafe">✿</span> Safe square</span
+              >
+            </div>
+          </div>
+          <div class="controls">
+            <div class="status" aria-live="polite">
+              <strong id="statusTitle">Welcome to Dhayam</strong
+              ><span id="statusText">Start a game to play.</span>
+              <div class="chips" id="rollChips" style="margin-top: 9px"></div>
+            </div>
+            <button class="btn" id="actionBtn">Roll Dayakattai</button>
+          </div>
+          <div class="demobar" id="demoBar" hidden>
+            <div class="demoinfo">
+              <strong>Guided demo is playing</strong
+              ><span id="demoProgress">Preparing…</span>
+            </div>
+            <div class="demoactions">
+              <label class="demospeed" for="demoSpeed">
+                Speed
+                <input
+                  id="demoSpeed"
+                  type="range"
+                  min="0.5"
+                  max="2"
+                  step="0.25"
+                  value="1"
+                  aria-label="Guided demo speed"
+                />
+                <output id="demoSpeedValue" for="demoSpeed">1×</output>
+              </label>
+              <button class="demobtn" id="demoPause" type="button">Pause</button
+              ><button
+                class="demobtn"
+                id="demoAudioToggle"
+                type="button"
+                aria-pressed="true"
+              >
+                🔊 Audio on</button
+              ><button class="demobtn" id="demoRestart" type="button">
+                Restart</button
+              ><button class="demobtn" id="demoExit" type="button">
+                Exit demo
+              </button>
+            </div>
+          </div>
+        </section>
+        <aside class="side">
+          <div class="panel">
+            <h2>Family table</h2>
+            <div id="players"></div>
+            <div class="divider"></div>
+            <div class="small" id="gameInfo">
+              Local pass-and-play · House variant
+            </div>
+          </div>
+          <div class="panel">
+            <h2>Dayakattai dice</h2>
+            <div class="dice">
+              <div
+                class="die"
+                id="dieA"
+                role="img"
+                aria-label="First die not rolled"
+              >
+                <div class="diecube show-0">
+                  <span class="dieface diefront">0</span
+                  ><span class="dieface dieback">1</span
+                  ><span class="dieface dieright">2</span
+                  ><span class="dieface dieleft">3</span
+                  ><span class="dieface dietop">✦</span
+                  ><span class="dieface diebottom">✦</span>
+                </div>
+              </div>
+              <div
+                class="die"
+                id="dieB"
+                role="img"
+                aria-label="Second die not rolled"
+              >
+                <div class="diecube show-0">
+                  <span class="dieface diefront">0</span
+                  ><span class="dieface dieback">1</span
+                  ><span class="dieface dieright">2</span
+                  ><span class="dieface dieleft">3</span
+                  ><span class="dieface dietop">✦</span
+                  ><span class="dieface diebottom">✦</span>
+                </div>
+              </div>
+            </div>
+            <div class="helper" id="diceHint">
+              Two long dice · bonus on 1, 5, 6, 12
+            </div>
+            <div class="divider"></div>
+            <div class="helper">
+              <strong>Ruleset:</strong> Heritage 7×7 house variant.<br />Six
+              pieces per player. Capture once before entering home. Exact
+              finish. Safe floral squares protect pieces.
+            </div>
+            <div class="divider"></div>
+            <button
+              class="btn secondary full"
+              id="audioToggle"
+              type="button"
+              aria-pressed="true"
+            >
+              🔊 Commentary on
+            </button>
+            <div style="height: 8px"></div>
+            <button class="btn secondary full" id="resetBtn">
+              Reset match
+            </button>
+          </div>
+        </aside>
+      </div>
+    </main>
+    <div class="modalback" id="modalback" role="presentation">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <h2 id="modalTitle">New family game</h2>
+        <div id="modalContent"></div>
+        <div class="actions">
+          <button class="btn secondary" id="modalCancel">Close</button
+          ><button class="btn" id="modalConfirm">Start game</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      "use strict";
+      const OUTER = [
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "B7",
+        "C7",
+        "D7",
+        "E7",
+        "F7",
+        "G7",
+        "G6",
+        "G5",
+        "G4",
+        "G3",
+        "G2",
+        "G1",
+        "F1",
+        "E1",
+        "D1",
+        "C1",
+        "B1",
+        "A1",
+        "A2",
+        "A3",
+      ];
+      const INNER = [
+        "B4",
+        "B3",
+        "B2",
+        "C2",
+        "D2",
+        "E2",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "E6",
+        "D6",
+        "C6",
+        "B6",
+        "B5",
+      ];
+      const SAFE = new Set(["A4", "B2", "B6", "D1", "D7", "F2", "F6", "G4"]),
+        BONUS_VALUES = new Set([1, 5, 6, 12]);
+      const SEATS = ["N", "E", "S", "W"],
+        START = { N: "A4", E: "D7", S: "G4", W: "D1" },
+        ENTRY = { N: "B4", E: "D6", S: "F4", W: "D2" },
+        APPROACH = { N: "C4", E: "D5", S: "E4", W: "D3" };
+      const THEMES = [
+        { name: "Maya", avatar: "🐘", color: "#e74c3c" },
+        { name: "Leo", avatar: "🐯", color: "#2389da" },
+        { name: "Amina", avatar: "🦚", color: "#f4b400" },
+        { name: "Kai", avatar: "🦁", color: "#2e9d57" },
+        { name: "Sofia", avatar: "🦊", color: "#8e5bd9" },
+        { name: "Noah", avatar: "🦉", color: "#00a6a6" },
+      ];
+      // Every seat follows the same 44-position route. Rotating the north route
+      // keeps movement rules consistent while giving each player a unique start.
+      function rotate(coord, n) {
+        let r = coord.charCodeAt(0) - 65,
+          c = Number(coord[1]) - 1;
+        for (let i = 0; i < n; i++) {
+          [r, c] = [c, 6 - r];
+        }
+        return String.fromCharCode(65 + r) + (c + 1);
+      }
+      function route(seat) {
+        const turns = SEATS.indexOf(seat);
+        const outer = OUTER.map((p) => rotate(p, turns));
+        const inner = INNER.map((p) => rotate(p, turns));
+        return [...outer, outer[0], ...inner, inner[0], APPROACH[seat], "D4"];
+      }
+      const ROUTES = Object.fromEntries(SEATS.map((s) => [s, route(s)]));
+      function arrowBetween(from, to) {
+        const r1 = from.charCodeAt(0),
+          c1 = Number(from[1]),
+          r2 = to.charCodeAt(0),
+          c2 = Number(to[1]);
+        return r2 > r1 ? "↓" : r2 < r1 ? "↑" : c2 > c1 ? "→" : "←";
+      }
+      function directionFor(sq) {
+        for (const path of [OUTER, INNER]) {
+          const i = path.indexOf(sq);
+          if (i >= 0) return arrowBetween(sq, path[(i + 1) % path.length]);
+        }
+        for (const seat of SEATS)
+          if (APPROACH[seat] === sq) return arrowBetween(sq, "D4");
+        return "";
+      }
+      const $ = (id) => document.getElementById(id);
+      let game = null,
+        selectedRoll = 0,
+        demo = false,
+        modalAction = null,
+        demoTimer = null,
+        demoSpeechTimer = null,
+        demoSpeechId = 0,
+        demoWaitingForSpeech = false,
+        demoNextDelay = 5000,
+        demoPaused = false,
+        demoStep = 0,
+        demoSpeed = 1,
+        audioEnabled = true,
+        demoRollQueue = [],
+        rolling = false,
+        moving = false,
+        movingPieceId = null,
+        rollTimer = null,
+        computerTimer = null,
+        commentaryUntil = 0;
+      const DEMO_DELAY = 5000,
+        MOVE_STEP_DELAY = 420;
+      function scaledDemoDelay(milliseconds) {
+        return demo ? milliseconds / demoSpeed : milliseconds;
+      }
+      function rand4() {
+        const v = new Uint32Array(1);
+        crypto.getRandomValues(v);
+        return v[0] % 4;
+      } // modulo bias negligible for demo; production should use unbiased rejection sampling
+      function rollDice() {
+        const a = rand4(),
+          b = rand4();
+        return { a, b, value: a === 0 && b === 0 ? 12 : a + b };
+      }
+      function stopDemo() {
+        if (demoTimer) clearTimeout(demoTimer);
+        if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
+        demoTimer = null;
+        demoSpeechTimer = null;
+        demoSpeechId++;
+        demoWaitingForSpeech = false;
+        if ("speechSynthesis" in window) speechSynthesis.cancel();
+        demo = false;
+        demoPaused = false;
+        demoStep = 0;
+        demoRollQueue = [];
+        if ($("demoBar")) $("demoBar").hidden = true;
+      }
+      function newGame(count = 4, computerCount = 0) {
+        stopDemo();
+        if (rollTimer) clearTimeout(rollTimer);
+        if (computerTimer) clearTimeout(computerTimer);
+        rollTimer = null;
+        computerTimer = null;
+        rolling = false;
+        moving = false;
+        movingPieceId = null;
+        if (count < 2 || count > 6)
+          throw new RangeError("Dhayam supports 2 to 6 total players");
+        const seats =
+          count === 2
+            ? ["N", "S"]
+            : count === 3
+              ? ["N", "E", "S"]
+              : Array.from({ length: count }, (_, i) => SEATS[i % 4]);
+        game = {
+          players: seats.map((seat, i) => {
+            const theme = THEMES[i];
+            return {
+              id: "P" + i,
+              name: computerCount ? (i === 0 ? "You" : theme.name) : theme.name,
+              avatar: theme.avatar,
+              color: theme.color,
+              computer: i > 0 && i <= computerCount,
+              seat,
+              captured: false,
+              rank: null,
+              pieces: Array.from({ length: 6 }, (_, j) => ({
+                id: "P" + i + "-" + j,
+                progress: -1,
+              })),
+            };
+          }),
+          current: 0,
+          phase: "roll",
+          pool: [],
+          history: [],
+          last: null,
+          turn: 1,
+          finished: 0,
+          computerCount,
+          paused: false,
+        };
+        selectedRoll = 0;
+        render();
+      }
+      function active() {
+        return game.players[game.current];
+      }
+      function node(player, piece) {
+        return piece.progress < 0 ? null : ROUTES[player.seat][piece.progress];
+      }
+      function finished(p) {
+        return p.pieces.every((q) => q.progress === 43);
+      }
+      function moveCandidate(p, piece, values) {
+        // Validate each roll in order. This matters when combined rolls capture
+        // midway through a move and thereby unlock the protected inner track.
+        let pos = piece.progress,
+          captured = p.captured,
+          targets = [];
+        for (const value of values) {
+          if (pos === 43) return null;
+          if (pos === -1) {
+            if (value !== 1) return null;
+            pos = 0;
+          } else {
+            const next = pos + value;
+            if (next > 43) return null;
+            if (next >= 25 && !captured) return null;
+            pos = next;
+          }
+          const sq = ROUTES[p.seat][pos];
+          const enemies = game.players
+            .filter((other) => other !== p)
+            .flatMap((other) =>
+              other.pieces
+                .filter(
+                  (q) =>
+                    q.progress >= 0 && q.progress < 43 && node(other, q) === sq,
+                )
+                .map((q) => ({ other, q })),
+            );
+          if (!SAFE.has(sq) && sq !== "D4") {
+            if (enemies.length > 1) return null;
+            if (enemies.length === 1) {
+              captured = true;
+              targets.push(enemies[0]);
+            }
+          }
+        }
+        return { progress: pos, captured, targets };
+      }
+      function options() {
+        if (!game || game.phase !== "move") return [];
+        const p = active(),
+          result = [];
+        const subsets = [];
+        for (let i = 0; i < game.pool.length; i++)
+          subsets.push({ indices: [i], values: [game.pool[i]] });
+        if (game.pool.length > 1 && game.pool.length <= 12)
+          subsets.push({
+            indices: game.pool.map((_, i) => i),
+            values: [...game.pool],
+          });
+        for (const piece of p.pieces)
+          for (const s of subsets) {
+            const test = moveCandidate(p, piece, s.values);
+            if (test)
+              result.push({
+                piece,
+                indices: s.indices,
+                values: s.values,
+                test,
+              });
+          }
+        return result;
+      }
+      function setDieFace(id, value, label) {
+        const die = $(id),
+          cube = die.querySelector(".diecube");
+        cube.classList.remove("show-0", "show-1", "show-2", "show-3");
+        cube.classList.add("show-" + value);
+        die.setAttribute("aria-label", label);
+      }
+      function triggerDiceAnimation() {
+        // Resetting these classes forces a fresh three-dimensional tumble even
+        // when the same faces appear in two consecutive rolls.
+        for (const id of ["dieA", "dieB"]) {
+          const die = $(id),
+            cube = die.querySelector(".diecube");
+          die.classList.remove("tumbling");
+          cube.classList.remove("rolling");
+          void cube.offsetWidth;
+          const animationSeconds = 1.15 / (demo ? demoSpeed : 1);
+          cube.style.animationDuration = animationSeconds + "s";
+          die.style.animationDuration = animationSeconds + "s";
+          die.classList.add("tumbling");
+          cube.classList.add("rolling");
+          setTimeout(() => {
+            die.classList.remove("tumbling");
+            cube.classList.remove("rolling");
+          }, scaledDemoDelay(1240));
+        }
+      }
+      function speakGame(message) {
+        if (!audioEnabled || demo || !("speechSynthesis" in window)) {
+          commentaryUntil = 0;
+          return 0;
+        }
+        speechSynthesis.cancel();
+        const words = message.trim().split(/\s+/).length,
+          duration = Math.max(2400, Math.round((words / 2.3) * 1000) + 700),
+          speech = new SpeechSynthesisUtterance(message);
+        speech.rate = 0.86;
+        speech.pitch = 1;
+        speech.volume = 1;
+        commentaryUntil = Date.now() + duration;
+        speechSynthesis.speak(speech);
+        return duration;
+      }
+      function finishRoll(d) {
+        const player = active();
+        game.last = d;
+        game.pool.push(d.value);
+        game.history.push(d.value);
+        rolling = false;
+        const bonus = BONUS_VALUES.has(d.value);
+        if (!bonus) {
+          game.phase = "move";
+          if (!options().length) {
+            game.pool = [];
+            speakGame(
+              player.name +
+                " rolled " +
+                d.value +
+                " but has no legal move. The turn passes.",
+            );
+            nextTurn("No legal moves — turn passed.");
+            return;
+          }
+        }
+        speakGame(
+          player.name +
+            " rolled " +
+            d.value +
+            "." +
+            (bonus ? " That earns another roll." : " Now choose a legal move."),
+        );
+        render();
+      }
+      function roll() {
+        if (!game || game.phase !== "roll" || rolling || demo) return;
+        const d = rollDice();
+        rolling = true;
+        setDieFace("dieA", d.a, "First die rolling");
+        setDieFace("dieB", d.b, "Second die rolling");
+        $("actionBtn").textContent = "Rolling…";
+        $("actionBtn").disabled = true;
+        triggerDiceAnimation();
+        rollTimer = setTimeout(() => {
+          rollTimer = null;
+          finishRoll(d);
+        }, 1220);
+      }
+      function nextTurn(message = "") {
+        if (!game) return;
+        game.pool = [];
+        game.history = [];
+        game.phase = "roll";
+        selectedRoll = 0;
+        if (game.players.every((p) => p.rank !== null)) {
+          game.phase = "done";
+          render();
+          return;
+        }
+        let i = game.current;
+        do {
+          i = (i + 1) % game.players.length;
+        } while (game.players[i].rank !== null && i !== game.current);
+        game.current = i;
+        game.turn++;
+        game.message = message;
+        render();
+      }
+      function waitForMoveStep() {
+        return new Promise((resolve) =>
+          setTimeout(resolve, scaledDemoDelay(MOVE_STEP_DELAY)),
+        );
+      }
+      async function animatePiece(player, piece, targetProgress) {
+        // Update progress one square at a time so the avatar visibly traces the
+        // route. The final game state (including captures) is committed by apply.
+        const totalSteps =
+            piece.progress < 0
+              ? targetProgress + 1
+              : targetProgress - piece.progress,
+          playerName = player.name;
+        let completed = 0;
+        if (piece.progress < 0) {
+          piece.progress = 0;
+          completed++;
+          render();
+          $("statusTitle").textContent = playerName + " is moving";
+          $("statusText").textContent =
+            "Entering the board · step " + completed + " of " + totalSteps;
+          await waitForMoveStep();
+        }
+        while (piece.progress < targetProgress) {
+          piece.progress++;
+          completed++;
+          render();
+          $("statusTitle").textContent = playerName + " is moving";
+          $("statusText").textContent =
+            "Following the route · step " + completed + " of " + totalSteps;
+          await waitForMoveStep();
+        }
+      }
+      async function animateScriptedPiece(player, piece, targetProgress) {
+        moving = true;
+        movingPieceId = piece.id;
+        render();
+        await animatePiece(player, piece, targetProgress);
+        moving = false;
+        movingPieceId = null;
+      }
+      async function apply(opt) {
+        if (!opt || game.phase !== "move" || moving) return;
+        const player = active(),
+          piece = opt.piece,
+          wasReserve = piece.progress < 0,
+          captureCount = opt.test.targets.length,
+          willFinish = opt.test.progress === 43;
+        let commentary =
+          player.name +
+          (wasReserve ? " enters a piece and" : " moves a piece") +
+          " uses " +
+          opt.values.join(" plus ") +
+          ".";
+        if (captureCount)
+          commentary += " An opponent is captured and returns to reserve.";
+        if (willFinish) commentary += " The piece reaches the center.";
+        moving = true;
+        movingPieceId = piece.id;
+        speakGame(commentary);
+        await animatePiece(player, piece, opt.test.progress);
+        player.captured = opt.test.captured;
+        for (const hit of opt.test.targets) hit.q.progress = -1;
+        game.pool = game.pool.filter(
+          (_, index) => !opt.indices.includes(index),
+        );
+        moving = false;
+        movingPieceId = null;
+        if (finished(player) && player.rank === null) {
+          player.rank = ++game.finished;
+          commentary +=
+            " " + player.name + " finishes in place " + player.rank + ".";
+          if (game.finished === game.players.length - 1) {
+            const remaining = game.players.find(
+              (candidate) => candidate.rank === null,
+            );
+            if (remaining) remaining.rank = ++game.finished;
+            game.phase = "done";
+            commentary +=
+              " Match complete. " +
+              game.players
+                .slice()
+                .sort((a, b) => a.rank - b.rank)
+                .map(
+                  (candidate) =>
+                    candidate.name + " is number " + candidate.rank,
+                )
+                .join(". ") +
+              ".";
+            speakGame(commentary);
+            render();
+            return;
+          }
+          speakGame(commentary);
+          nextTurn(player.name + " finished in place #" + player.rank + "!");
+          return;
+        }
+        if (!game.pool.length || !options().length) {
+          nextTurn();
+          return;
+        }
+        selectedRoll = 0;
+        render();
+      }
+      function bestAutomaticMove() {
+        // Computer players prefer finishing, then capturing, entering a piece,
+        // combining rolls, and finally the move with the greatest progress.
+        const moves = options();
+        return (
+          moves.sort((a, b) => {
+            const score = (m) =>
+              (m.test.progress === 43 ? 100000 : 0) +
+              (m.test.targets.length ? 50000 : 0) +
+              (m.piece.progress < 0 ? 8000 : 0) +
+              (m.indices.length > 1 ? 1000 : 0) +
+              m.test.progress;
+            return score(b) - score(a);
+          })[0] || null
+        );
+      }
+      function scheduleComputerIfNeeded() {
+        if (computerTimer) clearTimeout(computerTimer);
+        computerTimer = null;
+        if (
+          !game ||
+          demo ||
+          rolling ||
+          moving ||
+          game.phase === "done" ||
+          !active().computer
+        )
+          return;
+        const naturalDelay = 1400 + Math.floor(Math.random() * 700),
+          speechDelay = Math.max(0, commentaryUntil - Date.now() + 700);
+        computerTimer = setTimeout(
+          runComputerAction,
+          Math.max(naturalDelay, speechDelay),
+        );
+      }
+      function runComputerAction() {
+        computerTimer = null;
+        if (!game || demo || game.phase === "done" || !active().computer)
+          return;
+        if (game.phase === "roll") {
+          roll();
+          return;
+        }
+        const move = bestAutomaticMove();
+        if (move) apply(move);
+        else nextTurn("No legal moves — turn passed.");
+      }
+      function render() {
+        if (!game) return;
+        const opts = options();
+        const chosen = opts.filter((o) =>
+          selectedRoll === -1
+            ? o.indices.length === game.pool.length
+            : o.indices.length === 1 && o.indices[0] === selectedRoll,
+        );
+        const entry = chosen.find((o) => o.piece.progress === -1);
+        const legal = new Map();
+        for (const o of chosen) {
+          if (!legal.has(o.piece.id)) legal.set(o.piece.id, o);
+        }
+        $("board").innerHTML = "";
+        for (const row of "ABCDEFG")
+          for (let col = 1; col <= 7; col++) {
+            const sq = row + col,
+              el = document.createElement("button");
+            el.type = "button";
+            el.className =
+              "cell" +
+              (SAFE.has(sq) ? " safe" : "") +
+              (sq === "D4" ? " goal" : "") +
+              (INNER.includes(sq) ? " inner" : "");
+            for (const seat of SEATS)
+              if (START[seat] === sq) el.classList.add("start" + seat);
+            const occupied = game.players.flatMap((p) =>
+              p.pieces
+                .filter((piece) => node(p, piece) === sq)
+                .map((piece) => ({ p, piece })),
+            );
+            const can = occupied.some((o) => legal.has(o.piece.id));
+            if (can) el.classList.add("legal");
+            el.setAttribute(
+              "aria-label",
+              sq +
+                (SAFE.has(sq) ? ", safe square" : "") +
+                (occupied.length ? ", " + occupied.length + " pieces" : ""),
+            );
+            el.innerHTML =
+              sq === "D4"
+                ? '<span class="motif">✺</span>'
+                : SAFE.has(sq)
+                  ? '<span class="motif">✿</span>'
+                  : "";
+            if (occupied.length) {
+              // Group a player's stacked pieces under one large avatar and show
+              // a count badge, preserving cell space when many players meet.
+              const holder = document.createElement("span"),
+                groups = game.players
+                  .map((p) => ({
+                    p,
+                    pieces: occupied
+                      .filter((item) => item.p === p)
+                      .map((item) => item.piece),
+                  }))
+                  .filter((group) => group.pieces.length);
+              holder.className = "tokens count-" + Math.min(groups.length, 4);
+              for (const { p, pieces } of groups) {
+                const selectable = pieces.some((piece) => legal.has(piece.id)),
+                  t = document.createElement("span");
+                t.className =
+                  "token" +
+                  (p === active() ? " current" : "") +
+                  (pieces.some((piece) => piece.id === movingPieceId)
+                    ? " moving"
+                    : "") +
+                  (selectable ? " selectable" : "");
+                t.style.background = p.color;
+                t.textContent = p.avatar;
+                t.setAttribute(
+                  "aria-label",
+                  p.name +
+                    ", " +
+                    pieces.length +
+                    (pieces.length === 1 ? " piece" : " pieces"),
+                );
+                if (pieces.length > 1) {
+                  const count = document.createElement("span");
+                  count.className = "tokencount";
+                  count.textContent = pieces.length;
+                  t.appendChild(count);
+                }
+                holder.appendChild(t);
+              }
+              el.appendChild(holder);
+            }
+            if (can && !demo && !active().computer && !moving)
+              el.onclick = () => {
+                const o = occupied
+                  .map((x) => legal.get(x.piece.id))
+                  .find(Boolean);
+                apply(o);
+              };
+            el.addEventListener("keydown", (e) => {
+              if ((e.key === "Enter" || e.key === " ") && can) {
+                e.preventDefault();
+                el.click();
+              }
+            });
+            $("board").appendChild(el);
+          }
+        $("players").innerHTML = game.players
+          .map(
+            (p) =>
+              '<div class="player ' +
+              (active() === p && game.phase !== "done" ? "active" : "") +
+              '"><div class="avatar" aria-hidden="true" style="background:' +
+              p.color +
+              '">' +
+              p.avatar +
+              '</div><div style="flex:1"><div class="pname">' +
+              p.name +
+              (p.rank ? " · #" + p.rank : "") +
+              '</div><div class="pmeta">' +
+              p.pieces.filter((q) => q.progress === 43).length +
+              "/6 finished · " +
+              (p.captured ? "capture earned" : "capture needed") +
+              "</div></div>" +
+              (active() === p && game.phase !== "done"
+                ? '<div class="turn">● Turn</div>'
+                : "") +
+              "</div>",
+          )
+          .join("");
+        $("gameInfo").textContent = game.computerCount
+          ? "1 human · " +
+            game.computerCount +
+            " computer" +
+            (game.computerCount === 1 ? "" : "s") +
+            " · House variant"
+          : game.players.length +
+            " players · Local pass-and-play · House variant";
+        setDieFace(
+          "dieA",
+          game.last ? game.last.a : 0,
+          game.last ? "First die: " + game.last.a : "First die not rolled",
+        );
+        setDieFace(
+          "dieB",
+          game.last ? game.last.b : 0,
+          game.last ? "Second die: " + game.last.b : "Second die not rolled",
+        );
+        $("rollChips").innerHTML = "";
+        if (entry) {
+          const enter = document.createElement("button");
+          enter.className = "chip selected";
+          enter.textContent = "＋ Enter a piece";
+          enter.onclick = () => apply(entry);
+          enter.disabled = demo || active().computer || moving;
+          $("rollChips").appendChild(enter);
+        }
+        if (game.phase === "move") {
+          game.pool.forEach((v, i) => {
+            const b = document.createElement("button");
+            b.className = "chip" + (selectedRoll === i ? " selected" : "");
+            b.textContent = v;
+            b.setAttribute("aria-label", "Use roll " + v);
+            b.onclick = () => {
+              selectedRoll = i;
+              render();
+            };
+            b.disabled = demo || active().computer || moving;
+            $("rollChips").appendChild(b);
+          });
+          if (game.pool.length > 1) {
+            const b = document.createElement("button");
+            b.className = "chip" + (selectedRoll === -1 ? " selected" : "");
+            b.textContent = "Combine all";
+            b.onclick = () => {
+              selectedRoll = -1;
+              render();
+            };
+            b.disabled = demo || active().computer || moving;
+            $("rollChips").appendChild(b);
+          }
+        }
+        const p = active();
+        $("statusTitle").textContent =
+          game.phase === "done"
+            ? "Match complete!"
+            : p.avatar + " " + p.name + "’s turn";
+        $("statusText").textContent =
+          game.phase === "roll"
+            ? "Roll the Dayakattai" +
+              (game.history.length
+                ? " · bonus throw! Follow the glowing route around the board."
+                : " · Follow the glowing route around the board.")
+            : game.phase === "move"
+              ? "Choose a roll, then tap a gold-outlined " +
+                p.avatar +
+                " piece. " +
+                chosen.length +
+                " move" +
+                (chosen.length === 1 ? " is" : "s are") +
+                " available."
+              : "Rankings: " +
+                game.players
+                  .slice()
+                  .sort((a, b) => a.rank - b.rank)
+                  .map((p) => p.name + " #" + p.rank)
+                  .join(" · ");
+        $("actionBtn").textContent =
+          game.phase === "roll"
+            ? "🎲 Roll Dayakattai"
+            : game.phase === "move"
+              ? "Pass remaining rolls"
+              : "New match";
+        $("actionBtn").onclick = () =>
+          game.phase === "roll"
+            ? roll()
+            : game.phase === "move"
+              ? nextTurn("Unused rolls passed.")
+              : newGame(game.players.length);
+        $("actionBtn").disabled = demo || rolling || moving || p.computer;
+        if (demo) $("actionBtn").textContent = "Demo playing…";
+        else if (rolling) $("actionBtn").textContent = "Rolling…";
+        else if (moving) $("actionBtn").textContent = "Moving…";
+        else if (p.computer)
+          $("actionBtn").textContent = p.name + " is thinking…";
+        $("diceHint").textContent = game.last
+          ? "Last roll: " +
+            game.last.value +
+            " · " +
+            ([1, 5, 6, 12].includes(game.last.value) ? "bonus!" : "no bonus")
+          : "Two long dice · bonus on 1, 5, 6, 12";
+        updateAudioToggle();
+        scheduleComputerIfNeeded();
+      }
+      const DEMO_STEPS = [
+        () =>
+          demoScene(
+            "Maya starts. Each player has six pieces waiting off the board.",
+            () => {
+              game.current = 0;
+              game.turn = 1;
+              game.phase = "roll";
+              game.pool = [];
+              game.history = [];
+              game.last = null;
+            },
+          ),
+        () =>
+          demoScene(
+            "Maya rolls a 1. A roll of 1 can bring a piece onto the starting square and also earns a bonus roll.",
+            () => {
+              game.last = { a: 0, b: 1, value: 1 };
+              game.pool = [1];
+              game.history = [1];
+              game.phase = "move";
+            },
+          ),
+        () =>
+          demoScene(
+            "The elephant enters on its colored starting square.",
+            async () => {
+              await animateScriptedPiece(
+                game.players[0],
+                game.players[0].pieces[0],
+                0,
+              );
+              game.pool = [];
+              game.phase = "roll";
+            },
+          ),
+        () =>
+          demoScene(
+            "The bonus roll is 2. The gold outline shows which piece can move.",
+            () => {
+              game.last = { a: 0, b: 2, value: 2 };
+              game.pool = [2];
+              game.history = [1, 2];
+              game.phase = "move";
+            },
+          ),
+        () =>
+          demoScene(
+            "The elephant moves two spaces along the glowing route. Maya’s turn is over.",
+            async () => {
+              await animateScriptedPiece(
+                game.players[0],
+                game.players[0].pieces[0],
+                2,
+              );
+              game.pool = [];
+              game.history = [];
+              game.current = 1;
+              game.turn = 2;
+              game.phase = "roll";
+            },
+          ),
+        () =>
+          demoScene(
+            "Now it is Leo’s turn. The highlighted player card always shows whose turn it is.",
+            () => {},
+          ),
+        () =>
+          demoScene("Leo rolls a 1, so the tiger can enter the board.", () => {
+            game.last = { a: 0, b: 1, value: 1 };
+            game.pool = [1];
+            game.history = [1];
+            game.phase = "move";
+          }),
+        () =>
+          demoScene(
+            "The tiger enters on Leo’s colored starting square.",
+            async () => {
+              await animateScriptedPiece(
+                game.players[1],
+                game.players[1].pieces[0],
+                0,
+              );
+              game.pool = [];
+              game.history = [];
+              game.phase = "roll";
+            },
+          ),
+        () =>
+          demoScene(
+            "Capture example: Maya rolls 1 while Leo’s tiger is one space ahead on an unprotected square.",
+            () => {
+              game.current = 0;
+              game.turn = 3;
+              game.players[0].pieces[0].progress = 0;
+              game.players[1].pieces[0].progress = 13;
+              game.last = { a: 0, b: 1, value: 1 };
+              game.pool = [1];
+              game.history = [1];
+              game.phase = "move";
+            },
+          ),
+        () =>
+          demoScene(
+            "The elephant lands on the tiger. Leo’s piece returns to reserve, and Maya earns the capture needed to enter the inner track.",
+            async () => {
+              await animateScriptedPiece(
+                game.players[0],
+                game.players[0].pieces[0],
+                1,
+              );
+              game.players[0].captured = true;
+              game.players[1].pieces[0].progress = -1;
+              game.pool = [];
+              game.history = [];
+              game.phase = "roll";
+            },
+          ),
+        () =>
+          demoScene(
+            "Leo also completes a capture. Both players can now follow the inner route, so the automatic match will continue until the rankings are decided or you interrupt it.",
+            () => {
+              game.players[1].captured = true;
+              game.current = 0;
+              game.pool = [];
+              game.history = [];
+              game.phase = "roll";
+            },
+          ),
+      ];
+      const DEMO_FACES = {
+        1: [0, 1],
+        2: [0, 2],
+        3: [0, 3],
+        4: [1, 3],
+        5: [2, 3],
+        6: [3, 3],
+        12: [0, 0],
+      };
+      function finishDemoSpeech(id) {
+        if (id !== demoSpeechId) return;
+        if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
+        demoSpeechTimer = null;
+        demoWaitingForSpeech = false;
+        if (demo && !demoPaused && game.phase !== "done") scheduleDemo(1500);
+      }
+      function speakDemo(message) {
+        // The next demo action waits for narration to finish. A calculated
+        // reading delay provides the same human pace when audio is unavailable.
+        const words = message.trim().split(/\s+/).length;
+        demoNextDelay = Math.max(5000, Math.round((words / 2) * 1000) + 1800);
+        if (!audioEnabled || !("speechSynthesis" in window)) {
+          demoWaitingForSpeech = false;
+          return;
+        }
+        if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
+        const id = ++demoSpeechId;
+        speechSynthesis.cancel();
+        const speech = new SpeechSynthesisUtterance(message);
+        demoWaitingForSpeech = true;
+        speech.rate = Math.min(2, 0.78 * demoSpeed);
+        speech.pitch = 1;
+        speech.volume = 1;
+        speech.onend = () => finishDemoSpeech(id);
+        speech.onerror = () => finishDemoSpeech(id);
+        demoSpeechTimer = setTimeout(
+          () => finishDemoSpeech(id),
+          scaledDemoDelay(demoNextDelay + 2500),
+        );
+        speechSynthesis.speak(speech);
+      }
+      async function demoScene(message, update) {
+        await update();
+        render();
+        $("statusTitle").textContent = "Guided demo";
+        $("statusText").textContent = message;
+        speakDemo(message);
+        if (message.toLowerCase().includes("roll")) triggerDiceAnimation();
+      }
+      function findBonusRolls(total) {
+        // Build a legal sum from bonus rolls; recursion is bounded by the small
+        // 44-square route and tries larger rolls first to keep the demo moving.
+        if (total === 0) return [];
+        for (const value of [12, 6, 5, 1])
+          if (value <= total) {
+            const rest = findBonusRolls(total - value);
+            if (rest) return [value, ...rest];
+          }
+        return null;
+      }
+      function planDemoTurn(piece) {
+        // End every planned sequence with a non-bonus roll. This closes the roll
+        // phase while still reaching the exact remaining distance to the goal.
+        const reserve = piece.progress < 0,
+          remaining = reserve ? 43 : 43 - piece.progress;
+        if (remaining === 1) return [1, 2];
+        for (const finalRoll of [4, 3, 2]) {
+          if (finalRoll > remaining) continue;
+          const bonuses = findBonusRolls(remaining - finalRoll);
+          if (bonuses) return [...(reserve ? [1] : []), ...bonuses, finalRoll];
+        }
+        return [1, 2];
+      }
+      function chooseDemoMove() {
+        return bestAutomaticMove();
+      }
+      function demoRollAction() {
+        const player = active();
+        if (!demoRollQueue.length) {
+          const piece = player.pieces.find((item) => item.progress < 43);
+          demoRollQueue = planDemoTurn(piece);
+        }
+        const value = demoRollQueue.shift(),
+          faces = DEMO_FACES[value];
+        game.last = { a: faces[0], b: faces[1], value };
+        game.pool.push(value);
+        game.history.push(value);
+        if (!BONUS_VALUES.has(value)) game.phase = "move";
+        render();
+        const bonus = BONUS_VALUES.has(value) ? " It earns another roll." : "";
+        const message = player.name + " rolls " + value + "." + bonus;
+        $("statusTitle").textContent = "Full guided game · Turn " + game.turn;
+        $("statusText").textContent = message;
+        speakDemo(message);
+        triggerDiceAnimation();
+      }
+      async function demoMoveAction() {
+        const player = active(),
+          move = chooseDemoMove();
+        if (!move) {
+          nextTurn("No legal moves — turn passed.");
+          demoRollQueue = [];
+          const message =
+            player.name + " has no legal move, so the turn passes.";
+          $("statusTitle").textContent = "Full guided game · Turn " + game.turn;
+          $("statusText").textContent = message;
+          speakDemo(message);
+          return;
+        }
+        const from = move.piece.progress,
+          captures = move.test.targets.length,
+          willFinish = move.test.progress === 43;
+        await apply(move);
+        demoRollQueue = [];
+        let message =
+          player.name +
+          (from < 0 ? " enters a piece and " : " moves a piece ") +
+          "using " +
+          move.values.join(" + ") +
+          ".";
+        if (captures)
+          message += " An opponent is captured and returns to reserve.";
+        if (willFinish)
+          message += " That piece reaches the center and finishes.";
+        if (game.phase === "done")
+          message =
+            "Match complete. " +
+            game.players
+              .slice()
+              .sort((a, b) => a.rank - b.rank)
+              .map((item) => item.name + " finishes #" + item.rank)
+              .join(", ") +
+            ".";
+        $("statusTitle").textContent =
+          game.phase === "done"
+            ? "Full guided game complete"
+            : "Full guided game · Turn " + game.turn;
+        $("statusText").textContent = message;
+        speakDemo(message);
+      }
+      async function runDemoGameStep() {
+        if (game.phase === "done") return;
+        if (game.phase === "roll") demoRollAction();
+        else await demoMoveAction();
+      }
+      function updateDemoControls() {
+        const complete = game && game.phase === "done",
+          available = "speechSynthesis" in window,
+          opening = demoStep < DEMO_STEPS.length;
+        $("demoBar").hidden = !demo;
+        $("demoProgress").textContent = complete
+          ? "Full match complete"
+          : (demoPaused ? "Paused · " : "") +
+            (opening
+              ? "Opening lesson " +
+                Math.max(1, demoStep) +
+                " of " +
+                DEMO_STEPS.length
+              : "Full game · Turn " + game.turn);
+        $("demoPause").textContent = demoPaused ? "Resume" : "Pause";
+        $("demoPause").disabled = complete;
+        $("demoSpeed").value = String(demoSpeed);
+        $("demoSpeedValue").value = demoSpeed + "×";
+        $("demoAudioToggle").textContent = available
+          ? audioEnabled
+            ? "🔊 Audio on"
+            : "🔇 Audio off"
+          : "Audio unavailable";
+        $("demoAudioToggle").setAttribute("aria-pressed", String(audioEnabled));
+        $("demoAudioToggle").disabled = !available;
+      }
+      function scheduleDemo(delay = DEMO_DELAY) {
+        if (!demo || demoPaused || game.phase === "done") return;
+        if (demoTimer) clearTimeout(demoTimer);
+        demoTimer = setTimeout(runDemoStep, scaledDemoDelay(delay));
+      }
+      async function runDemoStep() {
+        demoTimer = null;
+        if (!demo || demoPaused) return;
+        if (demoStep < DEMO_STEPS.length) {
+          await DEMO_STEPS[demoStep]();
+          demoStep++;
+        } else await runDemoGameStep();
+        updateDemoControls();
+        if (game.phase !== "done" && !demoWaitingForSpeech)
+          scheduleDemo(demoNextDelay);
+      }
+      function startGuidedDemo() {
+        newGame(2);
+        demo = true;
+        demoPaused = false;
+        demoStep = 0;
+        demoRollQueue = [];
+        $("demoBar").hidden = false;
+        runDemoStep();
+      }
+      function restartGuidedDemo() {
+        startGuidedDemo();
+      }
+      function toggleDemoPause() {
+        if (!demo) return;
+        demoPaused = !demoPaused;
+        if (demoPaused) {
+          if (demoTimer) {
+            clearTimeout(demoTimer);
+            demoTimer = null;
+          }
+          if (demoSpeechTimer) {
+            clearTimeout(demoSpeechTimer);
+            demoSpeechTimer = null;
+          }
+          if ("speechSynthesis" in window) speechSynthesis.pause();
+        } else {
+          if ("speechSynthesis" in window) speechSynthesis.resume();
+          if (demoWaitingForSpeech) {
+            const id = demoSpeechId;
+            demoSpeechTimer = setTimeout(
+              () => finishDemoSpeech(id),
+              scaledDemoDelay(demoNextDelay + 2500),
+            );
+          } else scheduleDemo(800);
+        }
+        updateDemoControls();
+      }
+      function updateAudioToggle() {
+        const available = "speechSynthesis" in window;
+        if (!$("audioToggle")) return;
+        $("audioToggle").textContent = available
+          ? audioEnabled
+            ? "🔊 Commentary on"
+            : "🔇 Commentary off"
+          : "Commentary unavailable";
+        $("audioToggle").setAttribute("aria-pressed", String(audioEnabled));
+        $("audioToggle").disabled = !available;
+      }
+      function toggleAudio() {
+        audioEnabled = !audioEnabled;
+        commentaryUntil = 0;
+        if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
+        demoSpeechTimer = null;
+        demoSpeechId++;
+        demoWaitingForSpeech = false;
+        if ("speechSynthesis" in window) speechSynthesis.cancel();
+        if (audioEnabled && demo) speakDemo($("statusText").textContent);
+        else if (audioEnabled && !demo) speakGame("Audio commentary is on.");
+        else if (demo && !demoPaused) scheduleDemo(demoNextDelay);
+        updateAudioToggle();
+        updateDemoControls();
+      }
+      function exitGuidedDemo() {
+        newGame(4);
+      }
+      function showModal(title, html, actionLabel, action) {
+        $("modalTitle").textContent = title;
+        $("modalContent").innerHTML = html;
+        $("modalConfirm").textContent = actionLabel;
+        modalAction = action;
+        $("modalback").classList.add("open");
+      }
+      function closeModal() {
+        $("modalback").classList.remove("open");
+      }
+      $("demoPause").onclick = toggleDemoPause;
+      $("demoSpeed").oninput = (event) => {
+        demoSpeed = Number(event.target.value);
+        updateDemoControls();
+        if (demoTimer && !demoPaused) {
+          clearTimeout(demoTimer);
+          demoTimer = null;
+          scheduleDemo(demoNextDelay);
+        }
+      };
+      $("demoAudioToggle").onclick = toggleAudio;
+      $("audioToggle").onclick = toggleAudio;
+      $("demoRestart").onclick = restartGuidedDemo;
+      $("demoExit").onclick = exitGuidedDemo;
+      $("modalCancel").onclick = closeModal;
+      $("modalConfirm").onclick = () => {
+        if (modalAction) modalAction();
+        closeModal();
+      };
+      $("modalback").addEventListener("click", (e) => {
+        if (e.target === $("modalback")) closeModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeModal();
+      });
+      $("newBtn").onclick = () =>
+        showModal(
+          "Start a new game",
+          '<label for="gameMode">Game type</label><select id="gameMode"><option value="solo" selected>Solo vs computers</option><option value="local">Local pass-and-play</option></select><p><strong>Solo:</strong> You play manually. Computer turns roll and move automatically with a natural pause.</p><label for="computerCount">Computer opponents</label><select id="computerCount"><option value="1">1 computer</option><option value="2" selected>2 computers</option><option value="3">3 computers</option><option value="4">4 computers</option><option value="5">5 computers</option></select><div class="divider"></div><label for="localCount">Local players</label><select id="localCount"><option value="2">2 people</option><option value="3">3 people</option><option value="4">4 people</option></select>',
+          "Start game",
+          () => {
+            if ($("gameMode").value === "local")
+              newGame(Number($("localCount").value));
+            else {
+              const computers = Number($("computerCount").value);
+              newGame(computers + 1, computers);
+            }
+          },
+        );
+      $("resetBtn").onclick = () =>
+        showModal(
+          "Reset the match?",
+          "<p>This clears the current local game. Scores are not saved in this prototype.</p>",
+          "Reset match",
+          () => newGame(game.players.length, game.computerCount),
+        );
+      $("guideBtn").onclick = () =>
+        showModal(
+          "How to play",
+          "<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. Tap a highlighted piece to move using a selected roll.</p><p><strong>3.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>4.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p><p><strong>House-variant note:</strong> The outer and inner paths are an original provisional reconstruction. Their historical authenticity is not established.</p>",
+          "Got it",
+          () => {},
+        );
+      $("demoBtn").onclick = () =>
+        showModal(
+          "Automatic guided demo",
+          "<p>Watch a complete two-player match play automatically. The opening explains entry and capture, then the game keeps rolling and moving until final rankings are decided.</p><p>You can pause, resume, or restart at any time.</p>",
+          "Start demo",
+          startGuidedDemo,
+        );
+      newGame(4);
+    </script>
+  </body>
+</html>

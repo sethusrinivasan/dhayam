@@ -13,10 +13,22 @@ import {
 } from "../src/game.ts";
 
 test("creates the supported seating arrangements", () => {
-  assert.deepEqual(createGame(2).players.map((player) => player.seat), ["N", "S"]);
-  assert.deepEqual(createGame(3).players.map((player) => player.seat), ["N", "E", "S"]);
-  assert.deepEqual(createGame(4).players.map((player) => player.seat), ["N", "E", "S", "W"]);
-  assert.deepEqual(createGame(6).players.map((player) => player.seat), ["N", "E", "S", "W", "N", "E"]);
+  assert.deepEqual(
+    createGame(2).players.map((player) => player.seat),
+    ["N", "S"],
+  );
+  assert.deepEqual(
+    createGame(3).players.map((player) => player.seat),
+    ["N", "E", "S"],
+  );
+  assert.deepEqual(
+    createGame(4).players.map((player) => player.seat),
+    ["N", "E", "S", "W"],
+  );
+  assert.deepEqual(
+    createGame(6).players.map((player) => player.seat),
+    ["N", "E", "S", "W", "N", "E"],
+  );
   assert.throws(() => createGame(1), RangeError);
 });
 
@@ -45,7 +57,10 @@ test("requires a one to enter a reserved piece", () => {
   game.pool = [1, 2];
   assert.equal(evaluateMove(game, "P0-0", [2]), null);
   assert.equal(evaluateMove(game, "P0-0", [1])?.progress, 0);
-  assert.equal(legalMoves(game).filter((move) => move.values.length === 1).length, 6);
+  assert.equal(
+    legalMoves(game).filter((move) => move.values.length === 1).length,
+    6,
+  );
 });
 
 test("requires a capture before entering the inner track", () => {
@@ -72,7 +87,11 @@ test("captures one opponent on an unsafe square", () => {
   const next = applyMove(game, move!);
   assert.equal(next.players[0].captured, true);
   assert.equal(next.players[1].pieces[0].progress, -1);
-  assert.equal(game.players[1].pieces[0].progress, 13, "the input state remains unchanged");
+  assert.equal(
+    game.players[1].pieces[0].progress,
+    13,
+    "the input state remains unchanged",
+  );
 });
 
 test("does not capture opponents on safe squares", () => {
@@ -108,6 +127,9 @@ test("offers single rolls and all remaining rolls in order", () => {
   game.phase = "move";
   game.pool = [1, 2];
   const pieceMoves = legalMoves(game).filter((move) => move.pieceId === "P0-0");
-  assert.deepEqual(pieceMoves.map((move) => move.values), [[1], [1, 2]]);
+  assert.deepEqual(
+    pieceMoves.map((move) => move.values),
+    [[1], [1, 2]],
+  );
   assert.equal(pieceMoves[1].progress, 2);
 });
