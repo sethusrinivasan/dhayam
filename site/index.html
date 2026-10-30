@@ -984,6 +984,98 @@
         justify-content: flex-end;
         margin-top: 20px;
       }
+      .splashback {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        display: none;
+        place-items: center;
+        padding: 20px;
+        background: #100907dc;
+        backdrop-filter: blur(8px);
+      }
+      .splashback.open {
+        display: grid;
+      }
+      .splash {
+        width: min(680px, 100%);
+        max-height: min(760px, calc(100vh - 40px));
+        overflow: auto;
+        padding: clamp(24px, 5vw, 48px);
+        border: 1px solid #f6d17b8c;
+        border-radius: 28px;
+        color: #f8e8cb;
+        background:
+          radial-gradient(circle at 84% 12%, #d88a3e38, transparent 32%),
+          linear-gradient(145deg, #432416, #1e130f 72%);
+        box-shadow:
+          0 28px 90px #000b,
+          inset 0 0 0 2px #f0b96424;
+      }
+      .splash .eyebrow {
+        margin: 0 0 10px;
+        color: #f3c66f;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .splash h2 {
+        margin: 0;
+        font:
+          800 clamp(34px, 7vw, 58px) / 0.95 Georgia,
+          serif;
+        color: #fff0c8;
+      }
+      .splash .lead {
+        max-width: 57ch;
+        margin: 20px 0;
+        color: #e8d1af;
+        font-size: 16px;
+        line-height: 1.65;
+      }
+      .splashfacts {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin: 20px 0 24px;
+      }
+      .splashfact {
+        padding: 13px;
+        border: 1px solid #fff0c42b;
+        border-radius: 14px;
+        background: #ffffff0a;
+      }
+      .splashfact strong,
+      .splashfact span {
+        display: block;
+      }
+      .splashfact strong {
+        color: #ffe19a;
+        font-size: 19px;
+      }
+      .splashfact span {
+        margin-top: 4px;
+        color: #d9c2a4;
+        font-size: 11px;
+        line-height: 1.35;
+      }
+      .splashremember {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 15px;
+        color: #d9c2a4;
+        font-size: 12px;
+      }
+      .splashremember input {
+        accent-color: #e2ae59;
+      }
+      .splash .actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 20px;
+      }
       .notice {
         margin-top: 14px;
         font-size: 12px;
@@ -1062,6 +1154,9 @@
         }
         .panel {
           padding: 13px;
+        }
+        .splashfacts {
+          grid-template-columns: 1fr;
         }
       }
       @media (prefers-reduced-motion: reduce) {
@@ -1297,6 +1392,50 @@
         </aside>
       </div>
     </main>
+    <div class="splashback" id="splashback" role="presentation">
+      <section
+        class="splash"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="splashTitle"
+      >
+        <p class="eyebrow">Welcome to Dhayam</p>
+        <h2 id="splashTitle">A table, two dice, and a journey home.</h2>
+        <p class="lead">
+          Dayakattai is part of a long South Indian tradition of social board
+          play: a game of chance, counting, routes, and lively table talk. This
+          edition is a contemporary house variant built to make each move,
+          capture, and finish easy to follow together.
+        </p>
+        <div class="splashfacts" aria-label="Game highlights">
+          <div class="splashfact">
+            <strong>6 pieces</strong
+            ><span>Guide every numbered piece home.</span>
+          </div>
+          <div class="splashfact">
+            <strong>1 winner</strong
+            ><span>Finish all six to end the match.</span>
+          </div>
+          <div class="splashfact">
+            <strong>One table</strong
+            ><span>Play locally, together, at your pace.</span>
+          </div>
+        </div>
+        <p class="small">
+          Start a game, explore the guided demo, or use the game audit to study
+          every roll and decision afterward.
+        </p>
+        <label class="splashremember" for="hideSplash">
+          <input id="hideSplash" type="checkbox" />
+          Do not show this welcome again on this browser
+        </label>
+        <div class="actions">
+          <button class="btn" id="splashStart" type="button">
+            Begin the game
+          </button>
+        </div>
+      </section>
+    </div>
     <div class="modalback" id="modalback" role="presentation">
       <div
         class="modal"
@@ -2928,6 +3067,18 @@
       function closeModal() {
         $("modalback").classList.remove("open");
       }
+      const SPLASH_COOKIE = "dhayam_intro_seen";
+      function splashWasDismissed() {
+        return document.cookie
+          .split("; ")
+          .some((cookie) => cookie === SPLASH_COOKIE + "=1");
+      }
+      function closeSplash() {
+        if ($("hideSplash").checked)
+          document.cookie =
+            SPLASH_COOKIE + "=1; Max-Age=31536000; Path=/; SameSite=Lax";
+        $("splashback").classList.remove("open");
+      }
       $("demoPause").onclick = toggleDemoPause;
       $("demoSuperSpeed").onclick = toggleSuperSpeed;
       $("demoSpeed").oninput = (event) => {
@@ -2944,6 +3095,7 @@
       $("copyAuditBtn").onclick = copyGameAudit;
       $("demoRestart").onclick = restartGuidedDemo;
       $("demoExit").onclick = exitGuidedDemo;
+      $("splashStart").onclick = closeSplash;
       $("modalCancel").onclick = closeModal;
       $("modalConfirm").onclick = () => {
         if (modalAction) modalAction();
@@ -2994,6 +3146,7 @@
       if ("speechSynthesis" in window)
         speechSynthesis.addEventListener("voiceschanged", refreshVoices);
       newGame(4);
+      if (!splashWasDismissed()) $("splashback").classList.add("open");
     </script>
   </body>
 </html>
