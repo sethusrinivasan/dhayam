@@ -1782,12 +1782,15 @@
           finished: 0,
           computerCount,
           paused: false,
+          // Dice remain fair throughout the match.  This flag records whether
+          // the one-time opening safety net has already been satisfied.
+          openingEntryResolved: false,
         };
         audit = createAudit(computerCount ? "solo" : "local");
         recordAudit("GAME_START", {
           playerCount: count,
           computerCount,
-          rules: "Heritage 7x7 house variant",
+          rules: "Heritage 7x7 house variant; guaranteed opening entry",
         });
         selectedRoll = 0;
         selectedPieceId = null;
@@ -1893,7 +1896,7 @@
           "Exported: " + new Date().toISOString(),
           "Mode: " + audit.mode,
           "Status: " + game.phase,
-          "Rules: Heritage 7x7 house variant; exact finish; capture required for inner track",
+          "Rules: Heritage 7x7 house variant; guaranteed opening entry; exact finish; capture required for inner track",
           "Players: " +
             game.players
               .map(
@@ -1998,16 +2001,32 @@
           audit.events.length + " timestamped events copied as plain text.";
         setTimeout(() => (button.textContent = "📋 Copy game audit"), 2200);
       }
+      function openingEntryAvailable(p, piece, values) {
+        // A roll of 1 is always the normal way to enter.  Fair dice make a 1
+        // only 12.5% likely, so a whole first round can otherwise pass with no
+        // piece on the board.  The last player of that first round receives a
+        // one-roll entry allowance only if nobody has entered yet.  This makes
+        // the opening reliable without changing dice probabilities.
+        return (
+          !game.openingEntryResolved &&
+          game.turn <= game.players.length &&
+          game.current === game.players.length - 1 &&
+          piece.progress === -1 &&
+          values.length === 1
+        );
+      }
       function moveCandidate(p, piece, values) {
         // Validate each roll in order. This matters when combined rolls capture
         // midway through a move and thereby unlock the protected inner track.
+        const openingEntry =
+          values[0] !== 1 && openingEntryAvailable(p, piece, values);
         let pos = piece.progress,
           captured = p.captured,
           targets = [];
         for (const value of values) {
           if (pos === 43) return null;
           if (pos === -1) {
-            if (value !== 1) return null;
+            if (value !== 1 && !openingEntry) return null;
             pos = 0;
           } else {
             const next = pos + value;
@@ -2034,7 +2053,7 @@
             }
           }
         }
-        return { progress: pos, captured, targets };
+        return { progress: pos, captured, targets, openingEntry };
       }
       function options() {
         if (!game || game.phase !== "move") return [];
@@ -2258,7 +2277,11 @@
           }));
         let commentary =
           player.name +
-          (wasReserve ? " enters a piece and" : " moves a piece") +
+          (wasReserve
+            ? opt.test.openingEntry
+              ? " uses the opening entry allowance to enter a piece and"
+              : " enters a piece and"
+            : " moves a piece") +
           " uses " +
           opt.values.join(" plus ") +
           ".";
@@ -2269,6 +2292,7 @@
         movingPieceId = piece.id;
         speakGame(commentary);
         await animatePiece(player, piece, opt.test.progress);
+        if (wasReserve) game.openingEntryResolved = true;
         player.captured = opt.test.captured;
         if (captureCount) {
           capturedPieceIds = opt.test.targets.map((hit) => hit.q.id);
@@ -2305,6 +2329,7 @@
           legalMoveCount,
           captures: capturedPieces,
           enteredBoard: wasReserve,
+          openingEntryAllowance: Boolean(opt.test.openingEntry),
           finishedPiece: willFinish,
           inputSource,
         });
@@ -2386,6 +2411,11 @@
         }
       }
       function passRemainingRolls() {
+        if (options().some((move) => move.test.openingEntry)) {
+          $("statusText").textContent =
+            "The opening entry allowance must be used so the game can begin.";
+          return;
+        }
         recordAudit("PASS", {
           reason: "PLAYER_CHOICE",
           unusedRolls: [...game.pool],
@@ -2577,7 +2607,9 @@
         if (entry) {
           const enter = document.createElement("button");
           enter.className = "chip selected";
-          enter.textContent = "＋ Enter a piece";
+          enter.textContent = entry.test.openingEntry
+            ? "＋ Opening entry allowance"
+            : "＋ Enter a piece";
           enter.onclick = () => apply(entry, "entry-button");
           enter.disabled = demo || active().computer || moving;
           $("rollChips").appendChild(enter);
@@ -2650,6 +2682,9 @@
           game.phase === "done"
             ? "🏆 " + winner.name + " wins!"
             : p.avatar + " " + p.name + "’s turn";
+        const openingEntryRequired = opts.some(
+          (move) => move.test.openingEntry,
+        );
         $("statusText").textContent =
           game.phase === "roll"
             ? "Roll the Dayakattai" +
@@ -2657,20 +2692,24 @@
                 ? " · bonus throw! Follow the glowing route around the board."
                 : " · Follow the glowing route around the board.")
             : game.phase === "move"
-              ? "Choose a roll, then tap a gold-outlined " +
-                p.avatar +
-                " piece. " +
-                chosen.length +
-                " move" +
-                (chosen.length === 1 ? " is" : "s are") +
-                " available."
+              ? openingEntryRequired
+                ? "No player entered in the first round. Choose a piece to use the opening entry allowance."
+                : "Choose a roll, then tap a gold-outlined " +
+                  p.avatar +
+                  " piece. " +
+                  chosen.length +
+                  " move" +
+                  (chosen.length === 1 ? " is" : "s are") +
+                  " available."
               : winner.name +
                 " brought all six pieces to the center. The game is complete.";
         $("actionBtn").textContent =
           game.phase === "roll"
             ? "🎲 Roll Dayakattai"
             : game.phase === "move"
-              ? "Pass remaining rolls"
+              ? openingEntryRequired
+                ? "Choose opening entry"
+                : "Pass remaining rolls"
               : "New match";
         $("actionBtn").onclick = () =>
           game.phase === "roll"
@@ -2678,7 +2717,12 @@
             : game.phase === "move"
               ? passRemainingRolls()
               : newGame(game.players.length);
-        $("actionBtn").disabled = demo || rolling || moving || p.computer;
+        $("actionBtn").disabled =
+          demo ||
+          rolling ||
+          moving ||
+          p.computer ||
+          (game.phase === "move" && openingEntryRequired);
         if (game.phase === "done") $("actionBtn").textContent = "Game complete";
         else if (demo) $("actionBtn").textContent = "Demo playing…";
         else if (rolling) $("actionBtn").textContent = "Rolling…";
@@ -3263,7 +3307,7 @@
       $("guideBtn").onclick = () =>
         showModal(
           "How to play",
-          "<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. Tap a highlighted piece to move using a selected roll.</p><p><strong>3.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>4.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p>",
+          "<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. If nobody enters during the first round, the last player may use any one roll to enter a piece, so every game starts moving.</p><p><strong>3.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>4.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p>",
           "Got it",
           () => {},
         );
