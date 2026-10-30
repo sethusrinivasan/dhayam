@@ -1392,6 +1392,14 @@
             <div class="small" id="gameInfo">
               Local pass-and-play · House variant
             </div>
+            <div style="height: 10px"></div>
+            <button
+              class="btn secondary full"
+              id="editPlayersBtn"
+              type="button"
+            >
+              ✎ Rename players
+            </button>
           </div>
           <div class="panel">
             <h2>Dayakattai dice</h2>
@@ -1787,6 +1795,22 @@
       }
       function active() {
         return game.players[game.current];
+      }
+      function escapeHtml(value) {
+        return String(value).replace(
+          /[&<>'"]/g,
+          (character) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              "'": "&#39;",
+              '"': "&quot;",
+            })[character],
+        );
+      }
+      function cleanPlayerName(value, fallback) {
+        return value.replace(/\s+/g, " ").trim().slice(0, 18) || fallback;
       }
       function node(player, piece) {
         return piece.progress < 0 ? null : ROUTES[player.seat][piece.progress];
@@ -2496,7 +2520,7 @@
               '">' +
               p.avatar +
               '</div><div style="flex:1"><div class="pname">' +
-              p.name +
+              escapeHtml(p.name) +
               (p.rank ? " · #" + p.rank : "") +
               '</div><div class="pmeta">' +
               p.pieces.filter((q) => q.progress === 43).length +
@@ -2524,7 +2548,7 @@
                 '<span class="legendplayer" style="background:' +
                 player.color +
                 '" title="' +
-                player.name +
+                escapeHtml(player.name) +
                 '">' +
                 player.avatar +
                 "</span>",
@@ -3135,6 +3159,45 @@
       function closeModal() {
         $("modalback").classList.remove("open");
       }
+      function openPlayerEditor() {
+        const fields = game.players
+          .map(
+            (player, index) =>
+              '<label for="playerName' +
+              index +
+              '">' +
+              player.avatar +
+              " Player " +
+              (index + 1) +
+              '</label><input id="playerName' +
+              index +
+              '" maxlength="18" value="' +
+              escapeHtml(player.name) +
+              '">',
+          )
+          .join("");
+        showModal(
+          "Rename players",
+          "<p>Names apply to this match, commentary, and its game audit.</p>" +
+            fields,
+          "Save names",
+          () => {
+            game.players.forEach((player, index) => {
+              player.name = cleanPlayerName(
+                $("playerName" + index).value,
+                player.name,
+              );
+            });
+            recordAudit("PLAYER_NAMES_UPDATED", {
+              players: game.players.map((player) => ({
+                playerId: player.id,
+                playerName: player.name,
+              })),
+            });
+            render();
+          },
+        );
+      }
       const SPLASH_COOKIE = "dhayam_intro_seen";
       function splashWasDismissed() {
         return document.cookie
@@ -3161,6 +3224,7 @@
       $("demoAudioToggle").onclick = toggleAudio;
       $("audioToggle").onclick = toggleAudio;
       $("copyAuditBtn").onclick = copyGameAudit;
+      $("editPlayersBtn").onclick = openPlayerEditor;
       $("demoRestart").onclick = restartGuidedDemo;
       $("demoExit").onclick = exitGuidedDemo;
       $("splashStart").onclick = closeSplash;

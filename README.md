@@ -21,6 +21,7 @@ Open `http://localhost:8000/` from the machine that starts the local server.
 ## Player experience
 
 - Play locally with 2–4 people, or play solo against 1–5 computer players.
+- Let the organizer rename every player for the current match; names flow through the board, commentary, and audit.
 - Follow numbered pieces through square-by-square movement, capture animations, and the family table’s Waiting, On board, and Home lists.
 - Use the board or the explicit **Move selected piece** control for every legal move.
 - Run the guided demo with pause, restart, optional speech, 0.5×–2× speed, or silent 3× Super speed.
@@ -56,17 +57,18 @@ The browser UI is self-contained so it can run on static hosting without a backe
 
 ## Design decisions
 
-| Decision                         | Why                                                                                                                                              |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Static hosting                   | No accounts, database, or application server are required.                                                                                       |
-| `crypto.getRandomValues` dice    | Browser cryptographic randomness avoids predictable pseudo-random rolls. `% 4` is exact because the 32-bit range divides evenly into four faces. |
-| Diminishing bonus chains         | Special dice remain fair while unusually long turns become progressively less likely.                                                            |
-| Numbered pieces and family table | Piece numbers remove ambiguity in stacks; Waiting, On board, and Home make state visible.                                                        |
-| Capture animation before removal | The game names the losing player and piece, animates it away, then returns it to Waiting.                                                        |
-| Responsive dice-first layout     | Dice scale up on laptop and tablet screens; secondary controls compact, and the layout becomes a single-column flow on phones.                   |
-| Plaintext audit                  | Supports fairness and stuck-game analysis without sending data to a server.                                                                      |
-| First completed set wins         | The first player to finish all six pieces is announced immediately; later turns are disabled.                                                    |
-| Intro preference cookie          | The welcome screen is shown by default and a local cookie records an opt-out for future launches.                                                |
+| Decision                          | Why                                                                                                                                              |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Static hosting                    | No accounts, database, or application server are required.                                                                                       |
+| `crypto.getRandomValues` dice     | Browser cryptographic randomness avoids predictable pseudo-random rolls. `% 4` is exact because the 32-bit range divides evenly into four faces. |
+| Diminishing bonus chains          | Special dice remain fair while unusually long turns become progressively less likely.                                                            |
+| Numbered pieces and family table  | Piece numbers remove ambiguity in stacks; Waiting, On board, and Home make state visible.                                                        |
+| Organizer-controlled player names | A match-local rename dialog keeps the family table, commentary, and audit understandable without requiring accounts.                             |
+| Capture animation before removal  | The game names the losing player and piece, animates it away, then returns it to Waiting.                                                        |
+| Responsive dice-first layout      | Dice scale up on laptop and tablet screens; secondary controls compact, and the layout becomes a single-column flow on phones.                   |
+| Plaintext audit                   | Supports fairness and stuck-game analysis without sending data to a server.                                                                      |
+| First completed set wins          | The first player to finish all six pieces is announced immediately; later turns are disabled.                                                    |
+| Intro preference cookie           | The welcome screen is shown by default and a local cookie records an opt-out for future launches.                                                |
 
 ## Threat model and privacy
 
@@ -106,6 +108,7 @@ Before publishing a UI change, verify in a browser:
 6. Run a solo match with a computer player and confirm computer turns wait for animation and narration.
 7. Clear the `dhayam_intro_seen` cookie and confirm the welcome splash returns; select its opt-out checkbox and confirm it stays hidden after reload.
 8. Check 1440px, 1024px, 768px, and 390px widths for visible dice, usable controls, and no horizontal page overflow.
+9. Rename a player and confirm the family table, color legend, commentary, and audit use the updated name.
 
 ## Deployment
 
