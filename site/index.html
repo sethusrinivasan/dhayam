@@ -1868,6 +1868,9 @@
         const rolls = audit.events.filter((event) => event.type === "ROLL"),
           moves = audit.events.filter((event) => event.type === "MOVE"),
           passes = audit.events.filter((event) => event.type === "PASS"),
+          pacingAssists = audit.events.filter(
+            (event) => event.type === "PACING_ASSIST",
+          ),
           distribution = {},
           playerRolls = Object.fromEntries(
             game.players.map((player) => [player.id, {}]),
@@ -1940,6 +1943,7 @@
             );
           }),
           "Moves: " + moves.length,
+          "Adaptive pacing assists: " + pacingAssists.length,
           "Captures: " +
             moves.reduce(
               (total, event) => total + event.details.captures.length,
@@ -2080,6 +2084,57 @@
           }
         return result;
       }
+      const DICE_OUTCOMES = [
+        { a: 0, b: 1, value: 1 },
+        { a: 1, b: 0, value: 1 },
+        { a: 0, b: 2, value: 2 },
+        { a: 1, b: 1, value: 2 },
+        { a: 2, b: 0, value: 2 },
+        { a: 0, b: 3, value: 3 },
+        { a: 1, b: 2, value: 3 },
+        { a: 2, b: 1, value: 3 },
+        { a: 3, b: 0, value: 3 },
+        { a: 1, b: 3, value: 4 },
+        { a: 2, b: 2, value: 4 },
+        { a: 3, b: 1, value: 4 },
+        { a: 2, b: 3, value: 5 },
+        { a: 3, b: 2, value: 5 },
+        { a: 3, b: 3, value: 6 },
+        { a: 0, b: 0, value: 12 },
+      ];
+      function hasActionInThisRound() {
+        // A round is one turn per player. The live audit is the source of
+        // truth, making each pacing decision visible in the exported log.
+        const roundStart = game.turn - game.players.length + 1;
+        return audit.events.some(
+          (event) => event.type === "MOVE" && event.turn >= roundStart,
+        );
+      }
+      function pacingAssistRoll() {
+        // Normal dice stay fair. Only on the final turn of an otherwise empty
+        // round is one legal face outcome selected, and that intervention is
+        // recorded before the roll for later fairness analysis.
+        const isRoundCloser = game.turn % game.players.length === 0;
+        if (
+          !isRoundCloser ||
+          hasActionInThisRound() ||
+          !game.openingEntryResolved
+        ) return null;
+        const player = active();
+        const useful = DICE_OUTCOMES.filter((outcome) =>
+          player.pieces.some((piece) =>
+            moveCandidate(player, piece, [outcome.value]),
+          ),
+        );
+        if (!useful.length) return null;
+        const selected = useful[Math.floor(randomUnit() * useful.length)];
+        recordAudit("PACING_ASSIST", {
+          reason: "NO_ACTION_IN_ROUND",
+          eligibleOutcomes: useful.map((outcome) => outcome.value),
+          selectedValue: selected.value,
+        });
+        return { ...selected, pacingAssist: true };
+      }
       function setDieFace(id, value, label) {
         const die = $(id),
           cube = die.querySelector(".diecube");
@@ -2145,6 +2200,7 @@
           bonusDraw: bonusResult.bonusDraw,
           rollNumberInTurn: game.history.length,
           legalMoveCount,
+          pacingAssist: Boolean(d.pacingAssist),
         });
         if (!bonus) {
           if (!legalMoveCount) {
@@ -2165,6 +2221,9 @@
             " rolled " +
             d.value +
             "." +
+            (d.pacingAssist
+              ? " The pacing assist selected a playable outcome."
+              : "") +
             (bonus
               ? " That earns another roll."
               : specialRoll
@@ -2175,7 +2234,7 @@
       }
       function roll() {
         if (!game || game.phase !== "roll" || rolling || demo) return;
-        const d = rollDice();
+        const d = pacingAssistRoll() || rollDice();
         rolling = true;
         setDieFace("dieA", d.a, "First die rolling");
         setDieFace("dieB", d.b, "Second die rolling");
@@ -3307,7 +3366,7 @@
       $("guideBtn").onclick = () =>
         showModal(
           "How to play",
-          "<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. If nobody enters during the first round, the last player may use any one roll to enter a piece, so every game starts moving.</p><p><strong>3.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>4.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p>",
+          "<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. If nobody enters during the first round, the last player may use any one roll to enter a piece, so every game starts moving.</p><p><strong>3.</strong> The game uses its live audit to keep rounds active. If a whole round would have no move, its final roll is selected from playable outcomes and marked in the audit.</p><p><strong>4.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>5.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p>",
           "Got it",
           () => {},
         );
