@@ -133,3 +133,48 @@ test("offers single rolls and all remaining rolls in order", () => {
   );
   assert.equal(pieceMoves[1].progress, 2);
 });
+
+test("uses an earlier capture in a combined move to unlock the inner track", () => {
+  const game = createGame(2);
+  game.phase = "move";
+  game.pool = [1, 3];
+  game.players[0].pieces[0].progress = 21;
+
+  const captureSquare = ROUTES.N[22];
+  game.players[1].pieces[0].progress = ROUTES.S.indexOf(captureSquare);
+
+  const move = evaluateMove(game, "P0-0", [1, 3], [0, 1]);
+  assert.equal(move?.progress, 25);
+  assert.equal(move?.captured, true);
+  assert.deepEqual(move?.captures, [{ playerId: "P1", pieceId: "P1-0" }]);
+});
+
+test("applyMove consumes only the selected rolls and rejects forged moves", () => {
+  const game = createGame(2);
+  game.phase = "move";
+  game.pool = [1, 2];
+
+  const combined = evaluateMove(game, "P0-0", [1, 2], [0, 1]);
+  const next = applyMove(game, combined!);
+  assert.equal(next.players[0].pieces[0].progress, 2);
+  assert.deepEqual(next.pool, []);
+  assert.equal(game.players[0].pieces[0].progress, -1);
+  assert.deepEqual(game.pool, [1, 2]);
+
+  assert.throws(
+    () =>
+      applyMove(game, {
+        ...combined!,
+        pieceId: "P1-0",
+      }),
+    /Cannot apply an illegal move/,
+  );
+});
+
+test("does not offer moves outside the move phase or for the other player", () => {
+  const game = createGame(2);
+  assert.deepEqual(legalMoves(game), []);
+  game.phase = "move";
+  game.pool = [1];
+  assert.equal(evaluateMove(game, "P1-0", [1]), null);
+});

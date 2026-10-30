@@ -1,7 +1,7 @@
 # Dhayam
 
 [![Node.js](https://img.shields.io/badge/node-%E2%89%A522.18-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-node%20--test-2ea44f?logo=nodedotjs&logoColor=white)](#test-plan)
+[![Tests](https://github.com/sethusrinivasan/dhayam/actions/workflows/test.yml/badge.svg)](https://github.com/sethusrinivasan/dhayam/actions/workflows/test.yml)
 [![Deploy](https://img.shields.io/badge/deploy-GitHub%20Pages-222222?logo=githubpages&logoColor=white)](#deployment)
 [![License: MIT](https://img.shields.io/badge/license-MIT-8a2be2)](LICENSE)
 
@@ -63,7 +63,7 @@ The browser UI is self-contained so it can run on static hosting without a backe
 | Diminishing bonus chains         | Special dice remain fair while unusually long turns become progressively less likely.                                                            |
 | Numbered pieces and family table | Piece numbers remove ambiguity in stacks; Waiting, On board, and Home make state visible.                                                        |
 | Capture animation before removal | The game names the losing player and piece, animates it away, then returns it to Waiting.                                                        |
-| Responsive dice-first layout    | Dice scale up on laptop and tablet screens; secondary controls compact, and the layout becomes a single-column flow on phones.                  |
+| Responsive dice-first layout     | Dice scale up on laptop and tablet screens; secondary controls compact, and the layout becomes a single-column flow on phones.                   |
 | Plaintext audit                  | Supports fairness and stuck-game analysis without sending data to a server.                                                                      |
 | First completed set wins         | The first player to finish all six pieces is announced immediately; later turns are disabled.                                                    |
 | Intro preference cookie          | The welcome screen is shown by default and a local cookie records an opt-out for future launches.                                                |
@@ -92,7 +92,9 @@ npm test
 npm run test:coverage
 ```
 
-The unit suite covers seating, rotational routes, face-to-value mapping, entry, capture prerequisites, safe squares, illegal multi-opponent landings, immutable capture application, exact finishing, and combined-roll allocation.
+The unit suite covers seating, rotational routes, face-to-value mapping, entry, capture prerequisites, safe squares, illegal multi-opponent landings, immutable capture application, exact finishing, combined-roll allocation, forged move rejection, and capture-driven entry to the inner track.
+
+The **Test game rules** GitHub Action runs `npm test` and `npm run test:coverage` on every push, pull request, and manual workflow dispatch. The browser acceptance pass remains separate because the production UI is a dependency-free static page and no browser-test package is committed to this repository yet.
 
 Before publishing a UI change, verify in a browser:
 
