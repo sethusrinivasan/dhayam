@@ -63,6 +63,7 @@ The browser UI is self-contained so it can run on static hosting without a backe
 | Diminishing bonus chains         | Special dice remain fair while unusually long turns become progressively less likely.                                                            |
 | Numbered pieces and family table | Piece numbers remove ambiguity in stacks; Waiting, On board, and Home make state visible.                                                        |
 | Capture animation before removal | The game names the losing player and piece, animates it away, then returns it to Waiting.                                                        |
+| Responsive dice-first layout    | Dice scale up on laptop and tablet screens; secondary controls compact, and the layout becomes a single-column flow on phones.                  |
 | Plaintext audit                  | Supports fairness and stuck-game analysis without sending data to a server.                                                                      |
 | First completed set wins         | The first player to finish all six pieces is announced immediately; later turns are disabled.                                                    |
 | Intro preference cookie          | The welcome screen is shown by default and a local cookie records an opt-out for future launches.                                                |
@@ -102,6 +103,7 @@ Before publishing a UI change, verify in a browser:
 5. Copy an audit and inspect rolls, bonus-chain fields, move source, captures, passes, and winner event.
 6. Run a solo match with a computer player and confirm computer turns wait for animation and narration.
 7. Clear the `dhayam_intro_seen` cookie and confirm the welcome splash returns; select its opt-out checkbox and confirm it stays hidden after reload.
+8. Check 1440px, 1024px, 768px, and 390px widths for visible dice, usable controls, and no horizontal page overflow.
 
 ## Deployment
 
