@@ -1,0 +1,22 @@
+{
+  "id": "dhayam-heritage-7x7-house-v0.1",
+  "status": "PROVISIONAL_HOUSE_VARIANT_NOT_VERIFIED_TRADITIONAL_ROUTE",
+  "grid": {"rows": 7, "columns": 7, "coordinateFormat": "A1..G7"},
+  "safeSquares": ["A4", "B2", "B6", "D1", "D7", "F2", "F6", "G4"],
+  "goal": "D4",
+  "starts": {"N": "A4", "E": "D7", "S": "G4", "W": "D1"},
+  "outerClockwise": ["A4","A5","A6","A7","B7","C7","D7","E7","F7","G7","G6","G5","G4","G3","G2","G1","F1","E1","D1","C1","B1","A1","A2","A3"],
+  "innerCounterclockwiseFromNorth": ["B4","B3","B2","C2","D2","E2","F2","F3","F4","F5","F6","E6","D6","C6","B6","B5"],
+  "finalApproach": {"N": ["C4","D4"], "E": ["D5","D4"], "S": ["E4","D4"], "W": ["D3","D4"]},
+  "movement": {"outerSteps":24,"returnToStartSteps":1,"innerSteps":16,"returnToInnerEntrySteps":1,"finalSteps":2,"progressMin":-1,"progressFinish":43},
+  "dice": {"faces":[0,1,2,3],"doubleZero":12,"bonusValues":[1,5,6,12],"entryValues":[1]},
+  "piecesPerPlayer":6,
+  "captureRequiredBeforeHome":true,
+  "captureGrantsExtraRoll":false,
+  "allowFriendlyStacking":true,
+  "safeSquareOpponentsCoexist":true,
+  "unsafeMultipleOpponentOccupancy":"reject_capture_move",
+  "rollAllocation":"ordered_single_values_or_all_remaining_as_sequential_submoves",
+  "note":"The 24+1+16+1+2 path and safe squares are design choices requiring user approval, not historically verified Dayakattai rules."
+}
+
