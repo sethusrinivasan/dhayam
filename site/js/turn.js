@@ -57,10 +57,19 @@
                 ? " Its reduced bonus chance did not extend this turn, so now choose a legal move."
                 : " Now choose a legal move."),
         );
+        if (multiplayer.active && multiplayer.isHost) {
+          broadcastState();
+        }
         render();
       }
       function roll() {
         if (!game || game.phase !== "roll" || rolling || demo) return;
+        if (multiplayer.active && !multiplayer.isHost) {
+          if (game.current === multiplayer.mySeat) {
+            sendPlayerAction({ type: "ROLL" });
+          }
+          return;
+        }
         const d = pacingAssistRoll() || rollDice();
         rolling = true;
         setDieFace("dieA", d.a, "First die rolling");
@@ -83,6 +92,7 @@
         selectedRoll = 0;
         if (game.players.every((p) => p.rank !== null)) {
           game.phase = "done";
+          if (multiplayer.active && multiplayer.isHost) broadcastState();
           render();
           return;
         }
@@ -93,6 +103,7 @@
         game.current = i;
         game.turn++;
         game.message = message;
+        if (multiplayer.active && multiplayer.isHost) broadcastState();
         render();
       }
       function waitForMoveStep() {
@@ -148,6 +159,12 @@
       }
       async function apply(opt, inputSource = "board") {
         if (!opt || game.phase !== "move" || moving) return;
+        if (multiplayer.active && !multiplayer.isHost) {
+          if (game.current === multiplayer.mySeat) {
+            sendPlayerAction({ type: "MOVE", pieceId: opt.piece.id, targetProgress: opt.test.progress });
+          }
+          return;
+        }
         const player = active(),
           piece = opt.piece,
           wasReserve = piece.progress < 0,
@@ -242,6 +259,7 @@
             },
           });
           speakGame(commentary);
+          if (multiplayer.active && multiplayer.isHost) broadcastState();
           render();
           return;
         }
@@ -250,6 +268,7 @@
           return;
         }
         selectedRoll = 0;
+        if (multiplayer.active && multiplayer.isHost) broadcastState();
         render();
       }
 

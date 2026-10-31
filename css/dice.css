@@ -13,6 +13,32 @@
   padding: clamp(4px, 0.6vh, 8px) 5px;
   perspective: 1000px;
   perspective-origin: 50% 20%;
+  border-radius: 12px;
+  transition: background-color 0.2s ease, outline 0.2s ease;
+}
+
+.dice.rollable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.dice.rollable .die {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1), filter 0.2s ease;
+}
+
+.dice.rollable:hover .die {
+  transform: translateY(-3px) scale(1.05);
+  filter: drop-shadow(0 12px 10px #ffbd5955);
+}
+
+.dice.rollable .die:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.dice.rollable:focus-visible {
+  outline: 2px solid #ffdaa5;
+  outline-offset: 4px;
 }
 
 .die {

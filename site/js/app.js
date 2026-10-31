@@ -117,18 +117,6 @@
           },
         );
       }
-      const SPLASH_COOKIE = "dhayam_intro_seen";
-      function splashWasDismissed() {
-        return document.cookie
-          .split("; ")
-          .some((cookie) => cookie === SPLASH_COOKIE + "=1");
-      }
-      function closeSplash() {
-        if ($("hideSplash").checked)
-          document.cookie =
-            SPLASH_COOKIE + "=1; Max-Age=31536000; Path=/; SameSite=Lax";
-        $("splashback").classList.remove("open");
-      }
       $("demoPause").onclick = toggleDemoPause;
       $("demoSuperSpeed").onclick = toggleSuperSpeed;
       $("demoSpeed").oninput = (event) => {
@@ -147,7 +135,6 @@
       $("editPlayersBtn").onclick = openPlayerEditor;
       $("demoRestart").onclick = restartGuidedDemo;
       $("demoExit").onclick = exitGuidedDemo;
-      $("splashStart").onclick = closeSplash;
       $("modalCancel").onclick = closeModal;
       $("modalConfirm").onclick = () => {
         if (modalAction) modalAction();
@@ -159,20 +146,62 @@
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") closeModal();
       });
-      $("newBtn").onclick = () =>
-        showModal(
-          "Start a new game",
-          '<label for="gameMode">Game type</label><select id="gameMode"><option value="solo" selected>Solo vs computers</option><option value="local">Local pass-and-play</option></select><p><strong>Solo:</strong> You play manually. Computer turns roll and move automatically with a natural pause.</p><label for="computerCount">Computer opponents</label><select id="computerCount"><option value="1">1 computer</option><option value="2" selected>2 computers</option><option value="3">3 computers</option><option value="4">4 computers</option><option value="5">5 computers</option></select><div class="divider"></div><label for="localCount">Local players</label><select id="localCount"><option value="2">2 people</option><option value="3">3 people</option><option value="4">4 people</option></select>',
-          "Start game",
-          () => {
-            if ($("gameMode").value === "local")
-              newGame(Number($("localCount").value));
-            else {
-              const computers = Number($("computerCount").value);
-              newGame(computers + 1, computers);
-            }
-          },
-        );
+      $("newBtn").onclick = () => {
+        const modalHtml =
+          '<label for="gameMode">Game type</label>' +
+          '<select id="gameMode">' +
+          '<option value="solo" selected>Solo vs computers</option>' +
+          '<option value="local">Local pass-and-play</option>' +
+          '<option value="online-host">🌐 Host online match (P2P)</option>' +
+          '<option value="online-join">🔗 Join online match</option>' +
+          '</select>' +
+          '<div id="modeSoloSection">' +
+          '<p><strong>Solo:</strong> You play manually. Computer turns roll and move automatically with a natural pause.</p>' +
+          '<label for="computerCount">Computer opponents</label>' +
+          '<select id="computerCount"><option value="1">1 computer</option><option value="2" selected>2 computers</option><option value="3">3 computers</option><option value="4">4 computers</option><option value="5">5 computers</option></select>' +
+          '</div>' +
+          '<div id="modeLocalSection" style="display:none;">' +
+          '<label for="localCount">Local players</label>' +
+          '<select id="localCount"><option value="2" selected>2 people</option><option value="3">3 people</option><option value="4">4 people</option></select>' +
+          '</div>' +
+          '<div id="modeHostSection" style="display:none;">' +
+          '<p><strong>Host Online:</strong> Creates a WebRTC room. Opponents can join using a 5-letter room code or by scanning a QR code with their phone.</p>' +
+          '<label for="onlineCount">Total players</label>' +
+          '<select id="onlineCount"><option value="2" selected>2 players</option><option value="3">3 players</option><option value="4">4 players</option></select>' +
+          '</div>' +
+          '<div id="modeJoinSection" style="display:none;">' +
+          '<label for="roomCodeInput">5-Character Room Code</label>' +
+          '<input id="roomCodeInput" maxlength="6" placeholder="e.g. H7X2M" style="text-transform:uppercase;font-family:monospace;letter-spacing:2px;font-size:1.1rem;text-align:center;" />' +
+          '</div>';
+
+        showModal("Start a new game", modalHtml, "Start match", () => {
+          const mode = $("gameMode").value;
+          if (mode === "online-host") {
+            hostOnlineGame(Number($("onlineCount").value));
+          } else if (mode === "online-join") {
+            joinOnlineGame($("roomCodeInput").value);
+          } else if (mode === "local") {
+            leaveMultiplayer();
+            newGame(Number($("localCount").value));
+          } else {
+            leaveMultiplayer();
+            const computers = Number($("computerCount").value);
+            newGame(computers + 1, computers);
+          }
+        });
+
+        setTimeout(() => {
+          const select = $("gameMode");
+          if (!select) return;
+          select.onchange = () => {
+            const val = select.value;
+            $("modeSoloSection").style.display = val === "solo" ? "block" : "none";
+            $("modeLocalSection").style.display = val === "local" ? "block" : "none";
+            $("modeHostSection").style.display = val === "online-host" ? "block" : "none";
+            $("modeJoinSection").style.display = val === "online-join" ? "block" : "none";
+          };
+        }, 30);
+      };
       $("resetBtn").onclick = () =>
         showModal(
           "Reset the match?",
@@ -194,8 +223,79 @@
           "Start demo",
           startGuidedDemo,
         );
+      function showQrModal() {
+        const url = "https://sethusrinivasan.github.io/dhayam/";
+        const content =
+          '<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;padding:6px 0;">' +
+          '<p style="margin:0;font-size:0.95rem;color:#f2dec5;">Scan this QR code with your phone or tablet camera to open and play Dhayam instantly.</p>' +
+          '<div style="background:#fff;padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.5);display:inline-block;">' +
+          '<img src="assets/qr-dhayam.svg" alt="Dhayam Game QR Code" style="width:180px;height:180px;display:block;" />' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;align-items:center;justify-content:center;width:100%;max-width:380px;">' +
+          '<input type="text" readonly value="' +
+          url +
+          '" id="qrUrlInput" style="flex:1;padding:6px 10px;font-size:0.85rem;border-radius:6px;border:1px solid #7a4623;background:#27140b;color:#fae4c8;font-family:monospace;text-align:center;" />' +
+          '<button id="copyQrLinkBtn" class="pill" style="white-space:nowrap;padding:6px 12px;font-weight:700;">Copy link</button>' +
+          '</div>' +
+          '<p id="copyQrFeedback" style="margin:0;font-size:0.82rem;color:#a3e635;min-height:1.2em;"></p>' +
+          '</div>';
+        showModal("📱 Scan & Play on Mobile", content, "Done", () => {});
+        setTimeout(() => {
+          const copyBtn = $("copyQrLinkBtn");
+          const input = $("qrUrlInput");
+          const feedback = $("copyQrFeedback");
+          if (copyBtn && input) {
+            copyBtn.onclick = () => {
+              input.select();
+              const done = () => {
+                if (feedback) feedback.textContent = "✓ Link copied to clipboard!";
+                setTimeout(() => {
+                  if (feedback) feedback.textContent = "";
+                }, 2500);
+              };
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(done).catch(() => {
+                  document.execCommand("copy");
+                  done();
+                });
+              } else {
+                document.execCommand("copy");
+                done();
+              }
+            };
+          }
+        }, 40);
+      }
+      if ($("qrBtn")) $("qrBtn").onclick = showQrModal;
+      if ($("boardQrBadge")) $("boardQrBadge").onclick = showQrModal;
+
+      function handleDiceRollClick() {
+        if (
+          game &&
+          game.phase === "roll" &&
+          !rolling &&
+          !moving &&
+          !demo &&
+          !active().computer
+        ) {
+          roll();
+        }
+      }
+      const diceContainer = document.querySelector(".dice");
+      if (diceContainer) {
+        diceContainer.addEventListener("click", handleDiceRollClick);
+        diceContainer.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleDiceRollClick();
+          }
+        });
+      }
+
       refreshVoices();
       if ("speechSynthesis" in window)
         speechSynthesis.addEventListener("voiceschanged", refreshVoices);
       newGame(4);
-      if (!splashWasDismissed()) $("splashback").classList.add("open");
+      if (typeof initMultiplayerFromUrl === "function") {
+        initMultiplayerFromUrl();
+      }

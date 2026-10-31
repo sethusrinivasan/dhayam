@@ -39,8 +39,8 @@ check() {
 
 # 1. Structural File Integrity Checks
 check "Checking site/index.html exists" "[ -s '${SITE_DIR}/index.html' ]"
-check "Checking modular CSS files (7 files)" "[ \$(ls -1 '${SITE_DIR}/css/'*.css 2>/dev/null | wc -l) -eq 7 ]"
-check "Checking modular JS files (10 files)" "[ \$(ls -1 '${SITE_DIR}/js/'*.js 2>/dev/null | wc -l) -eq 10 ]"
+check "Checking modular CSS files (8 files)" "[ \$(ls -1 '${SITE_DIR}/css/'*.css 2>/dev/null | wc -l) -eq 8 ]"
+check "Checking modular JS files (12 files)" "[ \$(ls -1 '${SITE_DIR}/js/'*.js 2>/dev/null | wc -l) -eq 12 ]"
 check "Checking board definition JSON exists" "[ -s '${SITE_DIR}/board-definition-v1-candidate.json' ]"
 
 # 2. Browser Headless Verification (Headless Chrome)

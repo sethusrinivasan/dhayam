@@ -29,7 +29,7 @@ NC='\033[0m'
 
 echo -e "${GOLD}${BOLD}"
 echo "    ╔═══════════════════════════════════════════════════════════════╗"
-echo "    ║               DHAYAM · HERITAGE EDITION (தாயக்கட்டை)           ║"
+echo "    ║               DHAYAM · HERITAGE BOARD GAME                    ║"
 echo "    ╚═══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 echo -e "${GREEN}✓ Local server ready!${NC}"

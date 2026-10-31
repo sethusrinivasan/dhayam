@@ -14,9 +14,9 @@
     <link rel="stylesheet" href="css/controls.css" />
     <link rel="stylesheet" href="css/panels.css" />
     <link rel="stylesheet" href="css/modals.css" />
+    <link rel="stylesheet" href="css/multiplayer.css" />
     <link rel="stylesheet" href="css/responsive.css" />
   </head>
-</head>
   <body>
     <main class="shell">
       <header class="top">
@@ -28,14 +28,16 @@
           </div>
         </div>
         <nav class="topnav">
-          <button class="pill" id="newBtn">＋ New game</button
-          ><button class="pill" id="guideBtn">? How to play</button
-          ><button class="pill" id="demoBtn">✦ Guided demo</button>
+          <button class="pill" id="qrBtn" aria-label="Show QR code to scan and play on phone">📱 Scan QR</button>
+          <button class="pill" id="newBtn">＋ New game</button>
+          <button class="pill" id="guideBtn">? How to play</button>
+          <button class="pill" id="demoBtn">✦ Guided demo</button>
         </nav>
       </header>
       <div class="layout">
         <section aria-label="Game board and controls">
           <div class="boardcard">
+            <button id="boardQrBadge" class="board-qr-badge" title="Quick scan to play on phone" aria-label="QR Code quick scan"><img src="assets/qr-dhayam.svg" alt="QR" /></button>
             <div class="boardwrap">
               <div
                 class="board"
@@ -106,7 +108,7 @@
             <div class="status" aria-live="polite">
               <strong id="statusTitle">Welcome to Dhayam</strong
               ><span id="statusText">Start a game to play.</span>
-              <div class="chips" id="rollChips" style="margin-top: 9px"></div>
+              <div class="chips" id="rollChips"></div>
             </div>
             <div class="controlactions">
               <select
@@ -251,50 +253,6 @@
         <span>Dhayam Heritage Edition · <a href="https://github.com/sethusrinivasan/dhayam" target="_blank" rel="noopener">⭐ View Project & Rules on GitHub</a></span>
       </footer>
     </main>
-    <div class="splashback" id="splashback" role="presentation">
-      <section
-        class="splash"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="splashTitle"
-      >
-        <p class="eyebrow">Welcome to Dhayam</p>
-        <h2 id="splashTitle">A table, two dice, and a journey home.</h2>
-        <p class="lead">
-          Dayakattai is part of a long South Indian tradition of social board
-          play: a game of chance, counting, routes, and lively table talk. This
-          edition is a contemporary house variant built to make each move,
-          capture, and finish easy to follow together.
-        </p>
-        <div class="splashfacts" aria-label="Game highlights">
-          <div class="splashfact">
-            <strong>6 pieces</strong
-            ><span>Guide every numbered piece home.</span>
-          </div>
-          <div class="splashfact">
-            <strong>1 winner</strong
-            ><span>Finish all six to end the match.</span>
-          </div>
-          <div class="splashfact">
-            <strong>One table</strong
-            ><span>Play locally, together, at your pace.</span>
-          </div>
-        </div>
-        <p class="small">
-          Start a game, explore the guided demo, or use the game audit to study
-          every roll and decision afterward.
-        </p>
-        <label class="splashremember" for="hideSplash">
-          <input id="hideSplash" type="checkbox" />
-          Do not show this welcome again on this browser
-        </label>
-        <div class="actions">
-          <button class="btn" id="splashStart" type="button">
-            Begin the game
-          </button>
-        </div>
-      </section>
-    </div>
     <div class="modalback" id="modalback" role="presentation">
       <div
         class="modal"
@@ -320,6 +278,8 @@
     <script src="js/turn.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/demo.js"></script>
+    <script src="js/peerjs.min.js"></script>
+    <script src="js/multiplayer.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

@@ -37,13 +37,15 @@
                 .filter((piece) => node(p, piece) === sq)
                 .map((piece) => ({ p, piece })),
             );
-            const can = occupied.some((o) => legal.has(o.piece.id));
+            const canEntry = Boolean(entry && sq === START[active().seat]);
+            const can = occupied.some((o) => legal.has(o.piece.id)) || canEntry;
             if (can) el.classList.add("legal");
             el.setAttribute(
               "aria-label",
               sq +
                 (SAFE.has(sq) ? ", safe square" : "") +
-                (occupied.length ? ", " + occupied.length + " pieces" : ""),
+                (occupied.length ? ", " + occupied.length + " pieces" : "") +
+                (canEntry ? ", enter piece here" : ""),
             );
             el.innerHTML =
               sq === "D4"
@@ -78,7 +80,7 @@
                     : "") +
                   (selectable ? " selectable" : "");
                 t.style.background = p.color;
-                t.textContent = p.avatar;
+                t.innerHTML = '<span class="tokenemoji">' + p.avatar + '</span>';
                 const pieceNumbers = pieces.map(
                   (piece) => p.pieces.indexOf(piece) + 1,
                 );
@@ -90,6 +92,33 @@
                 ids.className = "tokenids";
                 ids.textContent = pieceNumbers.join("·");
                 t.appendChild(ids);
+
+                // Direct piece click or touch to move selected token
+                if (selectable && !demo && !active().computer && !moving) {
+                  t.style.cursor = "pointer";
+                  t.title = "Click or tap to move piece " + pieceNumbers.join(", ");
+                  t.setAttribute("role", "button");
+                  t.setAttribute("tabindex", "0");
+                  const onPieceTouch = (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const moveOpt = pieces.map((piece) => legal.get(piece.id)).find(Boolean);
+                    if (moveOpt) {
+                      selectedPieceId = moveOpt.piece.id;
+                      apply(moveOpt, "token-touch");
+                    }
+                  };
+                  t.onclick = onPieceTouch;
+                  t.addEventListener("pointerdown", (e) => {
+                    if (e.pointerType === "touch") e.stopPropagation();
+                  });
+                  t.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      onPieceTouch(e);
+                    }
+                  });
+                }
+
                 holder.appendChild(t);
               }
               el.appendChild(holder);
@@ -98,8 +127,8 @@
               el.onclick = () => {
                 const o = occupied
                   .map((x) => legal.get(x.piece.id))
-                  .find(Boolean);
-                apply(o, "board");
+                  .find(Boolean) || (canEntry ? entry : null);
+                if (o) apply(o, canEntry ? "start-entry" : "board");
               };
             el.addEventListener("keydown", (e) => {
               if ((e.key === "Enter" || e.key === " ") && can) {
@@ -186,42 +215,44 @@
           game.last ? game.last.b : 0,
           game.last ? "Second die: " + game.last.b : "Second die not rolled",
         );
-        $("rollChips").innerHTML = "";
-        if (entry) {
-          const enter = document.createElement("button");
-          enter.className = "chip selected";
-          enter.textContent = entry.test.openingEntry
-            ? "＋ Opening entry allowance"
-            : "＋ Enter a piece";
-          enter.onclick = () => apply(entry, "entry-button");
-          enter.disabled = demo || active().computer || moving;
-          $("rollChips").appendChild(enter);
-        }
-        if (game.phase === "move") {
-          game.pool.forEach((v, i) => {
-            const b = document.createElement("button");
-            b.className = "chip" + (selectedRoll === i ? " selected" : "");
-            b.textContent = v;
-            b.setAttribute("aria-label", "Use roll " + v);
-            b.onclick = () => {
-              selectedRoll = i;
-              selectedPieceId = null;
-              render();
-            };
-            b.disabled = demo || active().computer || moving;
-            $("rollChips").appendChild(b);
-          });
-          if (game.pool.length > 1) {
-            const b = document.createElement("button");
-            b.className = "chip" + (selectedRoll === -1 ? " selected" : "");
-            b.textContent = "Combine all";
-            b.onclick = () => {
-              selectedRoll = -1;
-              selectedPieceId = null;
-              render();
-            };
-            b.disabled = demo || active().computer || moving;
-            $("rollChips").appendChild(b);
+        if (!moving) {
+          $("rollChips").innerHTML = "";
+          if (entry) {
+            const enter = document.createElement("button");
+            enter.className = "chip selected";
+            enter.textContent = entry.test.openingEntry
+              ? "＋ Opening entry allowance"
+              : "＋ Enter a piece";
+            enter.onclick = () => apply(entry, "entry-button");
+            enter.disabled = demo || active().computer || moving;
+            $("rollChips").appendChild(enter);
+          }
+          if (game.phase === "move") {
+            game.pool.forEach((v, i) => {
+              const b = document.createElement("button");
+              b.className = "chip" + (selectedRoll === i ? " selected" : "");
+              b.textContent = v;
+              b.setAttribute("aria-label", "Use roll " + v);
+              b.onclick = () => {
+                selectedRoll = i;
+                selectedPieceId = null;
+                render();
+              };
+              b.disabled = demo || active().computer || moving;
+              $("rollChips").appendChild(b);
+            });
+            if (game.pool.length > 1) {
+              const b = document.createElement("button");
+              b.className = "chip" + (selectedRoll === -1 ? " selected" : "");
+              b.textContent = "Combine all";
+              b.onclick = () => {
+                selectedRoll = -1;
+                selectedPieceId = null;
+                render();
+              };
+              b.disabled = demo || active().computer || moving;
+              $("rollChips").appendChild(b);
+            }
           }
         }
         const moveChoices = [...legal.values()],
@@ -322,6 +353,19 @@
                 ? "bonus chain ended"
                 : "no bonus")
           : "Two long dice · bonus chance falls each chain";
+        const canRollDice = game.phase === "roll" && !rolling && !moving && !demo && !p.computer;
+        const diceEl = document.querySelector(".dice");
+        if (diceEl) {
+          diceEl.classList.toggle("rollable", canRollDice);
+          diceEl.setAttribute("aria-label", canRollDice ? "Dayakattai dice — Click to roll" : "Dayakattai dice");
+          if (canRollDice) {
+            diceEl.title = "Click to roll Dayakattai";
+            diceEl.setAttribute("tabindex", "0");
+          } else {
+            diceEl.removeAttribute("title");
+            diceEl.removeAttribute("tabindex");
+          }
+        }
         updateAudioToggle();
         scheduleComputerIfNeeded();
       }

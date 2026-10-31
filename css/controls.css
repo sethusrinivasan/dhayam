@@ -19,19 +19,24 @@
   border-radius: clamp(10px, 1.4vh, 14px);
   padding: clamp(5px, 0.9vh, 9px) clamp(8px, 1.2vw, 12px);
   min-width: 0;
+  min-height: clamp(58px, 8.2vh, 70px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .status strong {
   display: block;
   font-size: clamp(12px, 1.6vh, 14px);
   color: #fff6eb;
+  line-height: 1.2;
 }
 
 .status span {
   font-size: clamp(10px, 1.25vh, 11px);
   color: #d6c1a9;
   display: block;
-  margin-top: 1px;
+  margin-top: 2px;
   line-height: 1.35;
   white-space: nowrap;
   overflow: hidden;
@@ -41,9 +46,13 @@
 .chips {
   display: flex;
   gap: 5px;
-  flex-wrap: wrap;
-  max-height: 38px;
-  overflow-y: auto;
+  align-items: center;
+  flex-wrap: nowrap;
+  min-height: clamp(24px, 3.2vh, 28px);
+  max-height: clamp(24px, 3.2vh, 28px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-top: 4px;
 }
 
 .chip {

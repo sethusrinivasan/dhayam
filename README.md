@@ -1,4 +1,4 @@
-# Dhayam (தாயக்கட்டை)
+# Dhayam
 
 [![Deploy GitHub Pages](https://github.com/sethusrinivasan/dhayam/actions/workflows/pages.yml/badge.svg)](https://github.com/sethusrinivasan/dhayam/actions/workflows/pages.yml)
 [![Tests](https://github.com/sethusrinivasan/dhayam/actions/workflows/test.yml/badge.svg)](https://github.com/sethusrinivasan/dhayam/actions/workflows/test.yml)

@@ -1,0 +1,147 @@
+/**
+ * multiplayer.css - Online Multiplayer Lobby, Room Badges & Reaction Animations
+ *
+ * Provides visual styling for WebRTC room creation, join lobby, copy feedback,
+ * live connection dots, and floating emoji banter over the board.
+ */
+
+.mp-lobby {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.mp-code-box {
+  background: #1c1009;
+  border: 2px dashed #e5a959;
+  border-radius: 12px;
+  padding: 8px 20px;
+  margin: 6px 0 10px 0;
+  display: inline-block;
+}
+
+.mp-code-label {
+  font-size: 0.72rem;
+  letter-spacing: 1.5px;
+  color: #d1b79e;
+  font-weight: 700;
+}
+
+.mp-code-value {
+  font-size: 1.8rem;
+  font-weight: 950;
+  color: #ffe6ba;
+  letter-spacing: 4px;
+  font-family: monospace;
+}
+
+.mp-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid #7a4623;
+  background: #27140b;
+  color: #fae4c8;
+  font-family: monospace;
+  text-align: center;
+}
+
+.mp-lobby-status {
+  margin-top: 10px;
+  font-size: 0.88rem;
+  color: #ffd899;
+  font-weight: 600;
+}
+
+.mp-badge {
+  background: #244b24 !important;
+  border-color: #55a855 !important;
+  color: #e9ffe9 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #52e352;
+  box-shadow: 0 0 6px #52e352;
+  animation: mpPulse 1.8s infinite;
+}
+
+@keyframes mpPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.mp-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #ffda9933;
+  border-top-color: #ffda99;
+  border-radius: 50%;
+  animation: mpSpin 0.9s linear infinite;
+  margin: auto;
+}
+
+@keyframes mpSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Floating Emoji Reactions */
+.floating-emote {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 100;
+  animation: floatEmote 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.emote-icon {
+  font-size: clamp(36px, 8vmin, 56px);
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+}
+
+.emote-name {
+  font-size: 0.75rem;
+  background: #22130be6;
+  border: 1px solid #ffda9988;
+  color: #fff1d8;
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+@keyframes floatEmote {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -20px) scale(1.15);
+  }
+  30% {
+    transform: translate(-50%, -25px) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-50%, -55px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -85px) scale(0.85);
+  }
+}

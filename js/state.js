@@ -65,3 +65,20 @@
       function finished(p) {
         return p.pieces.every((q) => q.progress === 43);
       }
+
+      const multiplayer = {
+        active: false,
+        isHost: false,
+        roomCode: null,
+        mySeat: 0,
+        peer: null,
+        connections: [],
+        status: "offline",
+        roomTargetCount: 2,
+      };
+
+      function isMyTurn() {
+        if (!game) return false;
+        if (!multiplayer.active) return !active().computer;
+        return game.current === multiplayer.mySeat;
+      }
