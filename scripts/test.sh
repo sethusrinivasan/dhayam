@@ -58,7 +58,7 @@ fi
 
 # 3. Node.js Rules-Engine Test Suite (if node available)
 if command -v node >/dev/null 2>&1; then
-    check "Node.js rules-engine unit tests (npm test)" "npm test"
+    check "Node.js rules-engine & MCP unit tests (npm test)" "npm test"
 else
     # Python-based rules verification fallback
     check "Python rules engine verification" "python3 -c '
@@ -71,6 +71,12 @@ assert len(board[\"safeSquares\"]) == 8
 assert board[\"goal\"] == \"D4\"
 assert board[\"movement\"][\"progressFinish\"] == 43
 '"
+fi
+
+# 4. Cloudflare Edge Live Health & MCP Verification
+if command -v curl >/dev/null 2>&1; then
+    check "Cloudflare Edge live /health endpoint" "curl -fsS --max-time 5 https://dhayam.cancun.workers.dev/health | grep -q 'healthy'"
+    check "Cloudflare Edge live MCP /mcp endpoint discovery" "curl -fsS --max-time 5 https://dhayam.cancun.workers.dev/mcp | grep -q 'Dhayam MCP'"
 fi
 
 echo ""
