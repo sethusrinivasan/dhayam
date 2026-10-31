@@ -69,7 +69,8 @@ jobs:
             echo "has_token=true" >> $GITHUB_OUTPUT
           else
             echo "has_token=false" >> $GITHUB_OUTPUT
-            echo "::notice::CLOUDFLARE_API_TOKEN not configured — skipping Cloudflare deploy."
+            echo "::error::CLOUDFLARE_API_TOKEN is not configured in GitHub Secrets! Automated Cloudflare staging deploy cannot proceed without credentials. Please configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in repository secrets."
+            exit 1
           fi
 
       - name: "🚧 Deploy → dhayam-staging.cancun.workers.dev"
@@ -187,7 +188,8 @@ jobs:
             echo "has_token=true" >> $GITHUB_OUTPUT
           else
             echo "has_token=false" >> $GITHUB_OUTPUT
-            echo "::notice::CLOUDFLARE_API_TOKEN not configured — skipping production deploy."
+            echo "::error::CLOUDFLARE_API_TOKEN is not configured in GitHub Secrets! Production deploy cannot proceed without credentials."
+            exit 1
           fi
 
       - name: "🚀 Deploy → dhayam.cancun.workers.dev (production)"

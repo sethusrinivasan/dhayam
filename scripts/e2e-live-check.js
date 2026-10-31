@@ -158,6 +158,11 @@ async function runBrowserE2E(targetUrl) {
     // Check DOM components
     const evalRes = await send("Runtime.evaluate", {
       expression: `(() => {
+        let supports8 = false;
+        try {
+          newGame(8, 0);
+          supports8 = (game?.players?.length === 8);
+        } catch {}
         return {
           title: document.title,
           cellsCount: document.querySelectorAll('.cell').length,
@@ -168,7 +173,10 @@ async function runBrowserE2E(targetUrl) {
           statusTitle: document.getElementById('statusTitle')?.textContent?.trim(),
           statusText: document.getElementById('statusText')?.textContent?.trim(),
           hasDieA: !!document.getElementById('dieA'),
-          hasDieB: !!document.getElementById('dieB')
+          hasDieB: !!document.getElementById('dieB'),
+          hasQuantum: !!document.getElementById('demoQuantumSpeed'),
+          speedMax: document.getElementById('demoSpeed')?.getAttribute('max'),
+          supports8
         };
       })()`,
       returnByValue: true,
@@ -191,6 +199,20 @@ async function runBrowserE2E(targetUrl) {
       return false;
     }
     console.log(`  ✓ ${state.playersCount} player cards rendered`);
+
+    if (!state.hasQuantum) {
+      console.error("  ✗ Stale deployment detected: missing Quantum Mode button (#demoQuantumSpeed)");
+      return false;
+    }
+    if (state.speedMax !== "128") {
+      console.error(`  ✗ Stale deployment detected: expected speed slider max 128, found "${state.speedMax}"`);
+      return false;
+    }
+    if (!state.supports8) {
+      console.error("  ✗ Stale deployment detected: 8 players match creation failed in newGame(8, 0)");
+      return false;
+    }
+    console.log("  ✓ Feature freshness verified (8 players, Quantum 32×, 128× speed slider present)");
 
     if (!state.actionBtnVisible || state.actionBtnDisabled) {
       console.error(`  ✗ Action button not ready (visible: ${state.actionBtnVisible}, disabled: ${state.actionBtnDisabled})`);
