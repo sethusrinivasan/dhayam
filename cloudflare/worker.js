@@ -60,6 +60,21 @@ const DICE_OUTCOMES = [
   { a: 0, b: 0, val: 12 }
 ];
 
+function parsePieceCoord(id) {
+  if (!id) return null;
+  const m = String(id).trim().match(/^p?(\d+)[-_]?(?:q|piece)?(\d+)$/i);
+  return m ? m[1] + ":" + m[2] : null;
+}
+
+function matchPieceId(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const pa = parsePieceCoord(a);
+  const pb = parsePieceCoord(b);
+  if (pa && pb) return pa === pb;
+  return String(a).toLowerCase().replace(/[^a-z0-9]/g, "") === String(b).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 class DhayamEngine {
   constructor(state = null) {
     if (state) {
@@ -83,14 +98,14 @@ class DhayamEngine {
     const colors = ["#ff7518", "#2dd4bf", "#f59e0b", "#6366f1"];
 
     this.players = names.slice(0, count).map((name, i) => ({
-      id: "p" + i,
+      id: "P" + i,
       name,
       avatar: avatars[i],
       color: colors[i],
       seat: SEATS[i],
       captured: false,
       rank: null,
-      pieces: Array.from({ length: 6 }, (_, q) => ({ id: "p" + i + "_q" + q, progress: -1 }))
+      pieces: Array.from({ length: 6 }, (_, q) => ({ id: "P" + i + "-" + q, progress: -1 }))
     }));
 
     this.current = 0;
@@ -111,6 +126,17 @@ class DhayamEngine {
     return piece.progress < 0 ? null : ROUTES[p.seat][piece.progress];
   }
 
+  bonusDecision(value) {
+    const specialRoll = BONUS_VALUES.has(value);
+    const bonusDepth = Math.max(0, this.history.length - 1);
+    const bonusChance = specialRoll ? 0.5 ** bonusDepth : 0;
+    const randomBytes = new Uint32Array(1);
+    crypto.getRandomValues(randomBytes);
+    const bonusDraw = specialRoll && bonusChance < 1 ? randomBytes[0] / 2 ** 32 : null;
+    const bonus = specialRoll && (bonusChance === 1 || bonusDraw < bonusChance);
+    return { specialRoll, bonusDepth, bonusChance, bonusDraw, bonus };
+  }
+
   rollDice() {
     if (this.phase !== "roll") {
       return { error: "Cannot roll dice during move phase. Please choose a piece move first." };
@@ -119,11 +145,19 @@ class DhayamEngine {
     const randomBytes = new Uint8Array(1);
     crypto.getRandomValues(randomBytes);
     const outcome = DICE_OUTCOMES[randomBytes[0] % DICE_OUTCOMES.length];
-    const isBonus = BONUS_VALUES.has(outcome.val);
+    const bonusResult = this.bonusDecision(outcome.val);
+    const isBonus = bonusResult.bonus;
 
     this.pool.push(outcome.val);
     this.history.push(outcome.val);
-    this.lastRoll = { a: outcome.a, b: outcome.b, value: outcome.val, bonus: isBonus };
+    this.lastRoll = {
+      a: outcome.a,
+      b: outcome.b,
+      value: outcome.val,
+      val: outcome.val,
+      bonus: isBonus,
+      specialRoll: bonusResult.specialRoll
+    };
 
     this.audit.push({
       event: "ROLL",
@@ -131,16 +165,27 @@ class DhayamEngine {
       dice: { a: outcome.a, b: outcome.b },
       value: outcome.val,
       bonus: isBonus,
+      specialRoll: bonusResult.specialRoll,
       pool: [...this.pool]
     });
 
     if (!isBonus) {
       this.phase = "move";
+      const legal = this.getLegalMoves();
+      if (!legal.length) {
+        this.audit.push({
+          event: "PASS",
+          player: this.activePlayer().name,
+          reason: "NO_LEGAL_MOVE"
+        });
+        this.nextTurn();
+      }
     }
 
     return {
       roll: this.lastRoll,
       pool: [...this.pool],
+      history: [...this.history],
       phase: this.phase,
       bonusEarned: isBonus,
       legalMoves: this.phase === "move" ? this.getLegalMoves() : []
@@ -234,18 +279,27 @@ class DhayamEngine {
     }
 
     const legal = this.getLegalMoves();
-    const match = legal.find(
-      (m) => m.piece_id === pieceId && (!diceValues || JSON.stringify(m.dice_values) === JSON.stringify(diceValues))
-    ) || legal.find((m) => m.piece_id === pieceId);
+    const match =
+      legal.find(
+        (m) =>
+          matchPieceId(m.piece_id, pieceId) &&
+          (!diceValues || JSON.stringify(m.dice_values) === JSON.stringify(diceValues)),
+      ) || legal.find((m) => matchPieceId(m.piece_id, pieceId));
 
     if (!match) {
       return { error: "No legal move found for piece " + pieceId };
     }
 
     const p = this.activePlayer();
-    const piece = p.pieces.find((q) => q.id === pieceId);
-    const fromProgress = piece ? piece.progress : -1;
+    const piece = p.pieces.find((q) => matchPieceId(q.id, pieceId));
+    if (!piece) {
+      return { error: "Piece not found: " + pieceId };
+    }
+    const fromProgress = piece.progress;
     const test = this.testMove(p, piece, match.dice_values);
+    if (!test) {
+      return { error: "Move candidate validation failed for piece " + pieceId };
+    }
 
     const captureTargets = test.targets.map((hit) => ({
       playerId: hit.other.id,
@@ -279,7 +333,7 @@ class DhayamEngine {
     this.audit.push({
       event: "MOVE",
       player: p.name,
-      piece: pieceId,
+      piece: piece.id,
       to: test.destination,
       remaining_pool: [...this.pool]
     });
@@ -291,7 +345,7 @@ class DhayamEngine {
       return {
         status: "win",
         winner: p.name,
-        pieceId,
+        pieceId: piece.id,
         fromProgress,
         targetProgress: test.progress,
         destination: test.destination,
@@ -307,7 +361,7 @@ class DhayamEngine {
 
     return {
       status: "success",
-      pieceId,
+      pieceId: piece.id,
       fromProgress,
       targetProgress: test.progress,
       destination: test.destination,
@@ -329,7 +383,11 @@ class DhayamEngine {
     this.pool = [];
     this.history = [];
     this.lastRoll = null;
-    this.current = (this.current + 1) % this.players.length;
+    let i = this.current;
+    do {
+      i = (i + 1) % this.players.length;
+    } while (this.players[i].rank !== null && i !== this.current);
+    this.current = i;
     this.phase = "roll";
     this.turn += 1;
   }
@@ -726,12 +784,28 @@ export class DhayamRoom extends DurableObject {
       else if (data.type === "ROLL") {
         const seat = attachment.seat;
         if (seat === undefined || seat === null || this.engine.current !== seat || this.engine.phase !== "roll") {
+          ws.send(JSON.stringify({
+            type: "ERROR",
+            message: this.engine.current !== seat ? "Not your turn to roll." : "Cannot roll during " + this.engine.phase + " phase."
+          }));
+          ws.send(JSON.stringify({
+            type: "SYNC_STATE",
+            game: this.engine.serialize(),
+            audit: this.engine.audit,
+            seats: this.getSeatsInfo()
+          }));
           return;
         }
 
         const res = this.engine.rollDice();
         if (res.error) {
           ws.send(JSON.stringify({ type: "ERROR", message: res.error }));
+          ws.send(JSON.stringify({
+            type: "SYNC_STATE",
+            game: this.engine.serialize(),
+            audit: this.engine.audit,
+            seats: this.getSeatsInfo()
+          }));
           return;
         }
 
@@ -744,7 +818,12 @@ export class DhayamRoom extends DurableObject {
           player: this.engine.players[seat].name,
           dice: { a: res.roll.a, b: res.roll.b },
           value: res.roll.value,
-          bonus: res.bonusEarned
+          val: res.roll.value,
+          bonus: res.bonusEarned,
+          specialRoll: res.roll.specialRoll,
+          pool: [...this.engine.pool],
+          history: [...this.engine.history],
+          phase: this.engine.phase
         });
 
         // Broadcast SYNC_STATE
@@ -759,6 +838,16 @@ export class DhayamRoom extends DurableObject {
       else if (data.type === "MOVE") {
         const seat = attachment.seat;
         if (seat === undefined || seat === null || this.engine.current !== seat || this.engine.phase !== "move") {
+          ws.send(JSON.stringify({
+            type: "ERROR",
+            message: this.engine.current !== seat ? "Not your turn to move." : "Game is in " + this.engine.phase + " phase."
+          }));
+          ws.send(JSON.stringify({
+            type: "SYNC_STATE",
+            game: this.engine.serialize(),
+            audit: this.engine.audit,
+            seats: this.getSeatsInfo()
+          }));
           return;
         }
 
@@ -766,6 +855,12 @@ export class DhayamRoom extends DurableObject {
         const res = this.engine.applyMove(pieceId, diceValues);
         if (res.error) {
           ws.send(JSON.stringify({ type: "ERROR", message: res.error }));
+          ws.send(JSON.stringify({
+            type: "SYNC_STATE",
+            game: this.engine.serialize(),
+            audit: this.engine.audit,
+            seats: this.getSeatsInfo()
+          }));
           return;
         }
 
@@ -796,6 +891,16 @@ export class DhayamRoom extends DurableObject {
       else if (data.type === "PASS") {
         const seat = attachment.seat;
         if (seat === undefined || seat === null || this.engine.current !== seat) {
+          ws.send(JSON.stringify({
+            type: "ERROR",
+            message: "Not your turn."
+          }));
+          ws.send(JSON.stringify({
+            type: "SYNC_STATE",
+            game: this.engine.serialize(),
+            audit: this.engine.audit,
+            seats: this.getSeatsInfo()
+          }));
           return;
         }
 
@@ -808,6 +913,15 @@ export class DhayamRoom extends DurableObject {
           audit: this.engine.audit,
           seats: this.getSeatsInfo()
         });
+      }
+
+      else if (data.type === "GET_STATE" || data.type === "SYNC") {
+        ws.send(JSON.stringify({
+          type: "SYNC_STATE",
+          game: this.engine.serialize(),
+          audit: this.engine.audit,
+          seats: this.getSeatsInfo()
+        }));
       }
 
       else if (data.type === "EMOTE") {

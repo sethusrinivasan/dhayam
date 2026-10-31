@@ -169,12 +169,27 @@ export function diceValue(firstFace: number, secondFace: number): number {
   return firstFace === 0 && secondFace === 0 ? 12 : firstFace + secondFace;
 }
 
+function parsePieceCoord(id: string | null | undefined): string | null {
+  if (!id) return null;
+  const m = String(id).trim().match(/^p?(\d+)[-_]?(?:q|piece)?(\d+)$/i);
+  return m ? `${m[1]}:${m[2]}` : null;
+}
+
+export function matchPieceId(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const pa = parsePieceCoord(a);
+  const pb = parsePieceCoord(b);
+  if (pa && pb) return pa === pb;
+  return a.toLowerCase().replace(/[^a-z0-9]/g, "") === b.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 function findPiece(
   game: Game,
   pieceId: string,
 ): { player: Player; piece: Piece } | null {
   for (const player of game.players) {
-    const piece = player.pieces.find((candidate) => candidate.id === pieceId);
+    const piece = player.pieces.find((candidate) => matchPieceId(candidate.id, pieceId));
     if (piece) return { player, piece };
   }
   return null;
@@ -273,7 +288,7 @@ export function legalMoves(game: Game): Move[] {
 export function applyMove(game: Game, move: Move): Game {
   const legal = legalMoves(game).find(
     (candidate) =>
-      candidate.pieceId === move.pieceId &&
+      matchPieceId(candidate.pieceId, move.pieceId) &&
       candidate.indices.length === move.indices.length &&
       candidate.indices.every(
         (index, position) => index === move.indices[position],
@@ -284,7 +299,7 @@ export function applyMove(game: Game, move: Move): Game {
   const next = structuredClone(game);
   const activePlayer = next.players[next.current];
   const piece = activePlayer.pieces.find(
-    (candidate) => candidate.id === legal.pieceId,
+    (candidate) => matchPieceId(candidate.id, legal.pieceId),
   )!;
   piece.progress = legal.progress;
   activePlayer.captured = legal.captured;

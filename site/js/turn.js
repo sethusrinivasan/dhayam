@@ -8,17 +8,24 @@
 
       function finishRoll(d) {
         const player = active();
-        game.pool.push(d.value);
-        game.history.push(d.value);
+        const val = typeof d.value === "number" ? d.value : (typeof d.val === "number" ? d.val : (d.a + d.b === 0 ? 12 : d.a + d.b));
+        d.value = val;
+        d.val = val;
+        if (typeof val === "number" && !isNaN(val)) {
+          game.pool.push(val);
+          game.history.push(val);
+        }
         rolling = false;
-        const bonusResult = bonusDecision(d.value),
+        const bonusResult = typeof d.bonus === "boolean" && d.specialRoll !== undefined
+          ? { specialRoll: d.specialRoll, bonus: d.bonus, bonusDepth: Math.max(0, game.history.length - 1), bonusChance: d.bonus ? 1 : 0, bonusDraw: null }
+          : bonusDecision(val),
           { specialRoll, bonus } = bonusResult;
-        game.last = { ...d, ...bonusResult };
+        game.last = { ...d, ...bonusResult, value: val, val };
         if (!bonus) game.phase = "move";
         const legalMoveCount = game.phase === "move" ? options().length : null;
         if (typeof FlightRecorder !== "undefined") {
           FlightRecorder.record("ROLL_FINISHED", {
-            value: d.value,
+            value: val,
             faces: [d.a, d.b],
             bonus,
             specialRoll,
@@ -30,7 +37,7 @@
         recordAudit("ROLL", {
           firstFace: d.a,
           secondFace: d.b,
-          value: d.value,
+          value: val,
           specialRoll,
           bonus,
           bonusDepth: bonusResult.bonusDepth,
@@ -46,7 +53,7 @@
             speakGame(
               player.name +
                 " rolled " +
-                d.value +
+                val +
                 " but has no legal move. The turn passes.",
             );
             recordAudit("PASS", { reason: "NO_LEGAL_MOVE" });
@@ -57,7 +64,7 @@
         speakGame(
           player.name +
             " rolled " +
-            d.value +
+            val +
             "." +
             (d.pacingAssist
               ? " The pacing assist selected a playable outcome."
@@ -71,7 +78,11 @@
         if (multiplayer.active && multiplayer.isHost) {
           broadcastState();
         }
-        render();
+        if (typeof checkPendingRemoteState === "function") {
+          checkPendingRemoteState();
+        } else {
+          render();
+        }
       }
       function roll() {
         if (!game || game.phase !== "roll" || rolling || demo) return;
@@ -96,6 +107,9 @@
           }
         }
         const d = pacingAssistRoll() || rollDice();
+        const val = typeof d.value === "number" ? d.value : (typeof d.val === "number" ? d.val : (d.a + d.b === 0 ? 12 : d.a + d.b));
+        d.value = val;
+        d.val = val;
         rolling = true;
         setDieFace("dieA", d.a, "First die rolling");
         setDieFace("dieB", d.b, "Second die rolling");
@@ -109,8 +123,9 @@
                 type: "ROLL_START",
                 seat: game.current,
                 dice: { a: d.a, b: d.b },
-                value: d.val,
-                bonus: BONUS_VALUES.has(d.val)
+                value: val,
+                val: val,
+                bonus: BONUS_VALUES.has(val)
               });
             }
           });
@@ -448,11 +463,88 @@
         triggerDiceAnimation();
         rollTimer = setTimeout(() => {
           rollTimer = null;
+          rolling = false;
+
+          const val =
+            typeof data.value === "number"
+              ? data.value
+              : typeof data.val === "number"
+                ? data.val
+                : data.dice.a + data.dice.b === 0
+                  ? 12
+                  : data.dice.a + data.dice.b;
+          const isBonus =
+            typeof data.bonus === "boolean" ? data.bonus : BONUS_VALUES.has(val);
+          const specialRoll =
+            typeof data.specialRoll === "boolean"
+              ? data.specialRoll
+              : BONUS_VALUES.has(val);
+
+          setDieFace("dieA", data.dice.a, "First die showing " + data.dice.a);
+          setDieFace("dieB", data.dice.b, "Second die showing " + data.dice.b);
+
+          if (multiplayer.active && multiplayer.transport === "cf_ws") {
+            game.last = {
+              a: data.dice.a,
+              b: data.dice.b,
+              value: val,
+              val,
+              bonus: isBonus,
+              specialRoll,
+            };
+            game.pool = Array.isArray(data.pool) ? [...data.pool] : [val];
+            game.history = Array.isArray(data.history) ? [...data.history] : [val];
+            game.phase = data.phase || (isBonus ? "roll" : "move");
+
+            const legalMoveCount =
+              game.phase === "move" ? options().length : null;
+            if (typeof FlightRecorder !== "undefined") {
+              FlightRecorder.record("ROLL_FINISHED", {
+                value: val,
+                faces: [data.dice.a, data.dice.b],
+                bonus: isBonus,
+                specialRoll,
+                pool: [...game.pool],
+                phase: game.phase,
+                legalMoveCount,
+              });
+            }
+
+            const pName = activeP ? activeP.name : "Player";
+            if (!isBonus && game.phase === "roll") {
+              speakGame(
+                pName +
+                  " rolled " +
+                  val +
+                  " but has no legal move. The turn passes.",
+              );
+            } else {
+              speakGame(
+                pName +
+                  " rolled " +
+                  val +
+                  "." +
+                  (isBonus
+                    ? " That earns another roll."
+                    : " Now choose a legal move."),
+              );
+            }
+
+            if (typeof checkPendingRemoteState === "function") {
+              checkPendingRemoteState();
+            } else {
+              render();
+            }
+            return;
+          }
+
           finishRoll({
             a: data.dice.a,
             b: data.dice.b,
-            val: data.value,
-            bonus: data.bonus,
+            value: val,
+            val,
+            bonus: isBonus,
+            specialRoll,
           });
         }, 1220);
       }
@@ -461,7 +553,11 @@
         if (!game) return;
         const player = game.players[data.seat];
         if (!player) return;
-        const piece = player.pieces.find((q) => q.id === data.pieceId);
+        const piece = player.pieces.find((q) =>
+          typeof matchPieceId === "function"
+            ? matchPieceId(q.id, data.pieceId)
+            : q.id === data.pieceId,
+        );
         if (!piece) return;
 
         moving = true;
@@ -516,6 +612,11 @@
           await waitForCaptureAnimation();
           capturedPieceIds = [];
           capturedPlayerIds = [];
+        }
+
+        if (typeof checkPendingRemoteState === "function") {
+          checkPendingRemoteState();
+        } else {
           render();
         }
       }

@@ -127,16 +127,64 @@ function serializeGameState() {
   };
 }
 
+let pendingRemoteState = null;
+
+/**
+ * Normalizes piece IDs across client ("P0-0") and worker ("p0_q0") conventions
+ */
+function parsePieceCoord(id) {
+  if (!id) return null;
+  const m = String(id).trim().match(/^p?(\d+)[-_]?(?:q|piece)?(\d+)$/i);
+  return m ? m[1] + ":" + m[2] : null;
+}
+
+function matchPieceId(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const pa = parsePieceCoord(a);
+  const pb = parsePieceCoord(b);
+  if (pa && pb) return pa === pb;
+  return String(a).toLowerCase().replace(/[^a-z0-9]/g, "") === String(b).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+window.matchPieceId = matchPieceId;
+
+/**
+ * Applies pending remote state once active rolling or movement animations finish
+ */
+function checkPendingRemoteState() {
+  if (
+    pendingRemoteState &&
+    !(typeof rolling !== "undefined" && rolling) &&
+    !(typeof moving !== "undefined" && moving)
+  ) {
+    const { remoteGame, remoteAudit } = pendingRemoteState;
+    pendingRemoteState = null;
+    applyRemoteState(remoteGame, remoteAudit);
+    return true;
+  }
+  return false;
+}
+window.checkPendingRemoteState = checkPendingRemoteState;
+
 /**
  * Apply state received from authoritative Host or Cloudflare Durable Object
  */
 function applyRemoteState(remoteGame, remoteAudit) {
   if (!remoteGame) return;
+  if (
+    (typeof rolling !== "undefined" && rolling) ||
+    (typeof moving !== "undefined" && moving)
+  ) {
+    pendingRemoteState = { remoteGame, remoteAudit };
+    return;
+  }
+  pendingRemoteState = null;
+
   game.players = remoteGame.players;
   game.current = remoteGame.current;
   game.phase = remoteGame.phase;
-  game.pool = remoteGame.pool;
-  game.history = remoteGame.history;
+  game.pool = Array.isArray(remoteGame.pool) ? [...remoteGame.pool] : [];
+  game.history = Array.isArray(remoteGame.history) ? [...remoteGame.history] : [];
   game.last = remoteGame.last || remoteGame.lastRoll || null;
   game.turn = remoteGame.turn;
   game.finished = remoteGame.finished;
@@ -225,6 +273,16 @@ function sendWsMessage(payload) {
   return false;
 }
 window.sendWsMessage = sendWsMessage;
+
+/**
+ * Request fresh state sync from Cloudflare Durable Object
+ */
+function requestStateSync() {
+  if (multiplayer.active && multiplayer.transport === "cf_ws") {
+    sendWsMessage({ type: "GET_STATE" });
+  }
+}
+window.requestStateSync = requestStateSync;
 
 /**
  * Send floating emote reaction to all peers
@@ -568,6 +626,15 @@ function handleWsMessage(msg) {
 
     case "ERROR": {
       console.warn("Multiplayer server error:", msg.message);
+      if (typeof rolling !== "undefined") rolling = false;
+      if (typeof moving !== "undefined") {
+        moving = false;
+        movingPieceId = null;
+      }
+      if (typeof showToast === "function" && msg.message) {
+        showToast(msg.message);
+      }
+      render();
       break;
     }
   }
