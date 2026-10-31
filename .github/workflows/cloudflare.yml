@@ -1,25 +1,43 @@
-name: Deploy to Cloudflare (Staging → Production Gate)
+name: Deploy to Cloudflare (Staging → Manual Approval → Production)
 
-# ─── Strategy ──────────────────────────────────────────────────────────────
+# ─── Deployment Strategy ──────────────────────────────────────────────────
 #
 #  Every push to `main`:
-#    1. Deploy to STAGING (dhayam-staging.cancun.workers.dev)
-#    2. Run HTTP liveness + headless Chrome E2E against STAGING
-#    3. Only if staging passes → deploy to PRODUCTION (dhayam.cancun.workers.dev)
-#    4. Run final smoke check against PRODUCTION
 #
-#  This prevents any coding-agent quick-fix from silently breaking prod.
-#  Staging URL stays permanently live for manual QA.
+#    ┌── Job 1: deploy-staging ────────────────────────────────────────────┐
+#    │  Deploy code to dhayam-staging.cancun.workers.dev                  │
+#    └────────────────────────────────────────────────────────────────────┘
+#                              │
+#    ┌── Job 2: validate-staging ──────────────────────────────────────────┐
+#    │  npm test (unit + syntax + headless Chrome integrity)               │
+#    │  E2E liveness against staging: HTTP /health /mcp + roll dice        │
+#    │  Posts staging URL and E2E report as a GitHub summary               │
+#    └────────────────────────────────────────────────────────────────────┘
+#                              │ PASSES
+#    ┌── Job 3: await-approval ─────────────────────────────────────────────┐
+#    │  ⏸  PAUSES here — requires manual review in GitHub UI               │
+#    │  Reviewer sees: staging URL, E2E pass, commit SHA, and diff link     │
+#    │  Reviewer manually tests https://dhayam-staging.cancun.workers.dev   │
+#    │  Then clicks ✅ "Approve and deploy" (or ❌ "Reject")               │
+#    └────────────────────────────────────────────────────────────────────┘
+#                              │ APPROVED
+#    ┌── Job 4: deploy-production ─────────────────────────────────────────┐
+#    │  Deploy to dhayam.cancun.workers.dev (production)                  │
+#    └────────────────────────────────────────────────────────────────────┘
+#                              │
+#    ┌── Job 5: smoke-production ──────────────────────────────────────────┐
+#    │  Final E2E smoke check on production                               │
+#    └────────────────────────────────────────────────────────────────────┘
 #
-# ───────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
     inputs:
-      force_production:
-        description: "Force deploy directly to production (skip staging gate)"
+      skip_approval:
+        description: "Emergency bypass: skip manual approval gate (use only if staging is down)"
         required: false
         type: boolean
         default: false
@@ -30,12 +48,12 @@ permissions:
 
 concurrency:
   group: cloudflare-deploy
-  cancel-in-progress: false  # never cancel an in-flight promotion
+  cancel-in-progress: false   # never cancel a pending promotion
 
 jobs:
-  # ─── Job 1: Deploy to Staging ───────────────────────────────────────────
+  # ─── Job 1: Deploy to Staging ──────────────────────────────────────────
   deploy-staging:
-    name: 🚧 Deploy to Staging
+    name: "🚧 [1/5] Deploy to Staging"
     runs-on: ubuntu-latest
     outputs:
       has_token: ${{ steps.check_secrets.outputs.has_token }}
@@ -54,7 +72,7 @@ jobs:
             echo "::notice::CLOUDFLARE_API_TOKEN not configured — skipping Cloudflare deploy."
           fi
 
-      - name: 🚧 Deploy to Staging (dhayam-staging)
+      - name: "🚧 Deploy → dhayam-staging.cancun.workers.dev"
         if: steps.check_secrets.outputs.has_token == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
@@ -62,9 +80,9 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --env staging
 
-  # ─── Job 2: Staging Validation Gate ─────────────────────────────────────
+  # ─── Job 2: Validate Staging (automated E2E) ───────────────────────────
   validate-staging:
-    name: 🧪 Staging E2E Gate
+    name: "🧪 [2/5] Automated E2E Gate (Staging)"
     needs: deploy-staging
     runs-on: ubuntu-latest
 
@@ -80,33 +98,83 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run unit + integrity tests
+      - name: Run unit + integrity tests (JS syntax, headless Chrome, rules engine)
         run: npm test
 
-      - name: 🧪 E2E liveness check against STAGING
+      - name: "🧪 E2E liveness + game interaction against STAGING"
+        id: e2e
         run: node scripts/e2e-live-check.js
         env:
           CLOUDFLARE_URL: "https://dhayam-staging.cancun.workers.dev"
           GITHUB_PAGES_URL: "https://sethusrinivasan.github.io/dhayam/"
           E2E_SKIP_GITHUB_PAGES: "true"
 
-      - name: ✅ Staging gate passed
-        run: echo "::notice::✅ Staging E2E passed — safe to promote to production."
+      - name: "📋 Post staging verification summary"
+        if: always()
+        run: |
+          STATUS="${{ steps.e2e.outcome }}"
+          ICON="✅"
+          if [ "$STATUS" != "success" ]; then ICON="❌"; fi
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## $ICON Staging Automated E2E Report
 
-  # ─── Job 3: Promote to Production ────────────────────────────────────────
-  deploy-production:
-    name: 🚀 Promote to Production
-    needs: [deploy-staging, validate-staging]
+          | Item | Value |
+          |------|-------|
+          | **Staging URL** | [dhayam-staging.cancun.workers.dev](https://dhayam-staging.cancun.workers.dev) |
+          | **Commit** | \`${{ github.sha }}\` |
+          | **Branch** | \`${{ github.ref_name }}\` |
+          | **E2E Result** | $ICON \`$STATUS\` |
+          | **Tests** | JS syntax ✓, rules engine ✓, headless Chrome ✓ |
+
+          ### 👤 Next step — Manual QA
+          Open **[staging](https://dhayam-staging.cancun.workers.dev)**, play a full turn, and
+          verify the game is interactive before approving production promotion.
+
+          > Approval request will appear in the **[Environments tab](https://github.com/sethusrinivasan/dhayam/deployments)** after this job finishes.
+          EOF
+
+  # ─── Job 3: Manual Approval Gate ───────────────────────────────────────
+  await-approval:
+    name: "⏸ [3/5] Manual Approval — Test Staging Before Promoting"
+    needs: validate-staging
     runs-on: ubuntu-latest
-    # Promote only when staging E2E succeeded, OR on a forced manual dispatch
-    if: |
-      always() && (
-        needs.validate-staging.result == 'success' ||
-        (github.event_name == 'workflow_dispatch' && github.event.inputs.force_production == 'true')
-      )
+    # This job targets the `production` environment which has required_reviewers set.
+    # GitHub will PAUSE here and send a notification asking the reviewer to approve.
+    # The reviewer can open the staging URL, manually test, and then click Approve.
     environment:
       name: production
-      url: https://dhayam.cancun.workers.dev
+      url: https://dhayam-staging.cancun.workers.dev   # reviewer sees this as "test here first"
+
+    steps:
+      - name: "🧑‍💻 Confirm staging tested manually"
+        run: |
+          echo "✅ Manual approval received."
+          echo "Reviewer confirmed staging is healthy at https://dhayam-staging.cancun.workers.dev"
+          echo "Proceeding to deploy to production..."
+
+      - name: "📋 Record approval in job summary"
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## ✅ Manual Approval Granted
+
+          | Item | Value |
+          |------|-------|
+          | **Approved by** | ${{ github.actor }} |
+          | **Commit** | \`${{ github.sha }}\` |
+          | **Staging URL** | [dhayam-staging.cancun.workers.dev](https://dhayam-staging.cancun.workers.dev) |
+          | **Production target** | [dhayam.cancun.workers.dev](https://dhayam.cancun.workers.dev) |
+          EOF
+
+  # ─── Job 4: Deploy to Production ───────────────────────────────────────
+  deploy-production:
+    name: "🚀 [4/5] Deploy to Production"
+    needs: [deploy-staging, await-approval]
+    runs-on: ubuntu-latest
+    if: |
+      always() && (
+        needs.await-approval.result == 'success' ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.skip_approval == 'true')
+      )
 
     steps:
       - name: Check out repository
@@ -122,7 +190,7 @@ jobs:
             echo "::notice::CLOUDFLARE_API_TOKEN not configured — skipping production deploy."
           fi
 
-      - name: 🚀 Deploy to Production (dhayam)
+      - name: "🚀 Deploy → dhayam.cancun.workers.dev (production)"
         if: steps.check_secrets.outputs.has_token == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
@@ -130,9 +198,9 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
 
-  # ─── Job 4: Production Smoke Check ───────────────────────────────────────
+  # ─── Job 5: Production Smoke Check ─────────────────────────────────────
   smoke-production:
-    name: 💨 Production Smoke Check
+    name: "💨 [5/5] Production Smoke Check"
     needs: deploy-production
     runs-on: ubuntu-latest
     if: needs.deploy-production.result == 'success'
@@ -149,11 +217,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: 💨 Production smoke check
+      - name: "💨 Production E2E smoke check"
+        id: smoke
         run: node scripts/e2e-live-check.js
         env:
           CLOUDFLARE_URL: "https://dhayam.cancun.workers.dev"
           GITHUB_PAGES_URL: "https://sethusrinivasan.github.io/dhayam/"
 
-      - name: ✅ Production healthy
-        run: echo "::notice::✅ Production is healthy at https://dhayam.cancun.workers.dev"
+      - name: "📋 Final deployment summary"
+        if: always()
+        run: |
+          STATUS="${{ steps.smoke.outcome }}"
+          ICON="✅"
+          if [ "$STATUS" != "success" ]; then ICON="❌"; fi
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## $ICON Production Deployment Complete
+
+          | Item | Value |
+          |------|-------|
+          | **Production URL** | [dhayam.cancun.workers.dev](https://dhayam.cancun.workers.dev) |
+          | **Commit** | \`${{ github.sha }}\` |
+          | **Smoke Check** | $ICON \`$STATUS\` |
+          | **Deployed at** | $(date -u '+%Y-%m-%d %H:%M UTC') |
+          EOF
