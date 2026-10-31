@@ -554,7 +554,10 @@
         multiplayer.claimedSeats = {};
         if (typeof updateMultiplayerBadge === "function") updateMultiplayerBadge();
 
-        const pNames = ["Maya", "Leo", "Rohan", "Ananya", "Amina", "Kai", "Sofia", "Noah"];
+        const pNames =
+          typeof THEMES !== "undefined" && THEMES.length >= 8
+            ? THEMES.map((t) => t.name)
+            : ["Maya", "Leo", "Amina", "Kai", "Sofia", "Noah", "Zara", "Arun"];
         $("statusTitle").textContent = "Connecting to Cloudflare Edge";
         $("statusText").textContent =
           "Establishing live WebSocket room " + roomCode + " on Cloudflare Durable Objects…";
