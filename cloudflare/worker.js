@@ -112,6 +112,7 @@ class DhayamEngine {
       seat: count === 2 ? (i === 0 ? "N" : "S") : count === 3 ? (i === 0 ? "N" : i === 1 ? "E" : "S") : SEATS[i % SEATS.length],
       captured: false,
       rank: null,
+      bonusPoints: 0,
       pieces: Array.from({ length: 6 }, (_, q) => ({ id: "P" + i + "-" + q, progress: -1 }))
     }));
 
@@ -314,7 +315,15 @@ class DhayamEngine {
       pieceId: hit.q.id
     }));
 
+    const wasReserve = fromProgress === -1;
+    const willFinish = test.progress === 43;
     piece.progress = test.progress;
+    if (wasReserve) {
+      p.bonusPoints = (p.bonusPoints || 0) + 1;
+    }
+    if (willFinish) {
+      p.bonusPoints = (p.bonusPoints || 0) + 1;
+    }
     if (test.captured) {
       p.captured = true;
       for (const hit of test.targets) {

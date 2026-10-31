@@ -48,7 +48,7 @@ permissions:
 
 concurrency:
   group: cloudflare-deploy
-  cancel-in-progress: false   # never cancel a pending promotion
+  cancel-in-progress: true    # cancel superseded runs so fresh commits roll into staging immediately
 
 jobs:
   # ─── Job 1: Deploy to Staging ──────────────────────────────────────────

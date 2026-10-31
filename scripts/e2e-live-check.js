@@ -177,6 +177,9 @@ async function runBrowserE2E(targetUrl) {
           hasQuantum: !!document.getElementById('demoQuantumSpeed'),
           hasGameTimer: !!document.getElementById('gameTimer'),
           gameTimerText: document.getElementById('gameTimer')?.textContent?.trim(),
+          hasBuildBadge: !!document.getElementById('buildNumberBadge'),
+          buildText: document.getElementById('buildNumberBadge')?.textContent?.trim(),
+          hasBuildUpdated: !!document.getElementById('buildUpdatedTimestamp'),
           speedMax: document.getElementById('demoSpeed')?.getAttribute('max'),
           supports8
         };
@@ -218,7 +221,11 @@ async function runBrowserE2E(targetUrl) {
       console.error("  ✗ Stale deployment detected: missing game liveliness timer (#gameTimer)");
       return false;
     }
-    console.log(`  ✓ Feature freshness verified (8 players, Quantum 32×, 128× speed slider, Game Timer: "${state.gameTimerText}")`);
+    if (!state.hasBuildBadge) {
+      console.error("  ✗ Stale deployment detected: missing build metadata badge (#buildNumberBadge)");
+      return false;
+    }
+    console.log(`  ✓ Feature freshness verified (8 players, Quantum 32×, 128× speed slider, Game Timer: "${state.gameTimerText}", Build: "${state.buildText}")`);
 
     if (!state.actionBtnVisible || state.actionBtnDisabled) {
       console.error(`  ✗ Action button not ready (visible: ${state.actionBtnVisible}, disabled: ${state.actionBtnDisabled})`);

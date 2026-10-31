@@ -283,7 +283,9 @@
               (p.rank ? " · #" + p.rank : "") +
               '</span><span class="pscore-badge" title="Player score: ' +
               score +
-              ' points based on board advancement, captures (+50), and home finishes (+100)">⭐ ' +
+              ' points based on board advancement, captures (+50), home finishes (+100)' +
+              (p.bonusPoints ? ', and ' + p.bonusPoints + ' bonus points' : '') +
+              '">⭐ ' +
               score +
               ' pts</span></div><div class="pscore-track" title="' +
               progressPct +
@@ -295,6 +297,7 @@
               finishedCount +
               "/6 home · " +
               (p.captured ? "⚔️ Capture earned (+50)" : "Capture needed") +
+              (p.bonusPoints ? " · ⭐ " + p.bonusPoints + " bonus" : "") +
               '</div><div class="piecestatus"><span><b>Waiting:</b> ' +
               waiting +
               "</span><span><b>On board:</b> " +
@@ -667,9 +670,47 @@
         }
         if (p.captured) score += 50;
         if (p.rank === 1) score += 200;
+        if (p.bonusPoints) score += p.bonusPoints;
         return score;
       }
       window.calculatePlayerScore = calculatePlayerScore;
+
+      /**
+       * Celebratory goal splash when a coin reaches the sacred center (D4 / Goal).
+       * Congratulates the player, highlights the avatar, and confirms the +1 bonus point.
+       */
+      function showGoalSplash(square = "D4", playerName = "Player", avatar = "✨") {
+        const board = $("board");
+        if (!board) return;
+        const splash = document.createElement("div");
+        splash.className = "goal-splash";
+        splash.innerHTML =
+          '<div class="goal-splash-title"><span>🎯</span><span>Center Reached!</span></div>' +
+          '<div class="goal-splash-detail">🎉 Congratulations ' + escapeHtml(playerName) + '! ' + avatar + ' reached the sacred center!</div>' +
+          '<div class="goal-splash-bonus">⭐ +1 Bonus Point Awarded!</div>';
+
+        let sqEl = null;
+        if (square) {
+          sqEl = board.querySelector('.cell[data-sq="' + square + '"]');
+        }
+        if (sqEl) {
+          const rect = sqEl.getBoundingClientRect();
+          const boardRect = board.getBoundingClientRect();
+          splash.style.left = (rect.left - boardRect.left + rect.width / 2) + "px";
+          splash.style.top = (rect.top - boardRect.top + rect.height / 2) + "px";
+        } else {
+          splash.classList.add("centered");
+        }
+        board.appendChild(splash);
+        if (typeof playTone === "function") {
+          playTone(659.25, 0.2, "triangle");
+          setTimeout(() => playTone(880.0, 0.3, "triangle"), 150);
+        }
+        setTimeout(() => {
+          if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 2900);
+      }
+      window.showGoalSplash = showGoalSplash;
 
       function showCaptureSplash(square, detailText = "") {
         const board = $("board");

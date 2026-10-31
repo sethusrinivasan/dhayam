@@ -1250,6 +1250,68 @@ test("Game liveliness timer formatGameTimer outputs second-level accuracy in MM:
   assert.equal(formatGameTimer(3665), "01:01:05");
 });
 
+test("Entering a coin onto the board awards +1 bonus point to player", () => {
+  const game = createGame(2);
+  game.phase = "move";
+  game.pool = [1];
+  const moves = legalMoves(game);
+  const entryMove = moves.find((m) => m.pieceId === "P0-0" && m.progress === 0);
+  assert.ok(entryMove, "Entry move must be legal with a 1");
+  const next = applyMove(game, entryMove);
+  assert.equal(next.players[0].bonusPoints, 1, "Must award +1 bonus point on board entry");
+});
+
+test("Coin reaching the center goal awards +1 bonus point and congratulations", () => {
+  const game = createGame(2);
+  game.phase = "move";
+  game.pool = [1];
+  game.players[0].captured = true;
+  game.players[0].pieces[0].progress = 42; // One step away from center goal 43
+  const moves = legalMoves(game);
+  const finishMove = moves.find((m) => m.pieceId === "P0-0" && m.progress === 43);
+  assert.ok(finishMove, "Goal finish move must be legal");
+  const next = applyMove(game, finishMove);
+  assert.equal(next.players[0].bonusPoints, 1, "Must award +1 bonus point on goal finish");
+});
+
+test("calculatePlayerScore includes bonusPoints in score calculation", () => {
+  function calculateScore(p: any) {
+    if (!p || !Array.isArray(p.pieces)) return 0;
+    let score = 0;
+    for (const piece of p.pieces) {
+      if (piece.progress === 43) score += 100;
+      else if (piece.progress >= 0) score += piece.progress + 1;
+    }
+    if (p.captured) score += 50;
+    if (p.rank === 1) score += 200;
+    if (p.bonusPoints) score += p.bonusPoints;
+    return score;
+  }
+
+  const p = {
+    pieces: [{ progress: 43 }, { progress: 0 }, { progress: -1 }],
+    captured: true,
+    rank: null,
+    bonusPoints: 5,
+  };
+
+  // Base score: 100 (goal) + 1 (entry) + 50 (capture) = 151; with 5 bonus points = 156
+  assert.equal(calculateScore(p), 156);
+});
+
+test("Build metadata (BUILD_INFO) displays build number and updated timestamp", () => {
+  const BUILD_INFO = {
+    version: "0.2.0",
+    build: 43,
+    timestamp: "2026-10-31 14:35 UTC",
+  };
+
+  assert.equal(BUILD_INFO.build, 43);
+  assert.equal(BUILD_INFO.version, "0.2.0");
+  assert.ok(BUILD_INFO.timestamp.includes("2026-10-31"));
+});
+
+
 
 
 

@@ -108,6 +108,7 @@
               seat,
               captured: false,
               rank: null,
+              bonusPoints: 0,
               pieces: Array.from({ length: 6 }, (_, j) => ({
                 id: "P" + i + "-" + j,
                 progress: -1,
@@ -797,6 +798,16 @@
           }
         });
       }
+
+      function updateFooterBuildInfo() {
+        if (typeof BUILD_INFO !== "undefined") {
+          const badge = $("buildNumberBadge");
+          const ts = $("buildUpdatedTimestamp");
+          if (badge) badge.textContent = `Build #${BUILD_INFO.build} (v${BUILD_INFO.version})`;
+          if (ts) ts.textContent = `Updated: ${BUILD_INFO.timestamp}`;
+        }
+      }
+      updateFooterBuildInfo();
 
       refreshVoices();
       if ("speechSynthesis" in window)

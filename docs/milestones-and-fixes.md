@@ -51,14 +51,20 @@ A succinct, one-page executive summary documenting how Dhayam was conceived, eng
 * **What was built**: Monospace top-navigation timer (`#gameTimer`) displaying match duration with second-level accuracy (`⏱️ MM:SS`).
 * **How it works**: Updates every 30 seconds with a visual heartbeat pulse highlight, confirms JavaScript event loop liveliness, and appends `HEARTBEAT` diagnostics to Flight Recorder.
 
+### Milestone 8: Goal Congratulations, Coin Entry Bonus Scoring & Build Metadata
+* **What was built**:
+  1. **Coin Enters Board Bonus**: When a player moves a piece from reserve onto the board, they are awarded +1 bonus point (`player.bonusPoints`), logged in Flight Recorder, and celebrated via toast and floating star emote.
+  2. **Center Goal Congratulations & Bonus**: When a coin reaches the sacred center (progress 43 / `D4`), an animated celebration splash (`.goal-splash`) congratulates the player, awards +1 bonus point, triggers multi-emoji fireworks (`🎯`, `🏆`, `🎉`), and announces the milestone via commentary.
+  3. **Build Provenance**: Added authoritative build metadata (`BUILD_INFO` v0.2.0, Build #43) displayed at the bottom of the page footer (`#buildNumberBadge` and `#buildUpdatedTimestamp`) with ISO timestamp.
+
 ---
 
 ## 3. Verification & CI/CD Pipeline
 | Gate | Mechanism | Purpose |
 | :--- | :--- | :--- |
-| **Unit & Rules Tests** | `npm test` (62 tests) | Verifies immutable rules authority, MCP endpoints, and regression guards |
+| **Unit & Rules Tests** | `npm test` (66 tests) | Verifies immutable rules authority, MCP endpoints, bonus scoring, and regression guards |
 | **Deployment Gate** | `npx wrangler deploy --env staging` | Compiles Worker and deploys static assets with zero secret leakage |
-| **Automated E2E Gate** | `node scripts/e2e-live-check.js` | Headless Chrome verifies 49 cells, 8 players, Quantum 32×, 128× speed slider, Game Timer, and live dice click |
+| **Automated E2E Gate** | `node scripts/e2e-live-check.js` | Headless Chrome verifies 49 cells, 8 players, Quantum 32×, 128× speed slider, Game Timer, Build badge, and live dice click |
 
 ---
 *Maintained under [docs/](file:///home/home/github/dhayam/docs/) for complete project provenance.*

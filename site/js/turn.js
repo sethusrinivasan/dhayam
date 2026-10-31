@@ -273,8 +273,8 @@
           player.name +
           (wasReserve
             ? opt.test.openingEntry
-              ? " uses the opening entry allowance to enter a " + avName + " and"
-              : " enters a " + avName + " and"
+              ? " uses the opening entry allowance to enter a " + avName + " onto the board (+1 bonus point) and"
+              : " enters a " + avName + " onto the board (+1 bonus point) and"
             : " moves a " + avName) +
           " uses " +
           opt.values.join(" plus ") +
@@ -292,7 +292,9 @@
             .join(" and ");
           commentary += " " + victimDesc + " is captured and returns to reserve!";
         }
-        if (willFinish) commentary += " The " + avName + " reaches the center!";
+        if (willFinish) {
+          commentary += " 🎉 Congratulations " + player.name + "! The " + avName + " reaches the center goal (+1 bonus point)!";
+        }
         moving = true;
         movingPieceId = piece.id;
         speakGame(commentary);
@@ -317,6 +319,53 @@
           }
 
           await animatePiece(player, piece, opt.test.progress);
+
+          // Bonus Point Award: Coin entered onto the board from reserve
+          if (wasReserve) {
+            player.bonusPoints = (player.bonusPoints || 0) + 1;
+            if (typeof showToast === "function") {
+              showToast("⭐ +1 Bonus Point! " + player.name + " entered a coin onto the board.");
+            }
+            if (typeof displayFloatingEmote === "function") {
+              displayFloatingEmote("⭐", player.name);
+            }
+            if (typeof FlightRecorder !== "undefined") {
+              FlightRecorder.record("BONUS_POINT_AWARDED", {
+                player: player.name,
+                reason: "COIN_ENTERED_BOARD",
+                bonusPoints: player.bonusPoints,
+              });
+            }
+          }
+
+          // Bonus Point Award & Congratulatory Celebration: Coin reached the sacred center (Goal / D4)
+          if (willFinish) {
+            player.bonusPoints = (player.bonusPoints || 0) + 1;
+            const destSq = node(player, piece) || "D4";
+            if (typeof showGoalSplash === "function") {
+              showGoalSplash(destSq, player.name, player.avatar);
+            }
+            if (typeof displayFloatingEmote === "function") {
+              displayFloatingEmote("🎯", player.name);
+              setTimeout(() => displayFloatingEmote("🏆", player.name), 250);
+              setTimeout(() => displayFloatingEmote("🎉", player.name), 500);
+            }
+            if (typeof showToast === "function") {
+              showToast("🎉 Congratulations " + player.name + "! Reached the center (+1 bonus point)!");
+            }
+            $("statusTitle").textContent = "🎯 Center Reached!";
+            if ($("statusText")) {
+              $("statusText").textContent = "🎉 Congratulations " + player.name + "! Coin reached the sacred center (+1 bonus point)!";
+            }
+            if (typeof FlightRecorder !== "undefined") {
+              FlightRecorder.record("COIN_REACHED_CENTER", {
+                player: player.name,
+                pieceId: piece.id,
+                bonusPoints: player.bonusPoints,
+              });
+            }
+          }
+
           if (
             wasReserve &&
             game.turn <= game.players.length &&
@@ -634,6 +683,26 @@
           speakGame(commentary);
 
           await animatePiece(player, piece, data.targetProgress);
+
+          if (wasReserve) {
+            player.bonusPoints = (player.bonusPoints || 0) + 1;
+            if (typeof displayFloatingEmote === "function") {
+              displayFloatingEmote("⭐", player.name);
+            }
+          }
+
+          if (data.targetProgress === 43) {
+            player.bonusPoints = (player.bonusPoints || 0) + 1;
+            const destSq = (ROUTES[player.seat] && ROUTES[player.seat][43]) || "D4";
+            if (typeof showGoalSplash === "function") {
+              showGoalSplash(destSq, player.name, player.avatar);
+            }
+            if (typeof displayFloatingEmote === "function") {
+              displayFloatingEmote("🎯", player.name);
+              setTimeout(() => displayFloatingEmote("🏆", player.name), 250);
+              setTimeout(() => displayFloatingEmote("🎉", player.name), 500);
+            }
+          }
 
           if (data.captures && data.captures.length) {
             const capSquare = ROUTES[player.seat][data.targetProgress];

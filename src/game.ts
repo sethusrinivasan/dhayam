@@ -12,6 +12,7 @@ export type Player = {
   captured: boolean;
   rank: number | null;
   pieces: Piece[];
+  bonusPoints?: number;
 };
 
 export type Game = {
@@ -150,6 +151,7 @@ export function createGame(playerCount = 4): Game {
       seat,
       captured: false,
       rank: null,
+      bonusPoints: 0,
       pieces: Array.from({ length: 6 }, (_, pieceIndex) => ({
         id: `P${playerIndex}-${pieceIndex}`,
         progress: -1,
@@ -310,8 +312,16 @@ export function applyMove(game: Game, move: Move): Game {
   const piece = activePlayer.pieces.find(
     (candidate) => matchPieceId(candidate.id, legal.pieceId),
   )!;
+  const wasReserve = piece.progress === -1;
+  const willFinish = legal.progress === FINISH_PROGRESS;
   piece.progress = legal.progress;
   activePlayer.captured = legal.captured;
+  if (wasReserve) {
+    activePlayer.bonusPoints = (activePlayer.bonusPoints ?? 0) + 1;
+  }
+  if (willFinish) {
+    activePlayer.bonusPoints = (activePlayer.bonusPoints ?? 0) + 1;
+  }
   for (const capture of legal.captures) {
     const target = findPiece(next, capture.pieceId);
     if (target) target.piece.progress = -1;

@@ -74,6 +74,7 @@
       },
       theme: document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween",
       audio: typeof audioEnabled !== "undefined" ? audioEnabled : null,
+      build: typeof window !== "undefined" && window.BUILD_INFO ? window.BUILD_INFO : null,
       gameInitConfig: gameInitConfig,
       initialParameters: gameInitConfig,
       gameState: typeof game !== "undefined" && game ? {
@@ -269,12 +270,18 @@
         "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f132b;color:#fcd34d;padding:10px 18px;border-radius:10px;border:1px solid #f59e0b;box-shadow:0 10px 30px rgba(0,0,0,0.8);z-index:99999;font-size:0.88rem;font-weight:700;display:flex;align-items:center;gap:8px;pointer-events:none;transition:opacity 0.25s ease;";
       document.body.appendChild(toast);
     }
-    toast.innerHTML = "🛫 " + msg;
+    const hasIcon =
+      msg.startsWith("⭐") ||
+      msg.startsWith("🎉") ||
+      msg.startsWith("🎯") ||
+      msg.startsWith("🛫");
+    toast.innerHTML = (hasIcon ? "" : "🛫 ") + msg;
     toast.style.opacity = "1";
     setTimeout(() => {
       if (toast) toast.style.opacity = "0";
     }, 2800);
   }
+  window.showToast = showToast;
 
   // Public API
   window.FlightRecorder = {

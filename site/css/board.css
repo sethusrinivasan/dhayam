@@ -532,6 +532,66 @@
   }
 }
 
+/* Goal Splash: Celebratory banner when a coin reaches the sacred center (D4 / Goal) */
+.goal-splash {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 105;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.95), rgba(180, 83, 9, 0.95));
+  backdrop-filter: blur(6px);
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 24px rgba(245, 158, 11, 0.85);
+  font-family: inherit;
+  border: 2px solid rgba(254, 243, 199, 0.7);
+  animation: captureSplashAnim 2.8s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  max-width: 90%;
+  text-align: center;
+}
+
+.goal-splash.centered {
+  left: 50% !important;
+  top: 50% !important;
+}
+
+.goal-splash-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.96rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fffbeb;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.goal-splash-detail {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #fef3c7;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.goal-splash-bonus {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ffe082;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 238, 187, 0.4);
+}
+
 .boardlegend {
   flex: 0 0 auto;
   margin-top: clamp(3px, 0.5vh, 6px);

@@ -197,3 +197,34 @@ button:disabled {
 .footer a:hover {
   color: #ffffff;
 }
+
+.footer-build {
+  margin-top: 3px;
+  font-size: clamp(8.5px, 1vh, 10px);
+  color: #cdbda8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  opacity: 0.9;
+}
+
+.build-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  background: #ffffff14;
+  padding: 1px 7px;
+  border-radius: 6px;
+  border: 1px solid #ffffff24;
+  color: #f3c774;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.build-sep {
+  color: #786b59;
+}
+
+.build-updated {
+  color: #ad9a82;
+  font-variant-numeric: tabular-nums;
+}
