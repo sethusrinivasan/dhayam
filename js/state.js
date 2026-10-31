@@ -75,6 +75,7 @@
         connections: [],
         status: "offline",
         roomTargetCount: 2,
+        claimedSeats: {},
       };
 
       function isMyTurn() {

@@ -2,8 +2,9 @@
  * multiplayer.js - Peer-to-Peer Real-Time Multiplayer Engine
  *
  * Implements serverless online multiplayer using WebRTC DataChannels (via PeerJS).
- * Supports host room creation, shareable invite links, camera QR-code joining,
- * state synchronization across browsers, action forwarding, and animated reactions.
+ * Supports host room creation with dynamic QR codes, shareable invite links,
+ * auto-join via QR scan/URL, unassigned seat picking, state synchronization,
+ * action forwarding, and animated reactions.
  */
 "use strict";
 
@@ -29,6 +30,45 @@ function generateRoomCode() {
 function getRoomInviteUrl(code) {
   const base = window.location.origin + window.location.pathname;
   return base + "?join=" + code;
+}
+
+/**
+ * Generate a standalone crisp SVG QR code using client-side qrcode-generator
+ */
+function generateQrSvg(text, cellSize = 4, margin = 4) {
+  if (typeof qrcode === "undefined") {
+    return '<div style="padding:16px;color:#3b2210;font-size:0.85rem;">QR code library loading…</div>';
+  }
+  try {
+    const qr = qrcode(0, "M");
+    qr.addData(text);
+    qr.make();
+    return qr.createSvgTag(cellSize, margin);
+  } catch (err) {
+    console.warn("Failed to generate QR SVG:", err);
+    return '<div style="padding:16px;color:#3b2210;font-size:0.85rem;">Could not render QR code</div>';
+  }
+}
+
+/**
+ * Helper to inspect seat availability and claims for the current game
+ */
+function getRoomSeatsInfo() {
+  if (!game || !game.players) return [];
+  return game.players.map((p, idx) => {
+    const isHost = idx === 0;
+    const claim = multiplayer.claimedSeats ? multiplayer.claimedSeats[idx] : null;
+    const isClaimed = isHost || Boolean(claim);
+    return {
+      seat: idx,
+      name: p.name,
+      avatar: p.avatar,
+      color: p.color,
+      claimed: isClaimed,
+      claimedBy: isHost ? (game.players[0].name + " (Host)") : (claim ? claim.name : ""),
+      isHost: isHost,
+    };
+  });
 }
 
 /**
@@ -181,6 +221,11 @@ function hostOnlineGame(playerCount = 2) {
   // Initialize Host's game engine
   newGame(playerCount, 0);
 
+  // Host permanently owns seat 0
+  multiplayer.claimedSeats = {
+    0: { peerId: "HOST", name: game.players[0].name },
+  };
+
   const peer = new Peer(peerId, {
     debug: 1,
     config: {
@@ -214,40 +259,34 @@ function hostOnlineGame(playerCount = 2) {
 }
 
 /**
- * Host accepts and registers guest player
+ * Host accepts incoming guest connection and prompts for seat selection
  */
 function handleIncomingGuest(conn) {
-  const currentCount = multiplayer.connections.length + 1; // +1 for host
-  if (currentCount >= multiplayer.roomTargetCount) {
-    conn.on("open", () => {
-      conn.send({ type: "REJECT", reason: "Room is already full" });
-      setTimeout(() => conn.close(), 500);
-    });
-    return;
-  }
-
-  const assignedSeat = multiplayer.connections.length + 1;
-  multiplayer.connections.push(conn);
-
   conn.on("open", () => {
+    const total = multiplayer.roomTargetCount;
+    const claimedCount = Object.keys(multiplayer.claimedSeats || {}).length;
+    if (claimedCount >= total) {
+      conn.send({ type: "REJECT", reason: "Room " + multiplayer.roomCode + " is already full (" + total + "/" + total + " players)." });
+      setTimeout(() => conn.close(), 500);
+      return;
+    }
+
+    if (!multiplayer.connections.includes(conn)) {
+      multiplayer.connections.push(conn);
+    }
+
+    // Send available seats info so guest can pick an unassigned player
     conn.send({
-      type: "INIT",
-      seat: assignedSeat,
-      totalPlayers: multiplayer.roomTargetCount,
+      type: "CHOOSE_SEAT",
+      roomCode: multiplayer.roomCode,
+      totalPlayers: total,
+      seats: getRoomSeatsInfo(),
       game: serializeGameState(),
       audit: audit ? audit.events : [],
     });
 
     updateLobbyStatus();
     updateMultiplayerBadge();
-
-    // Auto-close lobby modal when target count is reached
-    if (multiplayer.connections.length + 1 >= multiplayer.roomTargetCount) {
-      setTimeout(() => {
-        closeModal();
-        broadcastState();
-      }, 1000);
-    }
   });
 
   conn.on("data", (data) => {
@@ -255,22 +294,105 @@ function handleIncomingGuest(conn) {
   });
 
   conn.on("close", () => {
-    multiplayer.connections = multiplayer.connections.filter((c) => c !== conn);
-    updateLobbyStatus();
-    updateMultiplayerBadge();
-    recordAudit("PLAYER_DISCONNECTED", { seat: assignedSeat });
+    handleGuestDisconnect(conn);
   });
 }
 
 /**
- * Host processes action sent by a guest
+ * Handle guest disconnection and release claimed seat
+ */
+function handleGuestDisconnect(conn) {
+  let releasedSeat = null;
+  if (multiplayer.claimedSeats) {
+    for (const [seatStr, claim] of Object.entries(multiplayer.claimedSeats)) {
+      if (claim.peerId === conn.peer || claim.conn === conn) {
+        releasedSeat = Number(seatStr);
+        delete multiplayer.claimedSeats[releasedSeat];
+        recordAudit("PLAYER_DISCONNECTED", { seat: releasedSeat });
+        break;
+      }
+    }
+  }
+  multiplayer.connections = multiplayer.connections.filter((c) => c !== conn);
+  updateLobbyStatus();
+  updateMultiplayerBadge();
+  broadcastState({ seats: getRoomSeatsInfo() });
+  updateHostLobbySeats();
+}
+
+/**
+ * Host processes action or seat claim sent by a guest
  */
 function handleHostReceivedData(conn, data) {
   if (!data || typeof data !== "object") return;
 
-  if (data.type === "ACTION") {
-    if (game.current !== data.seat) {
-      console.warn("Received action from seat out of turn:", data.seat);
+  if (data.type === "CLAIM_SEAT") {
+    const seat = Number(data.seat);
+    const total = multiplayer.roomTargetCount;
+    if (isNaN(seat) || seat <= 0 || seat >= total) {
+      conn.send({ type: "ERROR", message: "Invalid player slot selected." });
+      return;
+    }
+
+    if (multiplayer.claimedSeats && multiplayer.claimedSeats[seat]) {
+      conn.send({
+        type: "CHOOSE_SEAT",
+        roomCode: multiplayer.roomCode,
+        totalPlayers: total,
+        seats: getRoomSeatsInfo(),
+        error: "Seat " + (seat + 1) + " was just chosen by another player. Please pick an unassigned player.",
+      });
+      return;
+    }
+
+    // Register guest in claimedSeats
+    const originalName = game.players[seat].name;
+    const guestName = data.customName ? cleanPlayerName(data.customName, originalName) : originalName;
+    game.players[seat].name = guestName;
+
+    if (!multiplayer.claimedSeats) multiplayer.claimedSeats = {};
+    multiplayer.claimedSeats[seat] = {
+      peerId: conn.peer,
+      name: guestName,
+      conn: conn,
+    };
+
+    recordAudit("PLAYER_JOINED", {
+      seat,
+      name: guestName,
+      avatar: game.players[seat].avatar,
+    });
+
+    // Send confirmation INIT to guest
+    conn.send({
+      type: "INIT",
+      seat: seat,
+      roomCode: multiplayer.roomCode,
+      totalPlayers: total,
+      game: serializeGameState(),
+      audit: audit ? audit.events : [],
+      seats: getRoomSeatsInfo(),
+    });
+
+    // Broadcast updated state & seat list to all peers
+    broadcastState({ seats: getRoomSeatsInfo() });
+    updateLobbyStatus();
+    updateMultiplayerBadge();
+    updateHostLobbySeats();
+    render();
+  } else if (data.type === "ACTION") {
+    let senderSeat = null;
+    if (multiplayer.claimedSeats) {
+      for (const [s, claim] of Object.entries(multiplayer.claimedSeats)) {
+        if (claim.peerId === conn.peer || claim.conn === conn) {
+          senderSeat = Number(s);
+          break;
+        }
+      }
+    }
+
+    if (senderSeat === null || game.current !== senderSeat) {
+      console.warn("Received action from seat out of turn:", senderSeat, "current:", game.current);
       return;
     }
 
@@ -290,7 +412,6 @@ function handleHostReceivedData(conn, data) {
     }
   } else if (data.type === "EMOTE") {
     displayFloatingEmote(data.emote, data.name || "Player");
-    // Forward emote to all other connected peers
     multiplayer.connections.forEach((c) => {
       if (c !== conn && c.open) c.send(data);
     });
@@ -373,8 +494,13 @@ function joinOnlineGame(roomCode) {
 function handleGuestReceivedData(data) {
   if (!data || typeof data !== "object") return;
 
-  if (data.type === "INIT") {
+  if (data.type === "CHOOSE_SEAT") {
+    multiplayer.status = "choosing_seat";
+    closeModal();
+    showSeatSelectionModal(data);
+  } else if (data.type === "INIT") {
     multiplayer.mySeat = data.seat;
+    multiplayer.roomCode = data.roomCode || multiplayer.roomCode;
     multiplayer.status = "connected";
 
     // Initialize local game instance
@@ -386,11 +512,14 @@ function handleGuestReceivedData(data) {
 
     const myPlayer = game.players[data.seat];
     showModal(
-      "Joined Room " + multiplayer.roomCode,
-      '<div style="text-align:center;padding:8px 0;"><p>You are playing as <strong>' +
-        myPlayer.avatar + " " + escapeHtml(myPlayer.name) +
-        '</strong>.</p><p style="color:#a3e635;">Connected successfully!</p></div>',
-      "Let's play!",
+      "Joined Game!",
+      '<div style="text-align:center;padding:12px 0;">' +
+        '<div style="font-size:2.8rem;margin-bottom:8px;">' + myPlayer.avatar + '</div>' +
+        '<p style="font-size:1.1rem;color:#ffe4b5;margin:0 0 6px 0;">You are playing as <strong>' + escapeHtml(myPlayer.name) + '</strong></p>' +
+        '<p style="font-size:0.85rem;color:#a3e635;">Connected to Host in Room <strong>' + multiplayer.roomCode + '</strong></p>' +
+        '<p style="font-size:0.82rem;color:#d8c4ab;margin-top:8px;">When it is your turn, dice and piece movements will be enabled for you.</p>' +
+      '</div>',
+      "Let's Play!",
       () => {}
     );
   } else if (data.type === "SYNC_STATE") {
@@ -403,57 +532,167 @@ function handleGuestReceivedData(data) {
 }
 
 /**
- * Display Host Lobby Modal with Room Code, Direct Link & QR Code
+ * Display Guest Seat Selection Modal: pick an unassigned player
+ */
+function showSeatSelectionModal(data) {
+  const seats = data.seats || [];
+  const roomCode = data.roomCode || multiplayer.roomCode;
+  let errorBanner = "";
+  if (data.error) {
+    errorBanner = '<div class="mp-error-banner">' + escapeHtml(data.error) + '</div>';
+  }
+
+  const seatsHtml = seats
+    .map((s) => {
+      if (s.claimed) {
+        return (
+          '<div class="mp-seat-card claimed">' +
+            '<div class="mp-seat-avatar">' + s.avatar + '</div>' +
+            '<div class="mp-seat-info">' +
+              '<strong>' + escapeHtml(s.name) + '</strong>' +
+              '<span class="mp-seat-badge claimed-badge">' + (s.isHost ? '👑 Host' : 'Taken') + ' (' + escapeHtml(s.claimedBy) + ')</span>' +
+            '</div>' +
+            '<button type="button" class="btn pill" disabled style="opacity:0.4;cursor:not-allowed;">Occupied</button>' +
+          '</div>'
+        );
+      } else {
+        return (
+          '<div class="mp-seat-card available" data-seat="' + s.seat + '">' +
+            '<div class="mp-seat-avatar">' + s.avatar + '</div>' +
+            '<div class="mp-seat-info">' +
+              '<strong>' + escapeHtml(s.name) + '</strong>' +
+              '<span class="mp-seat-badge available-badge">✨ Available</span>' +
+            '</div>' +
+            '<button type="button" class="btn pill mp-pick-btn" data-seat="' + s.seat + '" style="font-weight:700;">Pick ' + escapeHtml(s.name) + '</button>' +
+          '</div>'
+        );
+      }
+    })
+    .join("");
+
+  const modalHtml =
+    '<div class="mp-seat-modal">' +
+      errorBanner +
+      '<p style="margin:0 0 10px 0;color:#f3dfc6;font-size:0.9rem;">' +
+        'Choose an <strong>unassigned player</strong> below to join match <strong>' + roomCode + '</strong>:' +
+      '</p>' +
+      '<div class="mp-name-input-row" style="margin-bottom:12px;">' +
+        '<label for="mpGuestCustomName" style="margin-bottom:4px;display:block;font-size:0.85rem;color:#e8d1b8;">Your Display Name (optional):</label>' +
+        '<input id="mpGuestCustomName" maxlength="15" placeholder="e.g. Anand" style="padding:7px 10px;font-size:0.9rem;border-radius:8px;" />' +
+      '</div>' +
+      '<div class="mp-seats-list">' + seatsHtml + '</div>' +
+    '</div>';
+
+  showModal("Pick Your Player", modalHtml, "Cancel", () => {
+    leaveMultiplayer();
+  });
+
+  setTimeout(() => {
+    const pickButtons = document.querySelectorAll(".mp-pick-btn");
+    pickButtons.forEach((btn) => {
+      btn.onclick = () => {
+        const seat = Number(btn.getAttribute("data-seat"));
+        const customName = ($("mpGuestCustomName")?.value || "").trim();
+        const conn = multiplayer.connections[0];
+        if (conn && conn.open) {
+          btn.textContent = "Joining…";
+          btn.disabled = true;
+          conn.send({
+            type: "CLAIM_SEAT",
+            seat,
+            customName: customName || null,
+          });
+        }
+      };
+    });
+  }, 40);
+}
+
+/**
+ * Display Host Lobby Modal with Room Code, Direct Link & Live Dynamic QR Code
  */
 function showHostLobbyModal(code, playerCount) {
   const inviteUrl = getRoomInviteUrl(code);
+  const qrSvg = generateQrSvg(inviteUrl, 4, 4);
+
   const content =
     '<div class="mp-lobby">' +
-    '<p style="margin:0 0 10px 0;color:#f3dfc6;font-size:0.92rem;">Share this code or link with opponents to join your match on their phone, tablet, or laptop:</p>' +
-    '<div class="mp-code-box">' +
-    '<div class="mp-code-label">ROOM CODE</div>' +
-    '<div class="mp-code-value">' + code + '</div>' +
-    '</div>' +
-    '<div style="background:#fff;padding:10px;border-radius:12px;display:inline-block;margin:10px 0;box-shadow:0 4px 14px rgba(0,0,0,0.4);">' +
-    '<img src="assets/qr-dhayam.svg" alt="Room QR Code" style="width:140px;height:140px;display:block;" />' +
-    '</div>' +
-    '<div style="display:flex;gap:6px;width:100%;max-width:380px;margin:auto;">' +
-    '<input type="text" readonly value="' + inviteUrl + '" id="mpInviteInput" class="mp-input" />' +
-    '<button id="mpCopyBtn" class="pill" type="button" style="white-space:nowrap;padding:6px 12px;font-weight:700;">Copy link</button>' +
-    '</div>' +
-    '<p id="mpCopyFeedback" style="margin:4px 0 0 0;font-size:0.8rem;color:#a3e635;min-height:1.2em;"></p>' +
-    '<div id="mpLobbyStatus" class="mp-lobby-status">' +
-    'Waiting for opponents to connect… (1/' + playerCount + ' joined)' +
-    '</div>' +
+      '<p style="margin:0 0 8px 0;color:#f3dfc6;font-size:0.88rem;">' +
+        'Share this unique <strong>Game Code</strong> or <strong>QR Code</strong> with friends on phone, tablet, or laptop to auto-join:' +
+      '</p>' +
+      '<div class="mp-code-box">' +
+        '<div class="mp-code-label">GAME CODE</div>' +
+        '<div class="mp-code-value">' + code + '</div>' +
+      '</div>' +
+      '<div class="mp-qr-box">' +
+        qrSvg +
+        '<div class="mp-qr-caption">📷 Scan with phone camera to auto-join</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;width:100%;max-width:400px;margin:8px auto 4px auto;">' +
+        '<input type="text" readonly value="' + inviteUrl + '" id="mpInviteInput" class="mp-input" />' +
+        '<button id="mpCopyBtn" class="pill" type="button" style="white-space:nowrap;padding:6px 12px;font-weight:700;">Copy link</button>' +
+      '</div>' +
+      '<p id="mpCopyFeedback" style="margin:2px 0 6px 0;font-size:0.8rem;color:#a3e635;min-height:1.2em;"></p>' +
+      '<div class="mp-lobby-seats" id="mpLobbySeatsContainer">' +
+        renderHostLobbySeatsHtml() +
+      '</div>' +
+      '<div id="mpLobbyStatus" class="mp-lobby-status">' +
+        renderLobbyStatusText() +
+      '</div>' +
     '</div>';
 
-  showModal("Online Room Lobby", content, "Start Match", () => {
+  showModal("Room Lobby: " + code, content, "Play Match", () => {
     broadcastState();
   });
 
   setTimeout(() => {
-    const copyBtn = $("mpCopyBtn");
-    const input = $("mpInviteInput");
-    const feedback = $("mpCopyFeedback");
-    if (copyBtn && input) {
-      copyBtn.onclick = () => {
-        input.select();
-        const done = () => {
-          if (feedback) feedback.textContent = "✓ Invite link copied!";
-          setTimeout(() => { if (feedback) feedback.textContent = ""; }, 2500);
-        };
-        if (navigator.clipboard?.writeText) {
-          navigator.clipboard.writeText(inviteUrl).then(done).catch(() => {
-            document.execCommand("copy");
-            done();
-          });
-        } else {
-          document.execCommand("copy");
-          done();
-        }
-      };
-    }
+    bindHostLobbyEvents(inviteUrl);
   }, 40);
+}
+
+/**
+ * Render HTML pills for host lobby seats
+ */
+function renderHostLobbySeatsHtml() {
+  const seats = getRoomSeatsInfo();
+  return (
+    '<div class="mp-seats-grid">' +
+    seats
+      .map((s) => {
+        const isClaimed = s.claimed;
+        return (
+          '<div class="mp-seat-pill ' + (isClaimed ? 'claimed' : 'waiting') + '">' +
+            '<span class="mp-seat-avatar">' + s.avatar + '</span>' +
+            '<span class="mp-seat-name">' + escapeHtml(s.name) + '</span>' +
+            '<span class="mp-seat-status">' + (s.isHost ? '👑 Host' : isClaimed ? '✓ Joined' : 'Waiting…') + '</span>' +
+          '</div>'
+        );
+      })
+      .join("") +
+    '</div>'
+  );
+}
+
+/**
+ * Render human-readable status text in lobby
+ */
+function renderLobbyStatusText() {
+  const connected = Object.keys(multiplayer.claimedSeats || {}).length;
+  const total = multiplayer.roomTargetCount;
+  return connected >= total
+    ? '<span style="color:#a3e635;font-weight:bold;">✓ All ' + total + ' players have joined!</span>'
+    : 'Waiting for players to scan QR code… (' + connected + '/' + total + ' joined)';
+}
+
+/**
+ * Re-render host lobby seats when someone joins or disconnects
+ */
+function updateHostLobbySeats() {
+  const container = $("mpLobbySeatsContainer");
+  if (container) {
+    container.innerHTML = renderHostLobbySeatsHtml();
+  }
+  updateLobbyStatus();
 }
 
 /**
@@ -461,13 +700,36 @@ function showHostLobbyModal(code, playerCount) {
  */
 function updateLobbyStatus() {
   const statusEl = $("mpLobbyStatus");
-  if (!statusEl) return;
-  const connected = multiplayer.connections.length + 1;
-  const total = multiplayer.roomTargetCount;
-  statusEl.innerHTML =
-    connected >= total
-      ? '<span style="color:#a3e635;font-weight:bold;">✓ All ' + total + ' players connected! Starting game…</span>'
-      : "Waiting for opponents to connect… (" + connected + "/" + total + " joined)";
+  if (statusEl) {
+    statusEl.innerHTML = renderLobbyStatusText();
+  }
+}
+
+/**
+ * Bind copy button events in host lobby
+ */
+function bindHostLobbyEvents(inviteUrl) {
+  const copyBtn = $("mpCopyBtn");
+  const input = $("mpInviteInput");
+  const feedback = $("mpCopyFeedback");
+  if (copyBtn && input) {
+    copyBtn.onclick = () => {
+      input.select();
+      const done = () => {
+        if (feedback) feedback.textContent = "✓ Invite link copied to clipboard!";
+        setTimeout(() => { if (feedback) feedback.textContent = ""; }, 2500);
+      };
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(inviteUrl).then(done).catch(() => {
+          document.execCommand("copy");
+          done();
+        });
+      } else {
+        document.execCommand("copy");
+        done();
+      }
+    };
+  }
 }
 
 /**
@@ -492,28 +754,32 @@ function updateMultiplayerBadge() {
   const role = multiplayer.isHost ? "Host" : "Guest";
   const seatName = game?.players[multiplayer.mySeat]?.name || "Player";
   badge.innerHTML = '<span class="mp-dot"></span> Room ' + multiplayer.roomCode + " · " + seatName;
-  badge.title = "Online match active (" + role + "). Click for room details.";
+  badge.title = "Online match active (" + role + "). Click to show QR code and room details.";
   badge.onclick = () => {
-    showModal(
-      "Online Match: " + multiplayer.roomCode,
-      '<div style="text-align:center;padding:10px 0;">' +
-        "<p>You are playing as <strong>" + seatName + "</strong> (" + role + ").</p>" +
-        "<p>Connected peers: " + (multiplayer.connections.length + (multiplayer.isHost ? 1 : 0)) + "</p>" +
-        '<button class="pill" id="mpLeaveBtn" style="background:#8b2626;color:#fff;margin-top:10px;">Leave Match</button>' +
-        "</div>",
-      "Close",
-      () => {}
-    );
-    setTimeout(() => {
-      const leaveBtn = $("mpLeaveBtn");
-      if (leaveBtn) {
-        leaveBtn.onclick = () => {
-          leaveMultiplayer();
-          closeModal();
-          newGame(4);
-        };
-      }
-    }, 40);
+    if (multiplayer.isHost) {
+      showHostLobbyModal(multiplayer.roomCode, multiplayer.roomTargetCount);
+    } else {
+      showModal(
+        "Room " + multiplayer.roomCode,
+        '<div style="text-align:center;padding:12px 0;">' +
+          '<p>You are playing as <strong>' + seatName + '</strong> (Guest).</p>' +
+          '<p style="color:#d8c4ab;font-size:0.88rem;">Connected to Host room ' + multiplayer.roomCode + '</p>' +
+          '<button class="pill" id="mpLeaveBtn" style="background:#8b2626;color:#fff;margin-top:14px;padding:8px 18px;font-weight:bold;">Leave Match</button>' +
+        '</div>',
+        "Close",
+        () => {}
+      );
+      setTimeout(() => {
+        const leaveBtn = $("mpLeaveBtn");
+        if (leaveBtn) {
+          leaveBtn.onclick = () => {
+            leaveMultiplayer();
+            closeModal();
+            newGame(4);
+          };
+        }
+      }, 40);
+    }
   };
 }
 
@@ -533,15 +799,16 @@ function leaveMultiplayer() {
   multiplayer.roomCode = null;
   multiplayer.connections = [];
   multiplayer.status = "offline";
+  multiplayer.claimedSeats = {};
   updateMultiplayerBadge();
 }
 
 /**
- * Check URL query params for auto-join link on page load (?join=CODE)
+ * Check URL query params for auto-join link on page load (?join=CODE or ?room=CODE)
  */
 function initMultiplayerFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  const joinCode = params.get("join") || params.get("room");
+  const joinCode = params.get("join") || params.get("room") || params.get("code");
   if (joinCode) {
     setTimeout(() => {
       joinOnlineGame(joinCode);

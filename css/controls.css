@@ -109,6 +109,14 @@
   transition: filter 0.15s, transform 0.1s;
 }
 
+.btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  filter: grayscale(0.5);
+  transform: none !important;
+}
+
 .btn:hover:not(:disabled) {
   filter: brightness(1.1);
 }

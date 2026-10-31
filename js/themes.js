@@ -67,7 +67,12 @@ function applyTheme(themeId) {
   if (!THEME_DEFINITIONS[themeId]) themeId = "halloween";
   currentTheme = themeId;
   localStorage.setItem("dhayam_theme", themeId);
-  document.body.setAttribute("data-theme", themeId);
+  if (document.documentElement) {
+    document.documentElement.setAttribute("data-theme", themeId);
+  }
+  if (document.body) {
+    document.body.setAttribute("data-theme", themeId);
+  }
 
   // Update theme configuration for active game
   const def = THEME_DEFINITIONS[themeId];

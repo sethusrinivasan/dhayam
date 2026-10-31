@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="halloween">
   <head>
     <meta charset="utf-8" />
     <meta
@@ -97,6 +97,18 @@
                   d="M350 50 L600 50 M650 100 L650 600 M600 650 L100 650 M50 600 L50 100 M100 50 L320 50 M350 150 L180 150 M150 180 L150 520 M180 550 L520 550 M550 520 L550 180 M520 150 L380 150 M350 250 L350 330 M450 350 L370 350 M350 450 L350 370 M250 350 L330 350"
                 />
               </svg>
+              <div class="halloween-decorations" aria-hidden="true">
+                <span class="halloween-decor spiderweb top-left">🕸️</span>
+                <span class="halloween-decor spiderweb top-right">🕸️</span>
+                <span class="halloween-decor spiderweb bottom-left">🕸️</span>
+                <span class="halloween-decor spiderweb bottom-right">🕸️</span>
+                <span class="halloween-decor bat bat-1">🦇</span>
+                <span class="halloween-decor bat bat-2">🦇</span>
+                <span class="halloween-decor ghost ghost-1">👻</span>
+                <span class="halloween-decor candy candy-1">🍬</span>
+                <span class="halloween-decor candy candy-2">🍭</span>
+                <span class="halloween-decor pumpkin pumpkin-1">🎃</span>
+              </div>
             </div>
             <div class="boardlegend" aria-label="Board legend">
               <span class="legenditem"
@@ -121,10 +133,15 @@
                 aria-label="Choose a legal piece to move"
                 hidden
               ></select>
-              <button class="btn" id="moveBtn" type="button" hidden>
+              <button class="btn" id="actionBtn" type="button">
+                🎲 Roll Dice
+              </button>
+              <button class="btn" id="moveBtn" type="button" disabled>
                 Move selected piece
               </button>
-              <button class="btn" id="actionBtn">Roll Dice</button>
+              <button class="btn secondary" id="passBtn" type="button" hidden>
+                Pass
+              </button>
             </div>
           </div>
           <div class="demobar" id="demoBar" hidden>
@@ -250,6 +267,7 @@
     <script src="js/turn.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/demo.js"></script>
+    <script src="js/qrcode.min.js"></script>
     <script src="js/peerjs.min.js"></script>
     <script src="js/multiplayer.js"></script>
     <script src="js/app.js"></script>

@@ -199,8 +199,20 @@
               const tid = btn.getAttribute("data-theme-id");
               if (tid && typeof applyTheme === "function") {
                 applyTheme(tid);
-                closeModal();
-                openSettingsModal();
+                themeBtns.forEach((b) => {
+                  const bId = b.getAttribute("data-theme-id");
+                  const isActive = bId === tid;
+                  b.style.borderColor = isActive ? "#f59e0b" : "";
+                  b.style.background = isActive ? "#f59e0b2a" : "";
+                  b.style.boxShadow = isActive ? "0 0 8px #f59e0b44" : "";
+                  const titleDiv = b.querySelector("div:first-child");
+                  if (titleDiv) {
+                    const opt = themeOptions.find((o) => o.id === bId);
+                    if (opt) {
+                      titleDiv.textContent = opt.name + (isActive ? " ✓ Active" : "");
+                    }
+                  }
+                });
               }
             };
           });
@@ -274,59 +286,140 @@
       });
       $("newBtn").onclick = () => {
         const modalHtml =
-          '<label for="gameMode">Game type</label>' +
-          '<select id="gameMode">' +
-          '<option value="solo" selected>Solo vs computers</option>' +
-          '<option value="local">Local pass-and-play</option>' +
-          '<option value="online-host">🌐 Host online match (P2P)</option>' +
-          '<option value="online-join">🔗 Join online match</option>' +
-          '</select>' +
-          '<div id="modeSoloSection">' +
-          '<p><strong>Solo:</strong> You play manually. Computer turns roll and move automatically with a natural pause.</p>' +
-          '<label for="computerCount">Computer opponents</label>' +
-          '<select id="computerCount"><option value="1">1 computer</option><option value="2" selected>2 computers</option><option value="3">3 computers</option><option value="4">4 computers</option><option value="5">5 computers</option></select>' +
-          '</div>' +
-          '<div id="modeLocalSection" style="display:none;">' +
-          '<label for="localCount">Local players</label>' +
-          '<select id="localCount"><option value="2" selected>2 people</option><option value="3">3 people</option><option value="4">4 people</option></select>' +
-          '</div>' +
-          '<div id="modeHostSection" style="display:none;">' +
-          '<p><strong>Host Online:</strong> Creates a WebRTC room. Opponents can join using a 5-letter room code or by scanning a QR code with their phone.</p>' +
-          '<label for="onlineCount">Total players</label>' +
-          '<select id="onlineCount"><option value="2" selected>2 players</option><option value="3">3 players</option><option value="4">4 players</option></select>' +
-          '</div>' +
-          '<div id="modeJoinSection" style="display:none;">' +
-          '<label for="roomCodeInput">5-Character Room Code</label>' +
-          '<input id="roomCodeInput" maxlength="6" placeholder="e.g. H7X2M" style="text-transform:uppercase;font-family:monospace;letter-spacing:2px;font-size:1.1rem;text-align:center;" />' +
+          '<div class="new-game-modal">' +
+            '<div class="ng-tabs">' +
+              '<button type="button" class="ng-tab active" id="tabStartGame">🎮 Start New Game</button>' +
+              '<button type="button" class="ng-tab" id="tabJoinGame">🔗 Join Multiplayer Game</button>' +
+            '</div>' +
+
+            '<!-- Start New Game Pane -->' +
+            '<div class="ng-pane" id="paneStartGame">' +
+              '<label for="ngMode">Game Mode</label>' +
+              '<select id="ngMode">' +
+                '<option value="online" selected>🌐 Online Multiplayer (P2P Room + QR Code)</option>' +
+                '<option value="solo">🤖 Solo vs Computer</option>' +
+                '<option value="local">👥 Local Pass & Play</option>' +
+              '</select>' +
+
+              '<div id="ngOnlineHelp" class="ng-help-box">' +
+                '<p style="margin:0;font-size:0.84rem;color:#f3dfc6;">' +
+                  'Generates a unique <strong>Game Code & QR Code</strong>. Opponents scan the QR code to <strong>auto-join and pick an unassigned player</strong>!' +
+                '</p>' +
+              '</div>' +
+
+              '<label for="ngPlayers">Total Players</label>' +
+              '<select id="ngPlayers">' +
+                '<option value="2" selected>2 Players</option>' +
+                '<option value="3">3 Players</option>' +
+                '<option value="4">4 Players</option>' +
+              '</select>' +
+
+              '<div id="ngSoloOpts" style="display:none;">' +
+                '<label for="ngAiCount">Computer Opponents</label>' +
+                '<select id="ngAiCount">' +
+                  '<option value="1">1 Computer</option>' +
+                  '<option value="2">2 Computers</option>' +
+                  '<option value="3" selected>3 Computers</option>' +
+                '</select>' +
+              '</div>' +
+
+              '<div class="ng-actions" style="margin-top:16px;">' +
+                '<button type="button" class="btn primary" id="btnConfirmStart" style="width:100%;padding:11px;font-size:0.95rem;font-weight:700;">' +
+                  '✨ Start Game & Get QR Code' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
+
+            '<!-- Join Existing Game Pane -->' +
+            '<div class="ng-pane" id="paneJoinGame" style="display:none;">' +
+              '<p style="margin:0 0 12px;font-size:0.86rem;color:#e8d1b8;">' +
+                'Enter the 5-character Game Code shared by your host to join their match:' +
+              '</p>' +
+              '<label for="ngJoinCode">5-Character Game Code</label>' +
+              '<input id="ngJoinCode" maxlength="8" placeholder="e.g. H7X2M" style="text-transform:uppercase;font-family:monospace;letter-spacing:3px;font-size:1.3rem;text-align:center;padding:10px;" />' +
+              '<div class="ng-actions" style="margin-top:16px;">' +
+                '<button type="button" class="btn primary" id="btnConfirmJoin" style="width:100%;padding:11px;font-size:0.95rem;font-weight:700;">' +
+                  '🔗 Connect & Pick Player' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
           '</div>';
 
-        showModal("Start a new game", modalHtml, "Start match", () => {
-          const mode = $("gameMode").value;
-          if (mode === "online-host") {
-            hostOnlineGame(Number($("onlineCount").value));
-          } else if (mode === "online-join") {
-            joinOnlineGame($("roomCodeInput").value);
-          } else if (mode === "local") {
-            leaveMultiplayer();
-            newGame(Number($("localCount").value));
-          } else {
-            leaveMultiplayer();
-            const computers = Number($("computerCount").value);
-            newGame(computers + 1, computers);
-          }
-        });
+        showModal("Dhayam Match Setup", modalHtml, "Cancel", () => {});
 
         setTimeout(() => {
-          const select = $("gameMode");
-          if (!select) return;
-          select.onchange = () => {
-            const val = select.value;
-            $("modeSoloSection").style.display = val === "solo" ? "block" : "none";
-            $("modeLocalSection").style.display = val === "local" ? "block" : "none";
-            $("modeHostSection").style.display = val === "online-host" ? "block" : "none";
-            $("modeJoinSection").style.display = val === "online-join" ? "block" : "none";
-          };
-        }, 30);
+          const tabStart = $("tabStartGame");
+          const tabJoin = $("tabJoinGame");
+          const paneStart = $("paneStartGame");
+          const paneJoin = $("paneJoinGame");
+          const modeSelect = $("ngMode");
+          const soloOpts = $("ngSoloOpts");
+          const onlineHelp = $("ngOnlineHelp");
+          const btnStart = $("btnConfirmStart");
+          const btnJoin = $("btnConfirmJoin");
+
+          if (tabStart && tabJoin) {
+            tabStart.onclick = () => {
+              tabStart.classList.add("active");
+              tabJoin.classList.remove("active");
+              paneStart.style.display = "block";
+              paneJoin.style.display = "none";
+            };
+            tabJoin.onclick = () => {
+              tabJoin.classList.add("active");
+              tabStart.classList.remove("active");
+              paneJoin.style.display = "block";
+              paneStart.style.display = "none";
+              $("ngJoinCode")?.focus();
+            };
+          }
+
+          if (modeSelect) {
+            modeSelect.onchange = () => {
+              const val = modeSelect.value;
+              if (onlineHelp) onlineHelp.style.display = val === "online" ? "block" : "none";
+              if (soloOpts) soloOpts.style.display = val === "solo" ? "block" : "none";
+              if (btnStart) {
+                btnStart.textContent =
+                  val === "online"
+                    ? "✨ Start Game & Get QR Code"
+                    : val === "solo"
+                      ? "🤖 Start Solo Match"
+                      : "👥 Start Local Match";
+              }
+            };
+          }
+
+          if (btnStart) {
+            btnStart.onclick = () => {
+              const mode = modeSelect?.value || "online";
+              const players = Number($("ngPlayers")?.value || 2);
+              closeModal();
+              if (mode === "online") {
+                hostOnlineGame(players);
+              } else if (mode === "solo") {
+                leaveMultiplayer();
+                const aiCount = Number($("ngAiCount")?.value || 1);
+                newGame(aiCount + 1, aiCount);
+              } else {
+                leaveMultiplayer();
+                newGame(players, 0);
+              }
+            };
+          }
+
+          if (btnJoin) {
+            btnJoin.onclick = () => {
+              const code = ($("ngJoinCode")?.value || "").trim();
+              if (!code) {
+                $("ngJoinCode")?.focus();
+                return;
+              }
+              closeModal();
+              joinOnlineGame(code);
+            };
+          }
+        }, 40);
       };
       if ($("resetBtn")) {
         $("resetBtn").onclick = () =>

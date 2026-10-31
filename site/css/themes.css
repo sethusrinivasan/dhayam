@@ -11,8 +11,7 @@
 /* ==========================================================================
    1. Halloween Theme (Default on launch)
    ========================================================================== */
-body[data-theme="halloween"],
-:root:not([data-theme]) body {
+body[data-theme="halloween"] {
   background: radial-gradient(
     ellipse at 50% 0%,
     #3b1842 0%,
@@ -21,8 +20,7 @@ body[data-theme="halloween"],
   );
 }
 
-body[data-theme="halloween"] .boardcard,
-:root:not([data-theme]) .boardcard {
+body[data-theme="halloween"] .boardcard {
   background: linear-gradient(
     140deg,
     #351608 0%,
@@ -38,9 +36,7 @@ body[data-theme="halloween"] .boardcard,
 }
 
 body[data-theme="halloween"] .boardcard:before,
-body[data-theme="halloween"] .boardcard:after,
-:root:not([data-theme]) .boardcard:before,
-:root:not([data-theme]) .boardcard:after {
+body[data-theme="halloween"] .boardcard:after {
   content: "🎃";
   font-size: clamp(15px, 2.2vh, 22px);
   color: #ff8c00;
@@ -48,33 +44,28 @@ body[data-theme="halloween"] .boardcard:after,
   filter: drop-shadow(0 0 6px #ff7518aa);
 }
 
-body[data-theme="halloween"] .cell,
-:root:not([data-theme]) .cell {
+body[data-theme="halloween"] .cell {
   background: #1e1126cc;
   border-color: #4a2952;
   color: #fbd6a5;
 }
 
-body[data-theme="halloween"] .cell:hover,
-:root:not([data-theme]) .cell:hover {
+body[data-theme="halloween"] .cell:hover {
   background: #2f1b3bcc;
 }
 
-body[data-theme="halloween"] .cell.safe,
-:root:not([data-theme]) .cell.safe {
+body[data-theme="halloween"] .cell.safe {
   background: #3b1b0fee;
   border-color: #ff922b;
   box-shadow: inset 0 0 10px #ff751844;
 }
 
-body[data-theme="halloween"] .cell.safe .motif,
-:root:not([data-theme]) .cell.safe .motif {
+body[data-theme="halloween"] .cell.safe .motif {
   color: #ffaa33;
   text-shadow: 0 0 8px #ff7518;
 }
 
-body[data-theme="halloween"] .cell.goal,
-:root:not([data-theme]) .cell.goal {
+body[data-theme="halloween"] .cell.goal {
   background: radial-gradient(circle, #5c2009 0%, #260f26 100%);
   border-color: #ff9f1c;
   box-shadow:
@@ -82,14 +73,12 @@ body[data-theme="halloween"] .cell.goal,
     0 0 10px #ff751844;
 }
 
-body[data-theme="halloween"] .cell.goal .motif,
-:root:not([data-theme]) .cell.goal .motif {
+body[data-theme="halloween"] .cell.goal .motif {
   color: #ffc078;
   text-shadow: 0 0 10px #ff9500;
 }
 
-body[data-theme="halloween"] .cell.legal,
-:root:not([data-theme]) .cell.legal {
+body[data-theme="halloween"] .cell.legal {
   border-color: #ff922b !important;
   box-shadow: 0 0 0 2px #ff922b, 0 0 12px #ff751899 !important;
   animation: halloweenLegalPulse 1.4s infinite ease-in-out;
@@ -100,8 +89,7 @@ body[data-theme="halloween"] .cell.legal,
   50% { box-shadow: 0 0 0 3px #ffa94d, 0 0 16px #ff7518cc; }
 }
 
-body[data-theme="halloween"] .dieface,
-:root:not([data-theme]) .dieface {
+body[data-theme="halloween"] .dieface {
   background: linear-gradient(
     145deg,
     #ff922b 0%,
@@ -115,68 +103,171 @@ body[data-theme="halloween"] .dieface,
     inset -5px -5px 8px #2b0b0388;
 }
 
-body[data-theme="halloween"] .logo,
-:root:not([data-theme]) .logo {
+body[data-theme="halloween"] .logo {
   background: #ff7518;
   color: #1a0802;
   box-shadow: 0 0 12px #ff751888;
 }
 
-body[data-theme="halloween"] .panel,
-:root:not([data-theme]) .panel {
+body[data-theme="halloween"] .panel {
   border-color: #ff75182e;
   background: #180b2077;
 }
 
-body[data-theme="halloween"] .panel h2,
-:root:not([data-theme]) .panel h2 {
+body[data-theme="halloween"] .panel h2 {
   color: #ffaa4d;
 }
 
-body[data-theme="halloween"] .btn,
-:root:not([data-theme]) .btn {
+body[data-theme="halloween"] .btn {
   background: linear-gradient(135deg, #ff7518 0%, #e8590c 100%);
   color: #ffffff;
   border-color: #ffa94d;
   box-shadow: 0 4px 14px #ff751844;
 }
 
-body[data-theme="halloween"] .btn:hover:not(:disabled),
-:root:not([data-theme]) .btn:hover:not(:disabled) {
+body[data-theme="halloween"] .btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #ff922b 0%, #f76707 100%);
   box-shadow: 0 6px 18px #ff751866;
 }
 
-body[data-theme="halloween"] .pathbase,
-:root:not([data-theme]) .pathbase {
+body[data-theme="halloween"] .pathbase {
   stroke: #ff7518;
   opacity: 0.22;
 }
 
-body[data-theme="halloween"] .pathflow,
-:root:not([data-theme]) .pathflow {
+body[data-theme="halloween"] .pathflow {
   stroke: #ffa94d;
 }
 
-body[data-theme="halloween"] .lastroll-container,
-:root:not([data-theme]) .lastroll-container {
+body[data-theme="halloween"] .lastroll-container {
   background: #19092499;
   border-color: #ff751844;
   box-shadow: 0 4px 16px #09020e88, inset 0 0 10px #ff75181a;
 }
 
-body[data-theme="halloween"] .lastroll-number,
-:root:not([data-theme]) .lastroll-number {
+body[data-theme="halloween"] .lastroll-number {
   color: #ffa94d;
   text-shadow: 0 0 18px #ff7518cc, 0 2px 6px #000;
 }
 
-body[data-theme="halloween"] .lastroll-status.bonus,
-:root:not([data-theme]) .lastroll-status.bonus {
+body[data-theme="halloween"] .lastroll-status.bonus {
   background: #ff751833;
   color: #ffc078;
   border-color: #ff922baa;
   box-shadow: 0 0 12px #ff751866;
+}
+
+/* --- Halloween Festive Board Goodies (Subtle & Non-cluttering) --- */
+.halloween-decorations {
+  display: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+[data-theme="halloween"] .halloween-decorations {
+  display: block;
+}
+
+.halloween-decor {
+  position: absolute;
+  user-select: none;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.7));
+  transition: opacity 0.3s;
+}
+
+.halloween-decor.spiderweb {
+  font-size: clamp(16px, 2.5vmin, 24px);
+  opacity: 0.38;
+}
+
+.halloween-decor.spiderweb.top-left {
+  top: 4px;
+  left: 4px;
+}
+
+.halloween-decor.spiderweb.top-right {
+  top: 4px;
+  right: 4px;
+}
+
+.halloween-decor.spiderweb.bottom-left {
+  bottom: 4px;
+  left: 4px;
+}
+
+.halloween-decor.spiderweb.bottom-right {
+  bottom: 4px;
+  right: 4px;
+}
+
+.halloween-decor.bat-1 {
+  top: 15%;
+  right: 17%;
+  font-size: clamp(13px, 2vmin, 18px);
+  opacity: 0.42;
+  animation: batFlap 4.2s ease-in-out infinite alternate;
+}
+
+.halloween-decor.bat-2 {
+  bottom: 16%;
+  left: 17%;
+  font-size: clamp(12px, 1.8vmin, 16px);
+  opacity: 0.36;
+  animation: batFlap 5s ease-in-out 1.8s infinite alternate;
+}
+
+.halloween-decor.ghost-1 {
+  top: 48%;
+  left: 3%;
+  font-size: clamp(14px, 2.2vmin, 18px);
+  opacity: 0.42;
+  animation: ghostDrift 6.5s ease-in-out infinite;
+}
+
+.halloween-decor.candy-1 {
+  bottom: 15%;
+  right: 16%;
+  font-size: clamp(12px, 1.8vmin, 16px);
+  opacity: 0.42;
+  transform: rotate(20deg);
+}
+
+.halloween-decor.candy-2 {
+  top: 15%;
+  left: 17%;
+  font-size: clamp(12px, 1.8vmin, 16px);
+  opacity: 0.38;
+  transform: rotate(-15deg);
+}
+
+.halloween-decor.pumpkin-1 {
+  bottom: 4%;
+  right: 48%;
+  font-size: clamp(12px, 1.8vmin, 16px);
+  opacity: 0.45;
+  animation: pumpkinGlow 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes ghostDrift {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.35; }
+  50% { transform: translateY(-7px) rotate(5deg); opacity: 0.58; }
+}
+
+@keyframes batFlap {
+  0% { transform: translateY(0) scale(1) rotate(-4deg); }
+  50% { transform: translateY(-5px) scale(1.06) rotate(4deg); }
+  100% { transform: translateY(0) scale(1) rotate(-4deg); }
+}
+
+@keyframes pumpkinGlow {
+  0% { filter: drop-shadow(0 0 2px #ff751866); opacity: 0.38; }
+  100% { filter: drop-shadow(0 0 7px #ff7518cc); opacity: 0.65; }
 }
 
 /* ==========================================================================

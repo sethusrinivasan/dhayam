@@ -115,6 +115,7 @@
                   const onPieceTouch = (e) => {
                     e.stopPropagation();
                     e.preventDefault();
+                    if (multiplayer.active && !isMyTurn()) return;
                     if (game.phase === "roll") {
                       $("statusText").textContent =
                         "Roll the dice first to see legal moves.";
@@ -174,7 +175,8 @@
               }
               el.appendChild(holder);
             }
-            if (can && !demo && !active().computer && !moving)
+            const isClickableTurn = !demo && (multiplayer.active ? isMyTurn() : !active().computer) && !moving;
+            if (can && isClickableTurn)
               el.onclick = () => {
                 let o = occupied
                   .map((x) => legal.get(x.piece.id))
@@ -346,103 +348,128 @@
           }
         }
         const moveChoices = [...legal.values()],
-          canUseMoveButton =
-            game.phase === "move" &&
-            moveChoices.length > 0 &&
-            !demo &&
-            !active().computer;
+          p = active(),
+          winner = game.players.find((player) => player.rank === 1),
+          isHumanTurn = !demo && (multiplayer.active ? isMyTurn() : !p.computer),
+          canRoll = game.phase === "roll" && !rolling && !moving && isHumanTurn && game.phase !== "done",
+          targetMove = (selectedPieceId ? legal.get(selectedPieceId) : null) || moveChoices[0] || (entry ? entry : null),
+          canMove = game.phase === "move" && Boolean(targetMove) && !rolling && !moving && isHumanTurn;
+
         if (!moveChoices.some((move) => move.piece.id === selectedPieceId))
-          selectedPieceId = moveChoices[0]?.piece.id ?? null;
-        $("moveChoice").innerHTML = moveChoices
-          .map((move) => {
-            const from = node(active(), move.piece) || "reserve",
-              destination = ROUTES[active().seat][move.test.progress];
-            return (
-              '<option value="' +
-              move.piece.id +
-              '"' +
-              (move.piece.id === selectedPieceId ? " selected" : "") +
-              ">Piece " +
-              (active().pieces.indexOf(move.piece) + 1) +
-              ": " +
-              from +
-              " → " +
-              destination +
-              "</option>"
-            );
-          })
-          .join("");
-        $("moveChoice").hidden = !canUseMoveButton;
-        $("moveChoice").onchange = (event) => {
-          selectedPieceId = event.target.value;
-        };
-        $("moveBtn").hidden = !canUseMoveButton;
-        $("moveBtn").disabled = moving || rolling;
-        $("moveBtn").onclick = () =>
-          apply(legal.get(selectedPieceId), "move-button");
-        const p = active(),
-          winner = game.players.find((player) => player.rank === 1);
+          selectedPieceId = targetMove?.piece?.id ?? null;
+
+        // Move Choice Dropdown (#moveChoice)
+        const moveChoiceEl = $("moveChoice");
+        if (moveChoiceEl) {
+          const showDropdown = game.phase === "move" && moveChoices.length > 1 && isHumanTurn;
+          moveChoiceEl.hidden = !showDropdown;
+          if (showDropdown) {
+            moveChoiceEl.innerHTML = moveChoices
+              .map((move) => {
+                const from = node(p, move.piece) || "reserve",
+                  destination = ROUTES[p.seat][move.test.progress];
+                return (
+                  '<option value="' +
+                  move.piece.id +
+                  '"' +
+                  (move.piece.id === selectedPieceId ? " selected" : "") +
+                  ">Piece " +
+                  (p.pieces.indexOf(move.piece) + 1) +
+                  ": " +
+                  from +
+                  " → " +
+                  destination +
+                  "</option>"
+                );
+              })
+              .join("");
+            moveChoiceEl.onchange = (event) => {
+              selectedPieceId = event.target.value;
+              render();
+            };
+          }
+        }
+
+        // 1. Move Selected Piece Button (#moveBtn)
+        const moveBtn = $("moveBtn");
+        if (moveBtn) {
+          moveBtn.hidden = false;
+          moveBtn.textContent = moving
+            ? "Moving…"
+            : targetMove && targetMove.piece.progress < 0
+              ? "Enter Piece"
+              : "Move selected piece";
+          moveBtn.disabled = !canMove;
+          moveBtn.onclick = () => {
+            if (canMove && targetMove) {
+              apply(targetMove, "move-button");
+            }
+          };
+        }
+
+        // 2. Roll Dice Button (#actionBtn)
+        const actionBtn = $("actionBtn");
+        if (actionBtn) {
+          if (game.phase === "done") {
+            actionBtn.textContent = "🏆 New match";
+            actionBtn.disabled = false;
+            actionBtn.onclick = () => newGame(game.players.length);
+          } else {
+            actionBtn.textContent = rolling
+              ? "🎲 Rolling…"
+              : demo
+                ? "Demo playing…"
+                : p.computer
+                  ? p.name + " is thinking…"
+                  : "🎲 Roll Dice";
+            actionBtn.disabled = !canRoll;
+            actionBtn.onclick = () => {
+              if (canRoll) roll();
+            };
+          }
+        }
+
+        const openingEntryRequired = opts.some(
+          (move) => move.test.openingEntry,
+        );
+
+        // 3. Pass Button (#passBtn)
+        const passBtn = $("passBtn");
+        if (passBtn) {
+          const canPass = game.phase === "move" && isHumanTurn && !openingEntryRequired && !moving && !rolling;
+          passBtn.hidden = game.phase !== "move" || !isHumanTurn || openingEntryRequired;
+          passBtn.disabled = !canPass;
+          passBtn.onclick = () => {
+            if (canPass) passRemainingRolls();
+          };
+        }
+
         $("statusTitle").textContent =
           game.phase === "done"
             ? "🏆 " + winner.name + " wins!"
             : p.avatar + " " + p.name + "’s turn";
-        const openingEntryRequired = opts.some(
-          (move) => move.test.openingEntry,
-        );
-        $("statusText").textContent =
-          game.phase === "roll"
-            ? "Roll the Dayakattai" +
-              (game.history.length
-                ? " · bonus throw! Follow the glowing route around the board."
-                : " · Follow the glowing route around the board.")
-            : game.phase === "move"
-              ? openingEntryRequired
-                ? "Use this player’s first-round entry allowance to put a piece on the board."
-                : "Choose a roll, then tap a gold-outlined " +
-                  p.avatar +
-                  " piece. " +
-                  chosen.length +
-                  " move" +
-                  (chosen.length === 1 ? " is" : "s are") +
-                  " available."
-              : winner.name +
-                " brought all six pieces to the center. The game is complete.";
-        $("actionBtn").textContent =
-          game.phase === "roll"
-            ? "🎲 Roll Dice"
-            : game.phase === "move"
-              ? openingEntryRequired && entry
-                ? "Enter Piece onto Board"
-                : canUseMoveButton && (legal.get(selectedPieceId) || moveChoices[0])
-                  ? "Move selected piece"
-                  : "Pass remaining rolls"
-              : "New match";
-        $("actionBtn").onclick = () => {
-          if (game.phase === "roll") {
-            roll();
-          } else if (game.phase === "move") {
-            if (openingEntryRequired && entry) {
-              apply(entry, "action-btn-entry");
-            } else if (canUseMoveButton && (legal.get(selectedPieceId) || moveChoices[0])) {
-              apply(legal.get(selectedPieceId) || moveChoices[0], "action-btn-move");
-            } else {
-              passRemainingRolls();
-            }
-          } else {
-            newGame(game.players.length);
-          }
-        };
-        $("actionBtn").disabled =
-          demo ||
-          rolling ||
-          moving ||
-          p.computer;
-        if (game.phase === "done") $("actionBtn").textContent = "Game complete";
-        else if (demo) $("actionBtn").textContent = "Demo playing…";
-        else if (rolling) $("actionBtn").textContent = "Rolling…";
-        else if (moving) $("actionBtn").textContent = "Moving…";
-        else if (p.computer)
-          $("actionBtn").textContent = p.name + " is thinking…";
+        if ($("statusText")) {
+          const isWaitingPeer = multiplayer.active && !isHumanTurn;
+          $("statusText").textContent =
+            game.phase === "done"
+              ? winner.name + " brought all six pieces to the center. The game is complete."
+              : isWaitingPeer
+                ? "Waiting for " + p.name + " to " + (game.phase === "roll" ? "roll dice" : "make a move") + "…"
+                : game.phase === "roll"
+                  ? "Roll the Dayakattai" +
+                    (game.history.length
+                      ? " · bonus throw! Follow the glowing route around the board."
+                      : " · Follow the glowing route around the board.")
+                  : openingEntryRequired
+                    ? "Use this player’s first-round entry allowance to put a piece on the board."
+                    : "Choose a roll, then tap a gold-outlined " +
+                      p.avatar +
+                      " piece. " +
+                      chosen.length +
+                      " move" +
+                      (chosen.length === 1 ? " is" : "s are") +
+                      " available.";
+        }
         const diceHintEl = $("diceHint");
         if (diceHintEl) {
           if (game.last) {
@@ -473,7 +500,7 @@
               '<div class="lastroll-helper-init">Two traditional dice · Click dice to roll.<br>Roll 1, 5, 6, or 12 for a bonus throw.</div>';
           }
         }
-        const canRollDice = game.phase === "roll" && !rolling && !moving && !demo && !p.computer;
+        const canRollDice = canRoll;
         const diceEl = document.querySelector(".dice");
         if (diceEl) {
           diceEl.classList.toggle("rollable", canRollDice);
@@ -481,13 +508,100 @@
           if (canRollDice) {
             diceEl.title = "Click to roll dice";
             diceEl.setAttribute("tabindex", "0");
+          } else if (game.phase === "move") {
+            diceEl.title = "Dice already rolled — Select a piece to move";
+            diceEl.setAttribute("tabindex", "0");
           } else {
             diceEl.removeAttribute("title");
             diceEl.removeAttribute("tabindex");
           }
+
+          diceEl.onclick = () => {
+            if (game.phase === "move") {
+              warnDiceAlreadyRolled();
+            } else if (canRollDice) {
+              roll();
+            }
+          };
+
+          diceEl.onkeydown = (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              diceEl.click();
+            }
+          };
+        }
+
+        const controlActions = document.querySelector(".controlactions");
+        if (controlActions && !controlActions._warnBound) {
+          controlActions._warnBound = true;
+          controlActions.addEventListener("click", (e) => {
+            if (game && game.phase === "move" && (e.target.id === "actionBtn" || e.target.closest("#actionBtn"))) {
+              warnDiceAlreadyRolled();
+            }
+          });
         }
         updateAudioToggle();
         scheduleComputerIfNeeded();
+      }
+
+      function warnDiceAlreadyRolled() {
+        const diceEl = document.querySelector(".dice");
+        if (!diceEl) return;
+
+        // 1. Horizontal shake vibration on the dice
+        diceEl.classList.remove("dice-shake-warn");
+        void diceEl.offsetWidth;
+        diceEl.classList.add("dice-shake-warn");
+        setTimeout(() => diceEl.classList.remove("dice-shake-warn"), 550);
+
+        // 2. Pulse attention on the Move Selected Piece button
+        const moveBtn = document.getElementById("moveBtn");
+        if (moveBtn) {
+          moveBtn.classList.remove("pulse-attention");
+          void moveBtn.offsetWidth;
+          moveBtn.classList.add("pulse-attention");
+          setTimeout(() => moveBtn.classList.remove("pulse-attention"), 1500);
+        }
+
+        // 3. Highlight legal cells on the board
+        const legalCells = document.querySelectorAll(".cell.legal");
+        legalCells.forEach((c) => {
+          c.classList.add("cell-highlight-attention");
+          setTimeout(() => c.classList.remove("cell-highlight-attention"), 1500);
+        });
+
+        // 4. Floating visual toast directly over the dice
+        let banner = document.getElementById("diceWarnBanner");
+        if (!banner) {
+          banner = document.createElement("div");
+          banner.id = "diceWarnBanner";
+          banner.className = "dice-warn-banner";
+          diceEl.appendChild(banner);
+        }
+        banner.textContent = "👉 Dice rolled! Pick a piece to move.";
+        banner.classList.add("visible");
+        if (banner._warnTimer) clearTimeout(banner._warnTimer);
+        banner._warnTimer = setTimeout(() => banner.classList.remove("visible"), 2600);
+
+        // 5. Explicit status prompt
+        const statusEl = document.getElementById("statusText");
+        if (statusEl) {
+          statusEl.innerHTML =
+            '<strong style="color:#ffa94d;">⚠️ Dice already rolled!</strong> Tap a piece on the board or click "Move selected piece".';
+        }
+
+        // 6. Audio cue if enabled
+        if (typeof playTone === "function") {
+          playTone(320, 0.12, "sine");
+        }
+
+        if (typeof FlightRecorder !== "undefined") {
+          FlightRecorder.record("DICE_CLICK_DURING_MOVE_PHASE_WARNED", {
+            phase: game ? game.phase : "unknown",
+            pool: game ? [...game.pool] : [],
+          });
+        }
       }
       const DEMO_STEPS = [
         () =>

@@ -145,3 +145,174 @@
     transform: translate(-50%, -85px) scale(0.85);
   }
 }
+
+/* Dynamic QR Code Box */
+.mp-qr-box {
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 16px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 6px auto 10px auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.mp-qr-box svg {
+  display: block;
+  width: clamp(140px, 24vmin, 180px);
+  height: clamp(140px, 24vmin, 180px);
+}
+
+.mp-qr-caption {
+  font-size: 0.76rem;
+  color: #3b2210;
+  font-weight: 700;
+  margin-top: 6px;
+  letter-spacing: 0.2px;
+}
+
+/* Tabs for New Game modal */
+.ng-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #ffffff26;
+  padding-bottom: 8px;
+}
+
+.ng-tab {
+  flex: 1;
+  background: #20130b;
+  border: 1px solid #7a4623;
+  color: #d8c4ab;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ng-tab.active {
+  background: #d97706;
+  border-color: #f59e0b;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.4);
+}
+
+.ng-help-box {
+  background: #26160d;
+  border-left: 3px solid #d97706;
+  padding: 8px 12px;
+  border-radius: 4px 8px 8px 4px;
+  margin: 10px 0;
+}
+
+/* Host Lobby Seats Grid */
+.mp-seats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.mp-seat-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  background: #25150c;
+  border: 1px solid #63381a;
+  color: #f5e4cf;
+}
+
+.mp-seat-pill.claimed {
+  border-color: #22c55e;
+  background: #14331a;
+  color: #bbf7d0;
+}
+
+.mp-seat-pill.waiting {
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+.mp-seat-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+/* Pick Player Seat Cards */
+.mp-seats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mp-seat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #24140b;
+  border: 1px solid #75411d;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mp-seat-card.available {
+  border-color: #f59e0b;
+  background: #331c10;
+}
+
+.mp-seat-card.claimed {
+  opacity: 0.6;
+}
+
+.mp-seat-avatar {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.mp-seat-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.mp-seat-info strong {
+  font-size: 0.95rem;
+  color: #ffeed3;
+}
+
+.mp-seat-badge {
+  font-size: 0.74rem;
+  display: inline-block;
+}
+
+.claimed-badge {
+  color: #e5a959;
+}
+
+.available-badge {
+  color: #86efac;
+  font-weight: 700;
+}
+
+.mp-error-banner {
+  background: #7f1d1d;
+  color: #fecaca;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  margin-bottom: 10px;
+}
+

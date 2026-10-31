@@ -338,6 +338,12 @@
             "The opening entry allowance must be used so the game can begin.";
           return;
         }
+        if (multiplayer.active && !multiplayer.isHost) {
+          if (game.current === multiplayer.mySeat) {
+            sendPlayerAction({ type: "PASS" });
+          }
+          return;
+        }
         recordAudit("PASS", {
           reason: "PLAYER_CHOICE",
           unusedRolls: [...game.pool],

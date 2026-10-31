@@ -315,6 +315,65 @@
   }
 }
 
+/* Dice warning feedback when user attempts to roll during move phase */
+@keyframes diceShakeWarn {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-9px) rotate(-3deg); filter: drop-shadow(0 0 10px #ef4444); }
+  40% { transform: translateX(9px) rotate(3deg); filter: drop-shadow(0 0 14px #f59e0b); }
+  60% { transform: translateX(-6px) rotate(-2deg); filter: drop-shadow(0 0 10px #ef4444); }
+  80% { transform: translateX(4px) rotate(1deg); filter: drop-shadow(0 0 8px #f59e0b); }
+}
+
+.dice.dice-shake-warn {
+  animation: diceShakeWarn 0.5s ease-in-out !important;
+}
+
+.dice-warn-banner {
+  position: absolute;
+  top: -38px;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: linear-gradient(135deg, #78350f, #451a03);
+  border: 1px solid #f59e0b;
+  color: #fef3c7;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 12px #f59e0b66;
+  opacity: 0;
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.dice-warn-banner.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@keyframes moveBtnPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8); }
+  50% { transform: scale(1.08); box-shadow: 0 0 20px 6px rgba(245, 158, 11, 0.9); border-color: #fbbf24; }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+#moveBtn.pulse-attention {
+  animation: moveBtnPulse 0.7s ease-in-out 2 !important;
+  border-color: #f59e0b !important;
+}
+
+@keyframes legalCellFlash {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); box-shadow: 0 0 18px 4px #f59e0b !important; }
+}
+
+.cell.cell-highlight-attention {
+  animation: legalCellFlash 0.6s ease-in-out 2 !important;
+  z-index: 10;
+}
+
 @keyframes dieShadowB {
   0% {
     transform: scale(0.9);
@@ -351,4 +410,63 @@
     opacity: 0.88;
     filter: blur(4px);
   }
+}
+
+/* Dice warning feedback when user attempts to roll during move phase */
+@keyframes diceShakeWarn {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-9px) rotate(-3deg); filter: drop-shadow(0 0 10px #ef4444); }
+  40% { transform: translateX(9px) rotate(3deg); filter: drop-shadow(0 0 14px #f59e0b); }
+  60% { transform: translateX(-6px) rotate(-2deg); filter: drop-shadow(0 0 10px #ef4444); }
+  80% { transform: translateX(4px) rotate(1deg); filter: drop-shadow(0 0 8px #f59e0b); }
+}
+
+.dice.dice-shake-warn {
+  animation: diceShakeWarn 0.5s ease-in-out !important;
+}
+
+.dice-warn-banner {
+  position: absolute;
+  top: -38px;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: linear-gradient(135deg, #78350f, #451a03);
+  border: 1px solid #f59e0b;
+  color: #fef3c7;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 12px #f59e0b66;
+  opacity: 0;
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.dice-warn-banner.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@keyframes moveBtnPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8); }
+  50% { transform: scale(1.08); box-shadow: 0 0 20px 6px rgba(245, 158, 11, 0.9); border-color: #fbbf24; }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+#moveBtn.pulse-attention {
+  animation: moveBtnPulse 0.7s ease-in-out 2 !important;
+  border-color: #f59e0b !important;
+}
+
+@keyframes legalCellFlash {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); box-shadow: 0 0 18px 4px #f59e0b !important; }
+}
+
+.cell.cell-highlight-attention {
+  animation: legalCellFlash 0.6s ease-in-out 2 !important;
+  z-index: 10;
 }
