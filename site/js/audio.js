@@ -94,19 +94,102 @@
         );
       }
 
+      let currentUtterance = null;
+      let speechStartTime = 0;
+      let speechIdCounter = 0;
+
+      function isAudioSpeaking() {
+        return Boolean(
+          typeof speechSynthesis !== "undefined" &&
+          (speechSynthesis.speaking || (currentUtterance && Date.now() < commentaryUntil))
+        );
+      }
+      window.isAudioSpeaking = isAudioSpeaking;
+
       function speakGame(message) {
         if (!audioEnabled || demo || !("speechSynthesis" in window)) {
           commentaryUntil = 0;
           return 0;
         }
+
+        // If an existing speech is still speaking, record interruption before cancelling
+        if (speechSynthesis.speaking && currentUtterance) {
+          const elapsed = Date.now() - speechStartTime;
+          if (typeof FlightRecorder !== "undefined") {
+            FlightRecorder.record("AUDIO_PLAYBACK_INTERRUPTED", {
+              id: currentUtterance._id,
+              text: currentUtterance.text,
+              elapsedMs: elapsed,
+              reason: "CANCELLED_FOR_NEW_COMMENTARY"
+            });
+          }
+        }
+
         speechSynthesis.cancel();
         const words = message.trim().split(/\s+/).length,
-          duration = Math.max(2400, Math.round((words / 2.3) * 1000) + 700),
+          duration = Math.max(2200, Math.round((words / 2.1) * 1000) + 750),
           speech = new SpeechSynthesisUtterance(message);
+        const id = ++speechIdCounter;
+        speech._id = id;
+        currentUtterance = speech;
+        speechStartTime = Date.now();
+
         speech.voice = voiceForPlayer(active());
         speech.rate = 0.86;
         speech.pitch = 1;
         speech.volume = 1;
+
+        speech.onstart = () => {
+          if (typeof FlightRecorder !== "undefined") {
+            FlightRecorder.record("AUDIO_PLAYBACK_START", {
+              id,
+              text: message,
+              words,
+              estimatedDurationMs: duration,
+              player: active()?.name,
+              avatar: active()?.avatar,
+              voice: speech.voice ? speech.voice.name : "default"
+            });
+          }
+        };
+
+        speech.onend = () => {
+          const elapsed = Date.now() - speechStartTime;
+          if (currentUtterance === speech) currentUtterance = null;
+          commentaryUntil = Math.min(commentaryUntil, Date.now());
+          if (typeof FlightRecorder !== "undefined") {
+            FlightRecorder.record("AUDIO_PLAYBACK_COMPLETE", {
+              id,
+              text: message,
+              elapsedMs: elapsed
+            });
+          }
+        };
+
+        speech.onerror = (e) => {
+          const elapsed = Date.now() - speechStartTime;
+          if (currentUtterance === speech) currentUtterance = null;
+          commentaryUntil = Math.min(commentaryUntil, Date.now());
+          const errorType = e.error || "unknown";
+          if (typeof FlightRecorder !== "undefined") {
+            if (errorType === "interrupted" || errorType === "canceled") {
+              FlightRecorder.record("AUDIO_PLAYBACK_INTERRUPTED", {
+                id,
+                text: message,
+                reason: errorType,
+                elapsedMs: elapsed
+              });
+            } else {
+              FlightRecorder.record("AUDIO_PLAYBACK_ABORTED", {
+                id,
+                text: message,
+                error: errorType,
+                elapsedMs: elapsed
+              });
+            }
+          }
+        };
+
         commentaryUntil = Date.now() + duration;
         speechSynthesis.speak(speech);
         return duration;
@@ -130,6 +213,17 @@
         }
         if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
         const id = ++demoSpeechId;
+
+        if (speechSynthesis.speaking) {
+          if (typeof FlightRecorder !== "undefined") {
+            FlightRecorder.record("AUDIO_PLAYBACK_INTERRUPTED", {
+              id,
+              text: message,
+              reason: "CANCELLED_FOR_DEMO_SCENE"
+            });
+          }
+        }
+
         speechSynthesis.cancel();
         const speech = new SpeechSynthesisUtterance(message);
         demoWaitingForSpeech = true;
@@ -137,8 +231,42 @@
         speech.rate = Math.min(2, 0.78 * demoSpeed);
         speech.pitch = 1;
         speech.volume = 1;
-        speech.onend = () => finishDemoSpeech(id);
-        speech.onerror = () => finishDemoSpeech(id);
+
+        speech.onstart = () => {
+          if (typeof FlightRecorder !== "undefined") {
+            FlightRecorder.record("AUDIO_PLAYBACK_START", {
+              id,
+              context: "demo",
+              text: message,
+              words
+            });
+          }
+        };
+
+        speech.onend = () => {
+          if (typeof FlightRecorder !== "undefined") {
+            FlightRecorder.record("AUDIO_PLAYBACK_COMPLETE", {
+              id,
+              context: "demo",
+              text: message
+            });
+          }
+          finishDemoSpeech(id);
+        };
+
+        speech.onerror = (e) => {
+          const err = e.error || "unknown";
+          if (typeof FlightRecorder !== "undefined") {
+            FlightRecorder.record(err === "interrupted" || err === "canceled" ? "AUDIO_PLAYBACK_INTERRUPTED" : "AUDIO_PLAYBACK_ABORTED", {
+              id,
+              context: "demo",
+              text: message,
+              error: err
+            });
+          }
+          finishDemoSpeech(id);
+        };
+
         demoSpeechTimer = setTimeout(
           () => finishDemoSpeech(id),
           scaledDemoDelay(demoNextDelay + 2500),

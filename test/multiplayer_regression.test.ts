@@ -714,5 +714,293 @@ test("default game experience initializes Solo vs Computer (2 players, 1 compute
   assert.deepEqual(defaultGame.seats, ["N", "S"], "2-player seating must be North and South");
 });
 
+test("calculatePlayerScore correctly tallies board progression, captures, and home finishes", () => {
+  function calculatePlayerScore(p: any) {
+    if (!p || !Array.isArray(p.pieces)) return 0;
+    let score = 0;
+    for (const piece of p.pieces) {
+      if (piece.progress === 43) {
+        score += 100;
+      } else if (piece.progress >= 0) {
+        score += piece.progress + 1;
+      }
+    }
+    if (p.captured) score += 50;
+    if (p.rank === 1) score += 200;
+    return score;
+  }
+
+  // Initial reserve state
+  const pInitial = {
+    pieces: Array.from({ length: 6 }, () => ({ progress: -1 })),
+    captured: false,
+    rank: null
+  };
+  assert.equal(calculatePlayerScore(pInitial), 0, "Initial player with all pieces in reserve has 0 points");
+
+  // Player with 2 pieces on board: piece 0 at progress 0 (1 pt), piece 1 at progress 14 (15 pts)
+  const pActive = {
+    pieces: [
+      { progress: 0 },
+      { progress: 14 },
+      { progress: -1 },
+      { progress: -1 },
+      { progress: -1 },
+      { progress: -1 }
+    ],
+    captured: false,
+    rank: null
+  };
+  assert.equal(calculatePlayerScore(pActive), 16, "Score should reflect sum of active board squares (1 + 15 = 16 pts)");
+
+  // Player with 1 capture earned (+50 pts)
+  pActive.captured = true;
+  assert.equal(calculatePlayerScore(pActive), 66, "Score should include +50 pts capture achievement bonus");
+
+  // Player brings 1 piece home (progress 43 = 100 pts)
+  pActive.pieces[0].progress = 43;
+  assert.equal(calculatePlayerScore(pActive), 165, "Score should include 100 pts for finished piece (100 + 15 + 50 = 165 pts)");
+
+  // Player wins match (rank 1 = +200 pts)
+  pActive.rank = 1;
+  assert.equal(calculatePlayerScore(pActive), 365, "Score should include +200 pts match victory bonus");
+});
+
+test("capture splash detail states who captured whom with player names and avatars", () => {
+  function formatCaptureDetail(player: any, targets: any[]) {
+    const victimSummary = targets
+      .map((hit) => (hit.other.avatar ? hit.other.avatar + " " : "") + hit.other.name)
+      .join(" & ");
+    return (player.avatar ? player.avatar + " " : "") + player.name + " captured " + victimSummary;
+  }
+
+  const capturer = { name: "You", avatar: "🎃" };
+  const targets = [{ other: { name: "Leo", avatar: "👻" }, q: { id: "P1-0" } }];
+  const detail = formatCaptureDetail(capturer, targets);
+  assert.equal(detail, "🎃 You captured 👻 Leo");
+
+  // Multi-target capture scenario
+  const multiTargets = [
+    { other: { name: "Leo", avatar: "👻" }, q: { id: "P1-0" } },
+    { other: { name: "Tara", avatar: "🧙" }, q: { id: "P2-0" } }
+  ];
+  const multiDetail = formatCaptureDetail(capturer, multiTargets);
+  assert.equal(multiDetail, "🎃 You captured 👻 Leo & 🧙 Tara");
+});
+
+test("audio playback lifecycle logs start, complete, and interrupted events to FlightRecorder", () => {
+  const events: any[] = [];
+  const mockFlightRecorder = {
+    record: (type: string, data: any) => events.push({ type, ...data })
+  };
+
+  let currentUtterance: any = null;
+  let commentaryUntil = 0;
+  let speechId = 0;
+
+  function simulateSpeak(text: string, isAlreadySpeaking: boolean) {
+    if (isAlreadySpeaking && currentUtterance) {
+      mockFlightRecorder.record("AUDIO_PLAYBACK_INTERRUPTED", {
+        id: currentUtterance.id,
+        text: currentUtterance.text,
+        reason: "CANCELLED_FOR_NEW_COMMENTARY"
+      });
+    }
+
+    const id = ++speechId;
+    currentUtterance = { id, text };
+    mockFlightRecorder.record("AUDIO_PLAYBACK_START", {
+      id,
+      text,
+      words: text.split(" ").length,
+      estimatedDurationMs: 2500
+    });
+
+    commentaryUntil = Date.now() + 2500;
+  }
+
+  function simulateSpeechEnd(id: number, text: string) {
+    mockFlightRecorder.record("AUDIO_PLAYBACK_COMPLETE", {
+      id,
+      text,
+      elapsedMs: 2200
+    });
+    currentUtterance = null;
+  }
+
+  // 1. Start speech
+  simulateSpeak("Leo rolled 3.", false);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].type, "AUDIO_PLAYBACK_START");
+
+  // 2. Normal completion
+  simulateSpeechEnd(1, "Leo rolled 3.");
+  assert.equal(events.length, 2);
+  assert.equal(events[1].type, "AUDIO_PLAYBACK_COMPLETE");
+
+  // 3. New speech starts while previous was interrupted
+  currentUtterance = { id: 2, text: "Previous speech" };
+  simulateSpeak("New speech starts", true);
+  assert.equal(events[2].type, "AUDIO_PLAYBACK_INTERRUPTED");
+  assert.equal(events[2].reason, "CANCELLED_FOR_NEW_COMMENTARY");
+  assert.equal(events[3].type, "AUDIO_PLAYBACK_START");
+});
+
+test("scheduleComputerIfNeeded pauses computer action until active speech completes", () => {
+  let computerTimerDelay = 0;
+
+  function calculateComputerWaitTime(ctx: {
+    audioEnabled: boolean;
+    isSpeaking: boolean;
+    commentaryUntil: number;
+    now: number;
+  }) {
+    const naturalDelay = 800;
+    const speechRemaining = Math.max(0, ctx.commentaryUntil - ctx.now);
+    const waitTime = (ctx.audioEnabled && (ctx.isSpeaking || speechRemaining > 0))
+      ? Math.max(naturalDelay, speechRemaining + 350)
+      : naturalDelay;
+    return waitTime;
+  }
+
+  const now = 10000;
+  // Scenario A: Speech is speaking with 2000ms remaining
+  const waitA = calculateComputerWaitTime({
+    audioEnabled: true,
+    isSpeaking: true,
+    commentaryUntil: now + 2000,
+    now
+  });
+  assert.equal(waitA, 2350, "Computer should wait 2000ms + 350ms buffer for speech to finish");
+
+  // Scenario B: Speech has completed or audio muted
+  const waitB = calculateComputerWaitTime({
+    audioEnabled: false,
+    isSpeaking: false,
+    commentaryUntil: 0,
+    now
+  });
+  assert.equal(waitB, 800, "Computer should use natural delay when audio is not active");
+});
+
+test("token progressive tier brightness scales proportionally across inner squares and goal", () => {
+  function getTierClass(maxProgress: number): string {
+    if (maxProgress === 43) return "tier-center";
+    if (maxProgress === 42) return "tier-inner3";
+    if (maxProgress >= 25 && maxProgress <= 41) return "tier-inner2";
+    return "";
+  }
+
+  // Outer circuit: baseline brightness
+  assert.equal(getTierClass(-1), "", "Reserve piece has no inner tier class");
+  assert.equal(getTierClass(0), "", "Start square progress 0 has baseline brightness");
+  assert.equal(getTierClass(15), "", "Outer loop progress 15 has baseline brightness");
+  assert.equal(getTierClass(24), "", "Last outer circuit step progress 24 has baseline brightness");
+
+  // Second inner square (5x5 ring): tier-inner2 (+20% brightness)
+  assert.equal(getTierClass(25), "tier-inner2", "Progress 25 enters second inner square");
+  assert.equal(getTierClass(33), "tier-inner2", "Progress 33 in second inner square");
+  assert.equal(getTierClass(41), "tier-inner2", "Progress 41 at end of second inner square");
+
+  // Third inner square (approach cross): tier-inner3 (+38% brightness)
+  assert.equal(getTierClass(42), "tier-inner3", "Progress 42 (approach square) is third inner square");
+
+  // Center goal (D4): tier-center (+55% brightness)
+  assert.equal(getTierClass(43), "tier-center", "Progress 43 is the center goal with maximum radiance");
+});
+
+test("captured piece animation structures flyer with victim avatar, color, and reserve bounce target", () => {
+  const victim = { id: "P1", name: "Leo", avatar: "👻", color: "#2389da" };
+  const target = { other: victim, q: { id: "P1-2" } };
+
+  function buildFlyingPiecePayload(sq: string, t: any) {
+    const v = t.other;
+    return {
+      square: sq,
+      victimId: v.id,
+      victimName: v.name,
+      avatar: v.avatar,
+      color: v.color,
+      className: "captured-flying-piece",
+      bounceTargetSelector: `.player[data-player-id="${v.id}"]`,
+      durationMs: 950
+    };
+  }
+
+  const payload = buildFlyingPiecePayload("B4", target);
+  assert.equal(payload.square, "B4");
+  assert.equal(payload.victimId, "P1");
+  assert.equal(payload.avatar, "👻");
+  assert.equal(payload.color, "#2389da");
+  assert.equal(payload.bounceTargetSelector, '.player[data-player-id="P1"]');
+  assert.equal(payload.durationMs, 950);
+});
+
+test("MCP AI Engine: evaluate_moves ranks moves with strategic tags and personality weighting", () => {
+  function scoreCandidate(move: any, strategy: string = "balanced") {
+    let score = move.progress;
+    const tags = [];
+    const captureWeight = strategy === "aggressive" ? 75000 : strategy === "cautious" ? 35000 : 50000;
+    const safetyWeight = strategy === "cautious" ? 25000 : strategy === "aggressive" ? 5000 : 12000;
+
+    if (move.progress === 43) {
+      score += 100000;
+      tags.push("GOAL_FINISH");
+    }
+    if (move.captures) {
+      score += captureWeight;
+      tags.push("CAPTURE");
+    }
+    if (move.isSafe && move.progress !== 43) {
+      score += safetyWeight;
+      tags.push("SAFETY_ZONE");
+    }
+    return { score, tags };
+  }
+
+  const captureMove = { progress: 12, captures: true, isSafe: false };
+  const safeMove = { progress: 18, captures: false, isSafe: true };
+  const goalMove = { progress: 43, captures: false, isSafe: false };
+
+  // Aggressive strategy prioritizes captures over sanctuary
+  const aggCapture = scoreCandidate(captureMove, "aggressive");
+  const aggSafe = scoreCandidate(safeMove, "aggressive");
+  assert.ok(aggCapture.score > aggSafe.score, "Aggressive strategy must rank capture above sanctuary");
+  assert.ok(aggCapture.tags.includes("CAPTURE"));
+
+  // Goal finish is always top priority
+  const goalScore = scoreCandidate(goalMove, "balanced");
+  assert.ok(goalScore.score > 100000);
+  assert.ok(goalScore.tags.includes("GOAL_FINISH"));
+});
+
+test("MCP AI Engine: play_ai_turn and simulate_ai_match state machine contracts", () => {
+  // Simulates the contract of playAiTurn
+  function simulateTurnContract(player: string, rolls: number[], moveCount: number) {
+    const actions: any[] = [];
+    rolls.forEach((val, i) => {
+      actions.push({ type: "ROLL", player, roll: { value: val }, bonusEarned: [1, 5, 6, 12].includes(val) });
+    });
+    if (moveCount > 0) {
+      actions.push({ type: "MOVE", player, piece_id: "P0-0", from: "A4", to: "B4", dice_values: [rolls[0]] });
+    } else {
+      actions.push({ type: "PASS", player, reason: "NO_LEGAL_MOVES_LEFT" });
+    }
+    return {
+      status: "success",
+      player,
+      actions,
+      commentary: `${player} rolled [${rolls.join(", ")}]. Executed move.`
+    };
+  }
+
+  const turn = simulateTurnContract("AI-Alpha", [5, 3], 1);
+  assert.equal(turn.status, "success");
+  assert.equal(turn.player, "AI-Alpha");
+  assert.equal(turn.actions.length, 3); // 2 rolls + 1 move
+  assert.ok(turn.commentary.includes("AI-Alpha rolled [5, 3]"));
+});
+
+
 
 

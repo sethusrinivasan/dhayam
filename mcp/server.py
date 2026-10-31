@@ -36,6 +36,8 @@ APPROACH = {
     "W": ["D3", "D4"]
 }
 
+START = {"N": "A4", "E": "D7", "S": "G4", "W": "D1"}
+
 SEATS = ["N", "E", "S", "W"]
 
 def build_route(seat: str) -> List[str]:
@@ -44,7 +46,7 @@ def build_route(seat: str) -> List[str]:
     start_inner = {"N": 0, "E": 12, "S": 8, "W": 4}[seat]
     inner_loop = [INNER[(start_inner + i) % len(INNER)] for i in range(len(INNER))]
     home = APPROACH[seat]
-    return outer_loop + inner_loop + home
+    return outer_loop + [outer_loop[0]] + inner_loop + [inner_loop[0]] + home
 
 ROUTES = {seat: build_route(seat) for seat in SEATS}
 
@@ -202,6 +204,7 @@ class DhayamGame:
                     from_sq = self.piece_node(p, piece) or "reserve"
                     moves.append({
                         "piece_id": piece["id"],
+                        "piece_number": piece_idx + 1,
                         "piece_index": piece_idx + 1,
                         "from": from_sq,
                         "to": res["destination"],
@@ -321,6 +324,244 @@ class DhayamGame:
             ]
         }
 
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "players": self.players,
+            "current": self.current,
+            "phase": self.phase,
+            "pool": list(self.pool),
+            "history": list(self.history),
+            "last_roll": self.last_roll,
+            "turn": self.turn,
+            "opening_entry_players": list(self.opening_entry_players),
+            "audit": list(self.audit)
+        }
+
+    def evaluate_moves(self, strategy: str = "balanced") -> List[Dict[str, Any]]:
+        if self.phase != "move" or not self.pool:
+            return []
+        p = self.active_player()
+        legal = self.get_legal_moves()
+        if not legal:
+            return []
+
+        # Calculate occupancy map for active player to relieve overcrowding
+        occupancy: Dict[str, int] = {}
+        for piece in p["pieces"]:
+            if 0 <= piece["progress"] < 43:
+                sq = self.piece_node(p, piece)
+                if sq:
+                    occupancy[sq] = occupancy.get(sq, 0) + 1
+
+        start_sq = START[p["seat"]]
+        start_crowd = occupancy.get(start_sq, 0)
+
+        scored_moves = []
+        capture_weight = 75000 if strategy == "aggressive" else (35000 if strategy == "cautious" else 50000)
+        safety_weight = 25000 if strategy == "cautious" else (5000 if strategy == "aggressive" else 12000)
+
+        for m in legal:
+            piece = next((q for q in p["pieces"] if q["id"] == m["piece_id"]), None)
+            from_sq = self.piece_node(p, piece) if piece and piece["progress"] >= 0 else None
+            crowding_at_origin = occupancy.get(from_sq, 1) if from_sq else 0
+            will_finish = m["target_progress"] == 43
+            will_capture = bool(m["captures"])
+            is_entering = not piece or piece["progress"] < 0
+            is_safe = m["to"] in SAFE_SQUARES
+            tags = []
+            score = 0
+
+            if will_finish:
+                score += 100000
+                tags.append("GOAL_FINISH")
+            if will_capture:
+                score += capture_weight
+                tags.append("CAPTURE")
+            if is_safe and not will_finish:
+                score += safety_weight
+                tags.append("SAFETY_ZONE")
+            if crowding_at_origin > 1:
+                score += 15000 * crowding_at_origin
+                tags.append("RELIEVE_OVERCROWDING")
+            if is_entering:
+                score += 2500 if start_crowd >= 2 else 8000
+                tags.append("ENTER_BOARD")
+            else:
+                lag_boost = max(0, 43 - (piece["progress"] if piece else 0)) * 20
+                score += lag_boost
+                if m["target_progress"] >= 25 and (piece["progress"] < 25 if piece else False):
+                    score += 10000
+                    tags.append("ENTER_INNER_TRACK")
+
+            if len(m.get("pool_indices", [])) > 1:
+                score += 1000
+                tags.append("COMBINE_DICE")
+
+            score += m["target_progress"]
+
+            explanation = f"Move piece #{m['piece_number']} from {m['from']} to {m['to']} ({'+'.join(map(str, m['dice_values']))})."
+            if will_finish:
+                explanation += " Reaches central goal to score +100 points!"
+            elif will_capture:
+                explanation += " Captures opponent piece sending it back to reserve!"
+            elif crowding_at_origin > 1:
+                explanation += f" Relieves {crowding_at_origin}-piece congestion at {m['from']}."
+            elif is_entering:
+                explanation += " Enters a fresh piece onto the board."
+            elif is_safe:
+                explanation += " Lands on safe sanctuary square protected from captures."
+
+            scored_moves.append({
+                **m,
+                "score": score,
+                "tags": tags,
+                "explanation": explanation
+            })
+
+        scored_moves.sort(key=lambda x: x["score"], reverse=True)
+        return scored_moves
+
+    def get_best_move(self, strategy: str = "balanced") -> Optional[Dict[str, Any]]:
+        scored = self.evaluate_moves(strategy)
+        return scored[0] if scored else None
+
+    def play_ai_turn(self, strategy: str = "balanced") -> Dict[str, Any]:
+        if self.phase == "done":
+            winner = next((p["name"] for p in self.players if p.get("rank") == 1), None)
+            return {"status": "game_complete", "winner": winner, "summary": self.get_summary()}
+
+        p = self.active_player()
+        actions = []
+        rolls_count = 0
+
+        # 1. Roll phase: keep rolling while bonus throws are earned
+        while self.phase == "roll" and rolls_count < 20:
+            rolls_count += 1
+            roll_res = self.roll_dice()
+            actions.append({
+                "type": "ROLL",
+                "player": p["name"],
+                "roll": roll_res.get("roll"),
+                "bonus_earned": roll_res.get("bonus_earned"),
+                "pool": list(self.pool)
+            })
+            if self.phase != "roll":
+                break
+
+        # 2. Move phase: play legal moves until pool is exhausted or no moves remain
+        move_loops = 0
+        while self.phase == "move" and self.pool and move_loops < 20:
+            move_loops += 1
+            best = self.get_best_move(strategy)
+            if not best:
+                pass_res = self.pass_turn()
+                actions.append({
+                    "type": "PASS",
+                    "player": p["name"],
+                    "reason": "NO_LEGAL_MOVES_LEFT",
+                    "remaining_pool": pass_res.get("unused_pool")
+                })
+                break
+
+            move_res = self.apply_move(best["piece_id"], best["dice_values"])
+            actions.append({
+                "type": "MOVE",
+                "player": p["name"],
+                "piece_id": best["piece_id"],
+                "piece_number": best["piece_number"],
+                "from": best["from"],
+                "to": best["to"],
+                "dice_values": best["dice_values"],
+                "score": best["score"],
+                "tags": best["tags"],
+                "explanation": best["explanation"]
+            })
+
+            if move_res.get("status") == "win":
+                break
+
+        rolls_desc = ", ".join(str(a["roll"]["value"]) for a in actions if a["type"] == "ROLL" and a.get("roll"))
+        moves_desc = [a for a in actions if a["type"] == "MOVE"]
+        commentary = f"{p['name']} rolled [{rolls_desc}]."
+        if moves_desc:
+            details = "; ".join(f"Piece #{m['piece_number']} ({m['from']} → {m['to']})" for m in moves_desc)
+            commentary += f" Executed: {details}."
+        else:
+            commentary += " No moves could be played, turn passed."
+
+        return {
+            "status": "success",
+            "player": p["name"],
+            "seat": p["seat"],
+            "strategy": strategy,
+            "actions": actions,
+            "commentary": commentary,
+            "summary": self.get_summary(),
+            "state": self.serialize()
+        }
+
+    def simulate_ai_match(self, player_names: Optional[List[str]] = None, strategies: Optional[Any] = None, max_turns: int = 150) -> Dict[str, Any]:
+        if player_names and len(player_names) >= 2:
+            self.__init__(player_names)
+
+        strat_map = {}
+        for idx, p in enumerate(self.players):
+            if isinstance(strategies, list) and idx < len(strategies):
+                strat_map[p["name"]] = strategies[idx]
+            elif isinstance(strategies, dict):
+                strat_map[p["name"]] = strategies.get(p["name"], "balanced")
+            else:
+                strat_map[p["name"]] = "balanced"
+
+        turn_logs = []
+        turn_count = 0
+
+        while self.phase != "done" and turn_count < max_turns:
+            turn_count += 1
+            current_active = self.active_player()["name"]
+            strategy = strat_map.get(current_active, "balanced")
+            turn_res = self.play_ai_turn(strategy)
+            turn_logs.append({
+                "turn": turn_count,
+                "player": current_active,
+                "strategy": strategy,
+                "commentary": turn_res["commentary"],
+                "actions": turn_res["actions"]
+            })
+
+        winner = next((p["name"] for p in self.players if p.get("rank") == 1), None)
+
+        statistics = []
+        for p in self.players:
+            rolls = [a for a in self.audit if a.get("event") == "ROLL" and a.get("player") == p["name"]]
+            captures = [a for a in self.audit if a.get("event") == "CAPTURE" and a.get("capturer") == p["name"]]
+            moves = [a for a in self.audit if a.get("event") == "MOVE" and a.get("player") == p["name"]]
+            statistics.append({
+                "name": p["name"],
+                "seat": p["seat"],
+                "avatar": p["avatar"],
+                "winner": winner == p["name"],
+                "rank": p.get("rank"),
+                "finished_pieces": sum(1 for q in p["pieces"] if q["progress"] == 43),
+                "captures_count": len(captures),
+                "total_rolls": len(rolls),
+                "bonus_rolls_count": sum(1 for r in rolls if r.get("bonus")),
+                "total_moves": len(moves)
+            })
+
+        return {
+            "status": "completed" if winner else "max_turns_reached",
+            "winner": winner,
+            "total_turns": turn_count,
+            "statistics": statistics,
+            "recent_highlights": [
+                t for t in turn_logs
+                if any(a.get("type") == "MOVE" and ("GOAL_FINISH" in a.get("tags", []) or "CAPTURE" in a.get("tags", [])) for a in t.get("actions", []))
+            ][-8:],
+            "summary": self.get_summary(),
+            "state": self.serialize()
+        }
+
 # Global active game instance
 CURRENT_GAME: Optional[DhayamGame] = None
 
@@ -397,6 +638,57 @@ TOOLS = [
                 }
             }
         }
+    },
+    {
+        "name": "dhayam_evaluate_moves",
+        "description": "Evaluate and rank all legal moves for the active player with tactical heuristic scores, strategic tags (CAPTURE, GOAL_FINISH, RELIEVE_OVERCROWDING, SAFETY_ZONE, ENTER_INNER_TRACK), and natural language explanations. Ideal for LLM pair programming and AI vs AI decision making.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "strategy": {
+                    "type": "string",
+                    "enum": ["balanced", "aggressive", "cautious"],
+                    "description": "AI evaluation strategy weighting. Defaults to 'balanced'."
+                }
+            }
+        }
+    },
+    {
+        "name": "dhayam_play_ai_turn",
+        "description": "Execute a complete automated turn for the current AI / computer player. Automatically handles Dayakattai dice rolls (including bonus chains on 1, 5, 6, 12), evaluates and executes the optimal legal moves, captures opponent pieces, and passes when the turn is complete.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "strategy": {
+                    "type": "string",
+                    "enum": ["balanced", "aggressive", "cautious"],
+                    "description": "AI play personality. 'aggressive' prioritizes captures; 'cautious' prioritizes safety zones; 'balanced' optimizes goal progress and overcrowding relief."
+                }
+            }
+        }
+    },
+    {
+        "name": "dhayam_simulate_ai_match",
+        "description": "Simulate a complete Computer-to-Computer or AI-to-AI match (2 to 4 players) to conclusion or max turns. Returns the winner, match statistics, capture counts, bonus streaks, turn highlights, and shareable web link.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "player_names": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of player/bot names (e.g. ['AlphaBot', 'BetaBot']). Defaults to ['Computer 1', 'Computer 2']."
+                },
+                "strategies": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["balanced", "aggressive", "cautious"]},
+                    "description": "Strategy for each player respectively."
+                },
+                "max_turns": {
+                    "type": "integer",
+                    "description": "Maximum turns to simulate before stopping. Defaults to 150."
+                }
+            }
+        }
     }
 ]
 
@@ -426,6 +718,28 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Any:
             "pool": CURRENT_GAME.pool,
             "legal_moves": CURRENT_GAME.get_legal_moves()
         }
+
+    if name == "dhayam_evaluate_moves":
+        strategy = args.get("strategy", "balanced")
+        scored = CURRENT_GAME.evaluate_moves(strategy)
+        return {
+            "current_player": CURRENT_GAME.active_player()["name"],
+            "phase": CURRENT_GAME.phase,
+            "pool": list(CURRENT_GAME.pool),
+            "strategy": strategy,
+            "recommended_move": scored[0] if scored else None,
+            "scored_moves": scored
+        }
+
+    if name == "dhayam_play_ai_turn":
+        strategy = args.get("strategy", "balanced")
+        return CURRENT_GAME.play_ai_turn(strategy)
+
+    if name == "dhayam_simulate_ai_match":
+        player_names = args.get("player_names")
+        strategies = args.get("strategies")
+        max_turns = args.get("max_turns", 150)
+        return CURRENT_GAME.simulate_ai_match(player_names, strategies, max_turns)
 
     if name == "dhayam_move_piece":
         piece_id = args.get("piece_id")

@@ -177,7 +177,7 @@
       }
       function waitForCaptureAnimation() {
         return new Promise((resolve) =>
-          setTimeout(resolve, scaledDemoDelay(750)),
+          setTimeout(resolve, scaledDemoDelay(1250)),
         );
       }
       async function animatePiece(player, piece, targetProgress) {
@@ -327,12 +327,29 @@
             capturedPieceIds = opt.test.targets.map((hit) => hit.q.id);
             capturedPlayerIds = opt.test.targets.map((hit) => hit.other.id);
             render();
+            const victimSummary = opt.test.targets
+              .map((hit) => (hit.other.avatar ? hit.other.avatar + " " : "") + hit.other.name)
+              .join(" & ");
+            const detail = (player.avatar ? player.avatar + " " : "") + player.name + " captured " + victimSummary;
+
             if (typeof showCaptureSplash === "function") {
-              showCaptureSplash(capSquare);
+              showCaptureSplash(capSquare, detail);
+            }
+            if (typeof FlightRecorder !== "undefined") {
+              FlightRecorder.record("PIECE_CAPTURED", {
+                capturer: player.name,
+                square: capSquare,
+                victims: capturedPieces,
+                detail
+              });
             }
             $("statusTitle").textContent = "⚔️ Capture!";
             if ($("statusText")) $("statusText").textContent = "";
-            await waitForCaptureAnimation();
+            if (typeof animateCapturedPiecesToTable === "function") {
+              await animateCapturedPiecesToTable(capSquare, opt.test.targets);
+            } else {
+              await waitForCaptureAnimation();
+            }
             for (const hit of opt.test.targets) hit.q.progress = -1;
             capturedPieceIds = [];
             capturedPlayerIds = [];
@@ -405,11 +422,15 @@
           !active().computer
         )
           return;
-        const naturalDelay = 750 + Math.floor(Math.random() * 400),
-          speechDelay = Math.min(900, Math.max(0, commentaryUntil - Date.now()));
+        const naturalDelay = 750 + Math.floor(Math.random() * 400);
+        const isSpeaking = typeof isAudioSpeaking === "function" ? isAudioSpeaking() : (typeof speechSynthesis !== "undefined" && speechSynthesis.speaking);
+        const speechRemaining = Math.max(0, commentaryUntil - Date.now());
+        const waitTime = (audioEnabled && (isSpeaking || speechRemaining > 0))
+          ? Math.max(naturalDelay, speechRemaining + 350)
+          : naturalDelay;
         computerTimer = setTimeout(
           runComputerAction,
-          Math.max(naturalDelay, speechDelay),
+          waitTime,
         );
       }
       function runComputerAction() {
@@ -617,12 +638,32 @@
             capturedPieceIds = data.captures.map((c) => c.pieceId || c.q?.id || c);
             capturedPlayerIds = data.captures.map((c) => c.playerId || c.other?.id || c);
             render();
+            const victimSummary = data.captures
+              .map((c) => {
+                const victimPlayer = game.players.find((p) => p.id === (c.playerId || c.other?.id));
+                return victimPlayer ? (victimPlayer.avatar ? victimPlayer.avatar + " " : "") + victimPlayer.name : "opponent";
+              })
+              .join(" & ");
+            const detail = (player.avatar ? player.avatar + " " : "") + player.name + " captured " + victimSummary;
+
             if (typeof showCaptureSplash === "function") {
-              showCaptureSplash(capSquare);
+              showCaptureSplash(capSquare, detail);
+            }
+            if (typeof FlightRecorder !== "undefined") {
+              FlightRecorder.record("PIECE_CAPTURED", {
+                capturer: player.name,
+                square: capSquare,
+                victims: data.captures,
+                detail
+              });
             }
             $("statusTitle").textContent = "⚔️ Capture!";
             if ($("statusText")) $("statusText").textContent = "";
-            await waitForCaptureAnimation();
+            if (typeof animateCapturedPiecesToTable === "function") {
+              await animateCapturedPiecesToTable(capSquare, data.captures);
+            } else {
+              await waitForCaptureAnimation();
+            }
             capturedPieceIds = [];
             capturedPlayerIds = [];
           }

@@ -106,7 +106,11 @@ test("MCP Server on Cloudflare: POST tools/list returns complete catalog", async
     "dhayam_move_piece",
     "dhayam_pass",
     "dhayam_get_audit_log",
-    "dhayam_get_share_url"
+    "dhayam_get_share_url",
+    "dhayam_evaluate_moves",
+    "dhayam_play_ai_turn",
+    "dhayam_simulate_ai_match",
+    "dhayam_simulate_online_match"
   ];
 
   for (const expected of expectedTools) {
@@ -195,6 +199,50 @@ test("MCP Server on Cloudflare: tools/call full gameplay loop (new game, roll, s
   // 6. dhayam_get_share_url
   const shareRes = await callTool("dhayam_get_share_url", {});
   assert.ok(shareRes.webUrl.startsWith("http"));
+});
+
+test("MCP Server on Cloudflare: tools/call AI-to-AI simulation and automated turn", async () => {
+  async function callTool(name: string, args: Record<string, any> = {}) {
+    const res = await fetch(MCP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: Date.now(),
+        method: "tools/call",
+        params: { name, arguments: args }
+      })
+    });
+    assert.equal(res.status, 200);
+    const json = await res.json();
+    assert.equal(json.jsonrpc, "2.0");
+    assert.ok(json.result?.content?.[0]?.text);
+    return JSON.parse(json.result.content[0].text);
+  }
+
+  // 1. Play automated AI turn
+  const turnRes = await callTool("dhayam_play_ai_turn", { strategy: "aggressive" });
+  assert.equal(turnRes.status, "success");
+  assert.ok(Array.isArray(turnRes.actions));
+  assert.ok(turnRes.actions.length >= 1);
+  assert.ok(typeof turnRes.commentary === "string");
+  assert.ok(turnRes.state);
+
+  // 2. Evaluate candidate moves with tactical scores and tags
+  const evalRes = await callTool("dhayam_evaluate_moves", { strategy: "balanced", state: turnRes.state });
+  assert.ok(Array.isArray(evalRes.scored_moves));
+
+  // 3. Full AI-to-AI match simulation
+  const simRes = await callTool("dhayam_simulate_ai_match", {
+    player_names: ["AlphaBot", "BetaBot"],
+    strategies: ["aggressive", "cautious"],
+    max_turns: 15
+  });
+  assert.ok(["completed", "max_turns_reached"].includes(simRes.status));
+  assert.ok(simRes.totalTurns >= 1);
+  assert.ok(Array.isArray(simRes.statistics));
+  assert.equal(simRes.statistics.length, 2);
+  assert.ok(simRes.share_url);
 });
 
 test("MCP Server on Cloudflare: JSON-RPC error handling", async () => {

@@ -70,6 +70,10 @@ The included MCP server implements the following tools:
 | `dhayam_roll_dice` | *none* | Rolls the traditional Dayakattai dice with cryptographic randomness (handles bonuses). |
 | `dhayam_get_legal_moves`| *none* | Computes all legal piece moves, destinations, and capture opportunities. |
 | `dhayam_move_piece` | `piece_id: string`, `dice_values?: int[]` | Applies a piece move, handles captures, board entries, and win conditions. |
+| `dhayam_evaluate_moves` | `strategy?: string` | Tactical evaluator ranking candidate moves with strategic tags (`CAPTURE`, `GOAL_FINISH`, `SAFETY_ZONE`, `RELIEVE_OVERCROWDING`). |
+| `dhayam_play_ai_turn` | `strategy?: string` | Executes a full automated turn for the current computer/AI player, resolving bonus dice cascades and heuristic moves. |
+| `dhayam_simulate_ai_match` | `player_names?: string[]`, `strategies?: string[]`, `max_turns?: int` | Simulates a full Computer vs Computer or AI vs AI match, returning winner, stats, captures, and turn highlights. |
+| `dhayam_simulate_online_match` | `room_code: string`, `turns?: int`, `strategy?: string` | Advances AI turns in a live Cloudflare room so spectators can watch live via WebSockets. |
 | `dhayam_pass` | *none* | Passes remaining rolls to transition turn. |
 | `dhayam_get_audit_log` | *none* | Fetches the tamper-evident audit history of all game actions. |
 | `dhayam_get_share_url` | `base_url?: string` | Returns the GitHub Pages URL to launch or inspect the game in a web browser. |

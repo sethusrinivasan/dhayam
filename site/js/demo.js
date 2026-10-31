@@ -343,9 +343,15 @@
         speakDemo(message);
         if (demoMode === "multiplayer" && typeof displayFloatingEmote === "function") {
           if (captures) {
+            const victim = move.test.targets[0]?.other;
+            const detail = (player.avatar ? player.avatar + " " : "") + player.name + " captured " + (victim ? (victim.avatar ? victim.avatar + " " : "") + victim.name : "opponent");
             if (typeof showCaptureSplash === "function") {
               const capSquare = ROUTES[player.seat][move.test.progress];
-              showCaptureSplash(capSquare);
+              showCaptureSplash(capSquare, detail);
+            }
+            if (typeof animateCapturedPiecesToTable === "function") {
+              const capSquare = ROUTES[player.seat][move.test.progress];
+              animateCapturedPiecesToTable(capSquare, move.test.targets);
             }
             displayFloatingEmote("😎", player.name);
             const victim = move.test.targets[0]?.other;

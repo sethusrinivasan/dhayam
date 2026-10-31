@@ -19,9 +19,9 @@ This document contains the official submission responses, project reflections, a
 
 ### 1. Briefly describe the game you made.
 
-> **Dhayam** is an authentic, cross-platform digital revival of *Dayakattai*, an ancient Tamil roll-and-move strategy board game that predates and inspired games like Pachisi, Chaupar, and Ludo. 
+> **Dhayam** is an authentic, cross-platform digital revival of **தாயக்கட்டை** (Dayakattai), an ancient Tamil roll-and-move strategy board game that predates and inspired games like Pachisi, Chaupar, and Ludo. 
 >
-> Designed for 2 to 4 players, the game can be played via real-time online multiplayer, local tabletop pass-and-play, or solo against intelligent computer AI. Players roll two traditional cuboidal brass dice to enter pawns on a *Dhayam* (1), race along a 44-position rotational circuit, seek shelter in floral safe squares (*Malai*), execute captures (*Vettu*) to unlock the inner ring, and guide all six pieces to the sacred lotus center (*D4*). 
+> Designed for 2 to 4 players, the game can be played via real-time online multiplayer, local tabletop pass-and-play, or solo against intelligent computer AI. Players roll two traditional cuboidal brass dice to enter pawns on a **தாயம்** (1), race along a 44-position rotational circuit, seek shelter in floral safe squares (**மலை**), execute captures (**வெட்டு**) to unlock the inner ring, and guide all six pieces to the sacred lotus center (*D4*). 
 >
 > The digital edition features realistic 3D cuboidal brass dice physics, synchronized real-time multi-user play over Cloudflare Edge WebSockets, dynamic QR code camera joining, synthesized voice commentary, heuristic solo AI, and an exportable cryptographic audit log.
 
@@ -36,7 +36,7 @@ This document contains the official submission responses, project reflections, a
 
 ### 3. What was fun?
 
-> 1. **Crafting the 3D Cuboidal Dayakattai Physics**: Unlike standard 6-sided cubic dice, Dayakattai uses long rectangular prism brass dice that roll values 0, 1, 2, or 3 (with double-zero counting as 12, *Pannirandu*). Designing the 3D CSS tumbling physics, realistic bounce damping, and matching Tamil sound callouts (*"Dhayam!"*, *"Pannirandu!"*) brought the cultural tabletop feel to life.
+> 1. **Crafting the 3D Cuboidal தாயக்கட்டை Physics**: Unlike standard 6-sided cubic dice, Dayakattai uses long rectangular prism brass dice that roll values 0, 1, 2, or 3 (with double-zero counting as **பன்னிரண்டு / 12**). Designing the 3D CSS tumbling physics, realistic bounce damping, and matching Tamil sound callouts (*"தாயம்!"*, *"பன்னிரண்டு!"*) brought the cultural tabletop feel to life.
 > 2. **Mobile QR Code Auto-Join & Live Emoji Banter**: Testing instant phone camera QR code auto-joining and tapping floating emoji reactions (🎉, 👏, 🔥, 😂, 🎲, 😱) during close captures brought back the lively banter of playing the game with family on the veranda floor.
 
 ---

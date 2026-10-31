@@ -12,3 +12,10 @@ Dhayam is a local casual game. It is not an anti-cheat system, competitive multi
 | Speech, clipboard, and cookies | Speech is optional, clipboard writes require user action, and the intro cookie stores only a dismissal preference. | Browser and OS support varies.                                                        |
 
 Do not treat a copied audit as proof of fair play. A future authoritative multiplayer version would need signed events, server-side rules evaluation, authenticated players, and an independently verifiable random source.
+
+---
+
+## OWASP Security Audit & Vulnerability Assessment
+For an in-depth security evaluation against the OWASP Top 10 (covering Cloudflare Worker, Durable Objects, WebSockets, SQLite, and XSS defense), see:
+- [docs/owasp-security-analysis.md](owasp-security-analysis.md)
+

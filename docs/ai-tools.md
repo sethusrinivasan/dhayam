@@ -1,7 +1,11 @@
-# AI-assisted development acknowledgement
+# AI-Assisted Development Acknowledgement
 
-OpenAI Codex / ChatGPT was used as an implementation assistant during the development of this repository. It assisted with iterative UI and rules changes, code comments, documentation, automated-test additions, and browser-based verification.
+This repository was designed and engineered with pair-programming assistance from:
+* **OpenAI Codex**
+* **Google Gemini / Antigravity**
 
-The game does not call an AI model or an AI API at runtime. It is a static browser application. Its runtime behavior relies on browser APIs such as `crypto.getRandomValues`, Speech Synthesis, and the Clipboard API.
+They assisted with iterative UI and board rule implementations, 3D dice physics, Cloudflare Edge Durable Object WebSockets, Model Context Protocol (MCP) tool integration, automated regression testing, and architectural documentation.
 
-Development verification also used Node's built-in test runner and coverage support, GitHub Actions, and headless Chromium through Playwright. These are development and deployment tools, not runtime dependencies for players.
+The game itself does not call an external AI API at runtime during player moves; the web game is a self-contained, zero-dependency browser application utilizing standard Web APIs (`crypto.getRandomValues`, SpeechSynthesis, WebSockets).
+
+For automated testing, simulation, and pair-programming, the pure game engine is also exposed via the Model Context Protocol (`/mcp` and `mcp/server.py`), enabling AI agents to analyze board states, evaluate legal moves, and simulate matches.

@@ -97,6 +97,16 @@
                 const selectable = isCurrentPlayer && (hasAnyMove || pieces.some((piece) => legal.has(piece.id)));
                 const t = document.createElement("span");
                 const isCrowded = pieces.length >= 2;
+                const maxProgress = Math.max(...pieces.map((piece) => piece.progress));
+                let tierClass = "";
+                if (maxProgress === 43) {
+                  tierClass = " tier-center";
+                } else if (maxProgress === 42) {
+                  tierClass = " tier-inner3";
+                } else if (maxProgress >= 25 && maxProgress <= 41) {
+                  tierClass = " tier-inner2";
+                }
+
                 t.className =
                   "token" +
                   (isCurrentPlayer ? " current" : "") +
@@ -107,7 +117,8 @@
                     ? " captured"
                     : "") +
                   (selectable ? " selectable" : "") +
-                  (isCrowded ? " crowded" : "");
+                  (isCrowded ? " crowded" : "") +
+                  tierClass;
                 t.style.background = p.color;
                 t.innerHTML = '<span class="tokenemoji">' + p.avatar + "</span>";
                 const pieceNumbers = pieces.map(
@@ -241,7 +252,15 @@
               onBoard = numbersFor(
                 (piece) => piece.progress >= 0 && piece.progress < 43,
               ),
-              home = numbersFor((piece) => piece.progress === 43);
+              home = numbersFor((piece) => piece.progress === 43),
+              finishedCount = p.pieces.filter((q) => q.progress === 43).length,
+              score = calculatePlayerScore(p);
+
+            const boardProgressTotal = p.pieces.reduce(
+              (sum, q) => sum + (q.progress === 43 ? 43 : q.progress >= 0 ? q.progress + 1 : 0),
+              0,
+            );
+            const progressPct = Math.min(100, Math.round((boardProgressTotal / 258) * 100));
             const isCurrentActive = active() === p && game.phase !== "done";
             const canCardEnter = Boolean(isCurrentActive && (entry || anyEntryOpt) && !demo && !p.computer && !moving);
             return (
@@ -249,6 +268,8 @@
               (isCurrentActive ? "active" : "") +
               (canCardEnter ? " can-enter" : "") +
               (capturedPlayerIds.includes(p.id) ? " captureloss" : "") +
+              '" data-player-id="' +
+              p.id +
               '"' +
               (canCardEnter
                 ? ' data-can-enter="true" role="button" tabindex="0" title="Click to enter piece from reserve onto the board"'
@@ -257,13 +278,23 @@
               p.color +
               '">' +
               p.avatar +
-              '</div><div style="flex:1"><div class="pname">' +
+              '</div><div style="flex:1;min-width:0;"><div class="pname-row"><span class="pname">' +
               escapeHtml(p.name) +
               (p.rank ? " · #" + p.rank : "") +
-              '</div><div class="pmeta">' +
-              p.pieces.filter((q) => q.progress === 43).length +
-              "/6 finished · " +
-              (p.captured ? "capture earned" : "capture needed") +
+              '</span><span class="pscore-badge" title="Player score: ' +
+              score +
+              ' points based on board advancement, captures (+50), and home finishes (+100)">⭐ ' +
+              score +
+              ' pts</span></div><div class="pscore-track" title="' +
+              progressPct +
+              '% board completion"><div class="pscore-fill" style="width:' +
+              progressPct +
+              '%;background:' +
+              p.color +
+              ';"></div></div><div class="pmeta">' +
+              finishedCount +
+              "/6 home · " +
+              (p.captured ? "⚔️ Capture earned (+50)" : "Capture needed") +
               '</div><div class="piecestatus"><span><b>Waiting:</b> ' +
               waiting +
               "</span><span><b>On board:</b> " +
@@ -544,7 +575,7 @@
               : isWaitingPeer
                 ? "Waiting for " + p.name + " to " + (game.phase === "roll" ? "roll dice" : "make a move") + "…"
                 : game.phase === "roll"
-                  ? "Roll the Dayakattai" +
+                  ? "Roll the தாயக்கட்டை (dice)" +
                     (game.history.length
                       ? " · bonus throw! Follow the glowing route around the board."
                       : " · Follow the glowing route around the board.")
@@ -624,12 +655,30 @@
         scheduleComputerIfNeeded();
       }
 
-      function showCaptureSplash(square) {
+      function calculatePlayerScore(p) {
+        if (!p || !Array.isArray(p.pieces)) return 0;
+        let score = 0;
+        for (const piece of p.pieces) {
+          if (piece.progress === 43) {
+            score += 100;
+          } else if (piece.progress >= 0) {
+            score += piece.progress + 1;
+          }
+        }
+        if (p.captured) score += 50;
+        if (p.rank === 1) score += 200;
+        return score;
+      }
+      window.calculatePlayerScore = calculatePlayerScore;
+
+      function showCaptureSplash(square, detailText = "") {
         const board = $("board");
         if (!board) return;
         const splash = document.createElement("div");
         splash.className = "capture-splash";
-        splash.innerHTML = '<span class="capture-splash-icon">⚔️</span><span class="capture-splash-text">Captured!</span>';
+        splash.innerHTML =
+          '<div class="capture-splash-title"><span class="capture-splash-icon">⚔️</span><span class="capture-splash-text">Captured!</span></div>' +
+          (detailText ? '<div class="capture-splash-detail">' + escapeHtml(detailText) + '</div>' : "");
         
         let sqEl = null;
         if (square) {
@@ -649,9 +698,77 @@
         }
         setTimeout(() => {
           if (splash.parentNode) splash.parentNode.removeChild(splash);
-        }, 1300);
+        }, 2400);
       }
       window.showCaptureSplash = showCaptureSplash;
+
+      async function animateCapturedPiecesToTable(square, targets) {
+        if (!square || !targets || !targets.length) return;
+        const board = $("board");
+        if (!board) return;
+        const sqEl = board.querySelector('.cell[data-sq="' + square + '"]');
+        if (!sqEl) return;
+        const startRect = sqEl.getBoundingClientRect();
+
+        const animations = targets.map((target) => {
+          return new Promise((resolve) => {
+            const victim = target.other || (target.playerId ? game.players.find((p) => p.id === target.playerId) : null);
+            if (!victim) {
+              resolve();
+              return;
+            }
+            const playerCard = document.querySelector('.player[data-player-id="' + victim.id + '"]') ||
+              document.querySelectorAll(".player")[game.players.indexOf(victim)];
+            
+            const targetRect = playerCard ? playerCard.getBoundingClientRect() : null;
+
+            const flyer = document.createElement("div");
+            flyer.className = "captured-flying-piece";
+            const size = Math.max(26, Math.min(38, Math.round(startRect.width * 0.72)));
+            flyer.style.width = size + "px";
+            flyer.style.height = size + "px";
+            flyer.style.background = victim.color || "#e74c3c";
+            flyer.innerHTML = '<span style="font-size:1.15rem;line-height:1;">' + (victim.avatar || "🔴") + '</span>';
+
+            const startX = startRect.left + startRect.width / 2 - size / 2;
+            const startY = startRect.top + startRect.height / 2 - size / 2;
+            flyer.style.left = startX + "px";
+            flyer.style.top = startY + "px";
+            flyer.style.opacity = "1";
+            flyer.style.transform = "scale(1.15)";
+
+            document.body.appendChild(flyer);
+
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                if (targetRect) {
+                  const destX = targetRect.left + 24;
+                  const destY = targetRect.top + targetRect.height / 2 - size / 2;
+                  flyer.style.transform = "translate(" + (destX - startX) + "px, " + (destY - startY) + "px) scale(0.85)";
+                } else {
+                  flyer.style.transform = "translate(0px, 80px) scale(0.6)";
+                }
+                flyer.style.opacity = "0.9";
+              });
+            });
+
+            const animDuration = (typeof demo !== "undefined" && demo) ? scaledDemoDelay(950) : 950;
+            setTimeout(() => {
+              if (flyer.parentNode) flyer.parentNode.removeChild(flyer);
+              if (playerCard) {
+                playerCard.classList.remove("reserve-bounce");
+                void playerCard.offsetWidth;
+                playerCard.classList.add("reserve-bounce");
+                setTimeout(() => playerCard.classList.remove("reserve-bounce"), 500);
+              }
+              resolve();
+            }, animDuration);
+          });
+        });
+
+        await Promise.all(animations);
+      }
+      window.animateCapturedPiecesToTable = animateCapturedPiecesToTable;
 
       function warnDiceAlreadyRolled() {
         const diceEl = document.querySelector(".dice");

@@ -35,12 +35,19 @@ const APPROACH = {
   W: ["D3", "D4"]
 };
 
+const START = {
+  N: "A4",
+  E: "D7",
+  S: "G4",
+  W: "D1"
+};
+
 function buildRoute(seat) {
   const startOuter = { N: 0, E: 6, S: 12, W: 18 }[seat];
   const outerLoop = Array.from({ length: OUTER.length }, (_, i) => OUTER[(startOuter + i) % OUTER.length]);
   const startInner = { N: 0, E: 12, S: 8, W: 4 }[seat];
   const innerLoop = Array.from({ length: INNER.length }, (_, i) => INNER[(startInner + i) % INNER.length]);
-  return [...outerLoop, ...innerLoop, ...APPROACH[seat]];
+  return [...outerLoop, outerLoop[0], ...innerLoop, innerLoop[0], ...APPROACH[seat]];
 }
 
 const ROUTES = {
@@ -411,6 +418,246 @@ class DhayamEngine {
     };
   }
 
+  evaluateMoves(strategy = "balanced") {
+    if (this.phase !== "move" || !this.pool.length) return [];
+    const p = this.activePlayer();
+    const legalMoves = this.getLegalMoves();
+    if (!legalMoves.length) return [];
+
+    // Occupancy map for active player to relieve overcrowding
+    const occupancy = new Map();
+    for (const piece of p.pieces) {
+      if (piece.progress >= 0 && piece.progress < 43) {
+        const sq = this.pieceNode(p, piece);
+        if (sq) occupancy.set(sq, (occupancy.get(sq) || 0) + 1);
+      }
+    }
+    const startSq = START[p.seat];
+    const startCrowd = occupancy.get(startSq) || 0;
+
+    return legalMoves.map((m) => {
+      const piece = p.pieces.find((q) => matchPieceId(q.id, m.piece_id));
+      const fromSq = piece && piece.progress >= 0 ? this.pieceNode(p, piece) : null;
+      const crowdingAtOrigin = fromSq ? (occupancy.get(fromSq) || 1) : 0;
+      const willFinish = m.target_progress === 43;
+      const willCapture = Boolean(m.captures);
+      const isEntering = !piece || piece.progress < 0;
+      const isSafe = SAFE_SQUARES.has(m.to);
+      const tags = [];
+      let score = 0;
+
+      const captureWeight = strategy === "aggressive" ? 75000 : strategy === "cautious" ? 35000 : 50000;
+      const safetyWeight = strategy === "cautious" ? 25000 : strategy === "aggressive" ? 5000 : 12000;
+
+      if (willFinish) {
+        score += 100000;
+        tags.push("GOAL_FINISH");
+      }
+      if (willCapture) {
+        score += captureWeight;
+        tags.push("CAPTURE");
+      }
+      if (isSafe && !willFinish) {
+        score += safetyWeight;
+        tags.push("SAFETY_ZONE");
+      }
+      if (crowdingAtOrigin > 1) {
+        score += 15000 * crowdingAtOrigin;
+        tags.push("RELIEVE_OVERCROWDING");
+      }
+      if (isEntering) {
+        score += startCrowd >= 2 ? 2500 : 8000;
+        tags.push("ENTER_BOARD");
+      } else {
+        const lagBoost = Math.max(0, 43 - (piece ? piece.progress : 0)) * 20;
+        score += lagBoost;
+        if (m.target_progress >= 25 && (piece ? piece.progress < 25 : false)) {
+          score += 10000;
+          tags.push("ENTER_INNER_TRACK");
+        }
+      }
+      if (m.pool_indices && m.pool_indices.length > 1) {
+        score += 1000;
+        tags.push("COMBINE_DICE");
+      }
+      score += m.target_progress;
+
+      let explanation = `Move piece #${m.piece_number} from ${m.from} to ${m.to} (${m.dice_values.join("+")}).`;
+      if (willFinish) explanation += " Reaches central goal to score +100 points!";
+      else if (willCapture) explanation += " Captures opponent piece sending it back to reserve!";
+      else if (crowdingAtOrigin > 1) explanation += ` Relieves ${crowdingAtOrigin}-piece congestion at ${m.from}.`;
+      else if (isEntering) explanation += " Enters a fresh piece onto the board.";
+      else if (isSafe) explanation += " Lands on safe sanctuary square protected from captures.";
+
+      return {
+        ...m,
+        score,
+        tags,
+        explanation
+      };
+    }).sort((a, b) => b.score - a.score);
+  }
+
+  getBestMove(strategy = "balanced") {
+    const scored = this.evaluateMoves(strategy);
+    return scored.length > 0 ? scored[0] : null;
+  }
+
+  playAiTurn(strategy = "balanced") {
+    if (this.phase === "done") {
+      return {
+        status: "game_complete",
+        winner: this.players.find((p) => p.rank === 1)?.name || null,
+        summary: this.getSummary(),
+        state: this.serialize()
+      };
+    }
+
+    const p = this.activePlayer();
+    const actions = [];
+    let rollsCount = 0;
+
+    // 1. Roll phase: keep rolling while bonus throws are earned
+    while (this.phase === "roll" && rollsCount < 20) {
+      rollsCount++;
+      const rollRes = this.rollDice();
+      actions.push({
+        type: "ROLL",
+        player: p.name,
+        roll: rollRes.roll,
+        bonusEarned: rollRes.bonusEarned,
+        pool: [...this.pool]
+      });
+      if (this.phase !== "roll") break;
+    }
+
+    // 2. Move phase: play legal moves until pool is exhausted or no moves remain
+    let moveLoops = 0;
+    while (this.phase === "move" && this.pool.length > 0 && moveLoops < 20) {
+      moveLoops++;
+      const best = this.getBestMove(strategy);
+      if (!best) {
+        const passRes = this.passTurn();
+        actions.push({
+          type: "PASS",
+          player: p.name,
+          reason: "NO_LEGAL_MOVES_LEFT",
+          remainingPool: passRes.unused_pool
+        });
+        break;
+      }
+
+      const moveRes = this.applyMove(best.piece_id, best.dice_values);
+      actions.push({
+        type: "MOVE",
+        player: p.name,
+        piece_id: best.piece_id,
+        piece_number: best.piece_number,
+        from: best.from,
+        to: best.to,
+        dice_values: best.dice_values,
+        captures: moveRes.captures || [],
+        score: best.score,
+        tags: best.tags,
+        explanation: best.explanation
+      });
+
+      if (moveRes.status === "win") {
+        break;
+      }
+    }
+
+    // Generate readable narrative commentary
+    const rollsDesc = actions.filter((a) => a.type === "ROLL").map((a) => a.roll?.value).filter(Boolean).join(", ");
+    const movesDesc = actions.filter((a) => a.type === "MOVE");
+    let commentary = `${p.name} rolled [${rollsDesc}].`;
+    if (movesDesc.length > 0) {
+      const moveDetails = movesDesc.map((m) => {
+        let desc = `Piece #${m.piece_number} (${m.from} → ${m.to})`;
+        if (m.captures && m.captures.length) {
+          desc += ` capturing ${m.captures.map((c) => c.playerName).join(" & ")}`;
+        }
+        return desc;
+      }).join("; ");
+      commentary += ` Executed: ${moveDetails}.`;
+    } else {
+      commentary += " No moves could be played, turn passed.";
+    }
+
+    return {
+      status: "success",
+      player: p.name,
+      seat: p.seat,
+      strategy,
+      actions,
+      commentary,
+      summary: this.getSummary(),
+      state: this.serialize()
+    };
+  }
+
+  simulateAiMatch(options = {}) {
+    const { player_names, strategies = [], max_turns = 150 } = options;
+    if (player_names && player_names.length >= 2) {
+      this.initNewMatch(player_names);
+    }
+
+    const stratMap = {};
+    this.players.forEach((p, idx) => {
+      stratMap[p.name] = (Array.isArray(strategies) ? strategies[idx] : strategies[p.name]) || "balanced";
+    });
+
+    const turnLogs = [];
+    const startTime = Date.now();
+    let turnCount = 0;
+
+    while (this.phase !== "done" && turnCount < max_turns) {
+      turnCount++;
+      const currentActive = this.activePlayer().name;
+      const strategy = stratMap[currentActive] || "balanced";
+      const turnResult = this.playAiTurn(strategy);
+      turnLogs.push({
+        turn: turnCount,
+        player: currentActive,
+        strategy,
+        commentary: turnResult.commentary,
+        actions: turnResult.actions
+      });
+    }
+
+    const winner = this.players.find((p) => p.rank === 1);
+    const durationMs = Date.now() - startTime;
+
+    const statistics = this.players.map((p) => {
+      const rolls = this.audit.filter((a) => a.event === "ROLL" && a.player === p.name);
+      const captures = this.audit.filter((a) => a.event === "CAPTURE" && a.capturer === p.name);
+      const moves = this.audit.filter((a) => a.event === "MOVE" && a.player === p.name);
+      return {
+        name: p.name,
+        seat: p.seat,
+        avatar: p.avatar,
+        winner: winner?.name === p.name,
+        rank: p.rank,
+        finishedPieces: p.pieces.filter((q) => q.progress === 43).length,
+        capturesCount: captures.length,
+        totalRolls: rolls.length,
+        bonusRollsCount: rolls.filter((r) => r.bonus).length,
+        totalMoves: moves.length
+      };
+    });
+
+    return {
+      status: winner ? "completed" : "max_turns_reached",
+      winner: winner ? winner.name : null,
+      totalTurns: turnCount,
+      durationMs,
+      statistics,
+      recentHighlights: turnLogs.filter((t) => t.actions?.some((a) => a.type === "MOVE" && (a.captures?.length || a.tags?.includes("GOAL_FINISH")))).slice(-8),
+      summary: this.getSummary(),
+      state: this.serialize()
+    };
+  }
+
   serialize() {
     return {
       players: this.players,
@@ -491,10 +738,100 @@ const MCP_TOOLS = [
         base_url: { type: "string", description: "Optional web client base URL." }
       }
     }
+  },
+  {
+    name: "dhayam_evaluate_moves",
+    description: "Evaluate and rank all legal moves for the active player with tactical heuristic scores, strategic tags (CAPTURE, GOAL_FINISH, RELIEVE_OVERCROWDING, SAFETY_ZONE, ENTER_INNER_TRACK), and natural language explanations. Ideal for LLM pair programming and AI vs AI decision making.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        strategy: {
+          type: "string",
+          enum: ["balanced", "aggressive", "cautious"],
+          description: "AI evaluation strategy weighting. Defaults to 'balanced'."
+        },
+        state: {
+          type: "object",
+          description: "Optional serialized game state to evaluate."
+        }
+      }
+    }
+  },
+  {
+    name: "dhayam_play_ai_turn",
+    description: "Execute a complete automated turn for the current AI / computer player. Automatically handles Dayakattai dice rolls (including bonus chains on 1, 5, 6, 12), evaluates and executes the optimal legal moves, captures opponent pieces, and passes when the turn is complete.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        strategy: {
+          type: "string",
+          enum: ["balanced", "aggressive", "cautious"],
+          description: "AI play personality. 'aggressive' prioritizes captures; 'cautious' prioritizes safety zones; 'balanced' optimizes goal progress and overcrowding relief."
+        },
+        state: {
+          type: "object",
+          description: "Optional serialized game state to play turn on."
+        }
+      }
+    }
+  },
+  {
+    name: "dhayam_simulate_ai_match",
+    description: "Simulate a complete Computer-to-Computer or AI-to-AI match (2 to 4 players) to conclusion or max turns. Returns the winner, match statistics, capture counts, bonus streaks, turn highlights, and shareable web link.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        player_names: {
+          type: "array",
+          items: { type: "string" },
+          description: "List of player/bot names (e.g. ['AlphaBot', 'BetaBot']). Defaults to ['Computer 1', 'Computer 2']."
+        },
+        strategies: {
+          type: "array",
+          items: { type: "string", enum: ["balanced", "aggressive", "cautious"] },
+          description: "Strategy for each player respectively."
+        },
+        max_turns: {
+          type: "integer",
+          description: "Maximum turns to simulate before stopping. Defaults to 150."
+        },
+        state: {
+          type: "object",
+          description: "Optional existing match state to resume simulation from."
+        }
+      }
+    }
+  },
+  {
+    name: "dhayam_simulate_online_match",
+    description: "Simulate AI-to-AI moves in a live Cloudflare multiplayer room so spectators can watch the dice tumbling and pieces moving in real-time in their web browser via WebSockets.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        room_code: {
+          type: "string",
+          description: "Multiplayer room code (e.g. 'CF88' or 'AI-ROOM'). Created if it does not exist."
+        },
+        turns: {
+          type: "integer",
+          description: "Number of automated AI turns to simulate in the room. Defaults to 4."
+        },
+        player_count: {
+          type: "integer",
+          description: "Number of players in the room (2 to 4). Defaults to 2."
+        },
+        strategy: {
+          type: "string",
+          enum: ["balanced", "aggressive", "cautious"],
+          description: "AI strategy for simulated bot moves."
+        }
+      },
+      required: ["room_code"]
+    }
   }
 ];
 
-function handleMcpToolCall(name, args = {}) {
+async function handleMcpToolCall(name, args = {}, env = null) {
   let engine = args.state ? new DhayamEngine(args.state) : activeSessionGame;
 
   let result;
@@ -519,6 +856,67 @@ function handleMcpToolCall(name, args = {}) {
       legalMoves: engine.getLegalMoves(),
       state: engine.serialize()
     };
+  } else if (name === "dhayam_evaluate_moves") {
+    const scored = engine.evaluateMoves(args.strategy || "balanced");
+    result = {
+      current_player: engine.activePlayer().name,
+      phase: engine.phase,
+      pool: [...engine.pool],
+      strategy: args.strategy || "balanced",
+      recommended_move: scored.length > 0 ? scored[0] : null,
+      scored_moves: scored,
+      state: engine.serialize()
+    };
+  } else if (name === "dhayam_play_ai_turn") {
+    const turnRes = engine.playAiTurn(args.strategy || "balanced");
+    if (!args.state) activeSessionGame = engine;
+    result = { ...turnRes, state: engine.serialize() };
+  } else if (name === "dhayam_simulate_ai_match") {
+    engine = args.state ? new DhayamEngine(args.state) : new DhayamEngine();
+    const simRes = engine.simulateAiMatch({
+      player_names: args.player_names,
+      strategies: args.strategies,
+      max_turns: args.max_turns || 150
+    });
+    if (!args.state) activeSessionGame = engine;
+    result = {
+      ...simRes,
+      share_url: "https://sethusrinivasan.github.io/dhayam/"
+    };
+  } else if (name === "dhayam_simulate_online_match") {
+    const roomCode = (args.room_code || "AI" + Math.floor(1000 + Math.random() * 9000)).toUpperCase();
+    if (env && env.DHAYAM_ROOM) {
+      try {
+        const id = env.DHAYAM_ROOM.idFromName(roomCode);
+        const stub = env.DHAYAM_ROOM.get(id);
+        const res = await stub.fetch(new Request("https://internal/ai-step", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            turns: args.turns || 4,
+            strategy: args.strategy || "balanced",
+            player_count: args.player_count || 2
+          })
+        }));
+        result = await res.json();
+      } catch (err) {
+        result = { error: "Room execution error: " + err.message };
+      }
+    } else {
+      engine = args.state ? new DhayamEngine(args.state) : new DhayamEngine();
+      if (!args.state) {
+        engine.initNewMatch(Array.from({ length: args.player_count || 2 }, (_, i) => "AI Bot " + (i + 1)));
+      }
+      const simRes = engine.simulateAiMatch({
+        strategies: args.strategy ? [args.strategy] : ["balanced"],
+        max_turns: args.turns || 6
+      });
+      result = {
+        ...simRes,
+        roomCode,
+        spectatorUrl: `https://dhayam.cancun.workers.dev/?room=${roomCode}`
+      };
+    }
   } else if (name === "dhayam_move_piece") {
     const moveRes = engine.applyMove(args.piece_id, args.dice_values);
     result = { ...moveRes, state: engine.serialize() };
@@ -679,6 +1077,62 @@ export class DhayamRoom extends DurableObject {
       }));
 
       return new Response(null, { status: 101, webSocket: client, headers: CORS_HEADERS });
+    }
+
+    if (request.method === "POST") {
+      let body = {};
+      try {
+        body = await request.json();
+      } catch (e) {}
+
+      const code = (url.searchParams.get("code") || url.pathname.split("/")[2] || "AI-ROOM").toUpperCase();
+      const targetCount = body.player_count || parseInt(url.searchParams.get("players") || "2", 10);
+      this.ensureInitialized(targetCount, code);
+
+      const turns = Math.min(Math.max(body.turns || 1, 1), 50);
+      const strategy = body.strategy || "balanced";
+      const executedTurns = [];
+
+      for (let t = 0; t < turns; t++) {
+        if (this.engine.phase === "done") break;
+        const activeSeat = this.engine.current;
+        const activeName = this.engine.players[activeSeat].name;
+
+        const turnRes = this.engine.playAiTurn(strategy);
+        executedTurns.push({
+          turn: this.engine.turn,
+          player: activeName,
+          commentary: turnRes.commentary,
+          actions: turnRes.actions
+        });
+
+        this.broadcast({
+          type: "ROOM_UPDATE",
+          seats: this.getSeatsInfo(),
+          message: turnRes.commentary
+        });
+
+        this.broadcast({
+          type: "SYNC_STATE",
+          game: this.engine.serialize(),
+          audit: this.engine.audit,
+          seats: this.getSeatsInfo()
+        });
+      }
+
+      this.persist();
+
+      return new Response(JSON.stringify({
+        status: "success",
+        roomCode: this.roomCode,
+        turnsExecuted: executedTurns.length,
+        executedTurns,
+        phase: this.engine.phase,
+        winner: this.engine.players.find((p) => p.rank === 1)?.name || null,
+        spectatorUrl: `https://dhayam.cancun.workers.dev/?room=${this.roomCode}`,
+        seats: this.getSeatsInfo(),
+        game: this.engine.serialize()
+      }), { headers: CORS_HEADERS });
     }
 
     // Room info GET endpoint
@@ -1048,7 +1502,7 @@ export default {
 
           if (method === "tools/call") {
             const params = body.params || {};
-            const toolResult = handleMcpToolCall(params.name, params.arguments);
+            const toolResult = await handleMcpToolCall(params.name, params.arguments, env);
             return new Response(
               JSON.stringify({
                 jsonrpc: "2.0",

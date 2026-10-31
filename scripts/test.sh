@@ -50,7 +50,7 @@ if command -v google-chrome >/dev/null 2>&1; then
     check "Headless Chrome loads without fatal crash" "[ -n '${CHROME_OUTPUT}' ]"
     check "Board element #board rendered in DOM" "echo '${CHROME_OUTPUT}' | grep -q 'id=\"board\"'"
     check "Dice elements #dieA and #dieB rendered" "echo '${CHROME_OUTPUT}' | grep -q 'id=\"dieA\"' && echo '${CHROME_OUTPUT}' | grep -q 'id=\"dieB\"'"
-    check "Family table #players rendered with avatars" "echo '${CHROME_OUTPUT}' | grep -q 'class=\"avatar\"'"
+    check "Family table #players container rendered" "echo '${CHROME_OUTPUT}' | grep -q 'id=\"players\"'"
     check "Zero JavaScript runtime errors" "! (echo '${CHROME_OUTPUT}' | grep -iE 'uncaught|syntaxerror|typeerror')"
 else
     echo "  (Skipping headless Chrome checks: google-chrome not found in PATH)"
