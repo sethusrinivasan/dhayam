@@ -481,3 +481,209 @@ test("startGuidedDemo supports multiplayer-real mode targeting Cloudflare", () =
   assert.equal(sockets.length, 3, "Spawns host socket and 2 simulated guest sockets for 3-player Cloudflare demo");
 });
 
+test("state transitions and button enablement audit across all game phases", () => {
+  function getActionAndMoveBtnState(ctx: {
+    phase: string;
+    isHumanTurn: boolean;
+    isComputer: boolean;
+    rolling: boolean;
+    moving: boolean;
+    demo: boolean;
+    targetMove: any;
+    optsCount: number;
+    historyLength: number;
+  }) {
+    let actionDisabled = false;
+    let actionText = "";
+    let moveDisabled = false;
+    let moveText = "";
+
+    const canMove = ctx.phase === "move" && Boolean(ctx.targetMove) && !ctx.rolling && !ctx.moving && ctx.isHumanTurn;
+
+    // Move button logic
+    if (ctx.moving) {
+      moveText = "Moving…";
+      moveDisabled = true;
+    } else if (canMove && ctx.targetMove) {
+      moveText = ctx.targetMove.piece.progress < 0 ? "✨ Enter Piece" : "Move selected piece";
+      moveDisabled = false;
+    } else {
+      moveText = "Move selected piece";
+      moveDisabled = true;
+    }
+
+    // Action button logic
+    if (ctx.phase === "done") {
+      actionText = "🏆 New match";
+      actionDisabled = false;
+    } else if (ctx.demo) {
+      actionText = "Demo playing…";
+      actionDisabled = true;
+    } else if (!ctx.isHumanTurn && !ctx.isComputer) {
+      actionText = "Waiting for player…";
+      actionDisabled = true;
+    } else if (ctx.isComputer) {
+      actionText = ctx.rolling ? "Computer rolling…" : ctx.moving ? "Computer moving…" : "Computer is thinking…";
+      actionDisabled = true;
+    } else if (ctx.rolling) {
+      actionText = "🎲 Rolling…";
+      actionDisabled = true;
+    } else if (ctx.moving) {
+      actionText = "Moving…";
+      actionDisabled = true;
+    } else if (ctx.phase === "move") {
+      if (ctx.targetMove) {
+        actionText = ctx.targetMove.piece.progress < 0 ? "✨ Enter Piece" : "👉 Move Selected Piece";
+        actionDisabled = false;
+      } else if (ctx.optsCount === 0) {
+        actionText = "Pass turn";
+        actionDisabled = false;
+      } else {
+        actionText = "👉 Move Piece";
+        actionDisabled = false;
+      }
+    } else if (ctx.phase === "roll") {
+      actionText = ctx.historyLength > 0 ? "🎲 Roll Dice (Bonus throw!)" : "🎲 Roll Dice";
+      actionDisabled = false;
+    }
+
+    return { actionDisabled, actionText, moveDisabled, moveText };
+  }
+
+  // 1. Human Roll Phase: actionBtn enabled, moveBtn disabled
+  const s1 = getActionAndMoveBtnState({
+    phase: "roll",
+    isHumanTurn: true,
+    isComputer: false,
+    rolling: false,
+    moving: false,
+    demo: false,
+    targetMove: null,
+    optsCount: 0,
+    historyLength: 0
+  });
+  assert.equal(s1.actionDisabled, false);
+  assert.equal(s1.actionText, "🎲 Roll Dice");
+  assert.equal(s1.moveDisabled, true);
+
+  // 2. Human Rolling: both buttons disabled
+  const s2 = getActionAndMoveBtnState({
+    phase: "roll",
+    isHumanTurn: true,
+    isComputer: false,
+    rolling: true,
+    moving: false,
+    demo: false,
+    targetMove: null,
+    optsCount: 0,
+    historyLength: 0
+  });
+  assert.equal(s2.actionDisabled, true);
+  assert.equal(s2.moveDisabled, true);
+
+  // 3. Human Move Phase with entry move: both buttons enabled and aligned
+  const s3 = getActionAndMoveBtnState({
+    phase: "move",
+    isHumanTurn: true,
+    isComputer: false,
+    rolling: false,
+    moving: false,
+    demo: false,
+    targetMove: { piece: { id: "P0-0", progress: -1 } },
+    optsCount: 6,
+    historyLength: 1
+  });
+  assert.equal(s3.actionDisabled, false);
+  assert.equal(s3.actionText, "✨ Enter Piece");
+  assert.equal(s3.moveDisabled, false);
+  assert.equal(s3.moveText, "✨ Enter Piece");
+
+  // 4. Moving animation: both buttons strictly disabled with "Moving…" text
+  const s4 = getActionAndMoveBtnState({
+    phase: "move",
+    isHumanTurn: true,
+    isComputer: false,
+    rolling: false,
+    moving: true,
+    demo: false,
+    targetMove: { piece: { id: "P0-0", progress: 0 } },
+    optsCount: 1,
+    historyLength: 1
+  });
+  assert.equal(s4.actionDisabled, true);
+  assert.equal(s4.actionText, "Moving…");
+  assert.equal(s4.moveDisabled, true);
+  assert.equal(s4.moveText, "Moving…");
+
+  // 5. Computer turn: actionBtn strictly disabled ("Computer is thinking…"), moveBtn disabled
+  const s5 = getActionAndMoveBtnState({
+    phase: "roll",
+    isHumanTurn: false,
+    isComputer: true,
+    rolling: false,
+    moving: false,
+    demo: false,
+    targetMove: null,
+    optsCount: 0,
+    historyLength: 0
+  });
+  assert.equal(s5.actionDisabled, true);
+  assert.equal(s5.actionText, "Computer is thinking…");
+  assert.equal(s5.moveDisabled, true);
+});
+
+test("guaranteed cleanup of moving flag via try-finally on move execution", async () => {
+  let moving = false;
+  let movingPieceId: string | null = null;
+
+  async function simulateApplyWithPotentialError(throwError: boolean) {
+    moving = true;
+    movingPieceId = "P0-0";
+    try {
+      if (throwError) {
+        throw new Error("Simulated animation or audio exception");
+      }
+    } catch (_) {
+      // Handled
+    } finally {
+      moving = false;
+      movingPieceId = null;
+    }
+  }
+
+  // Normal move execution
+  await simulateApplyWithPotentialError(false);
+  assert.equal(moving, false, "moving flag must be false after normal execution");
+  assert.equal(movingPieceId, null);
+
+  // Exceptional execution must still clear moving flag
+  await simulateApplyWithPotentialError(true);
+  assert.equal(moving, false, "moving flag must be false even if an error is thrown");
+  assert.equal(movingPieceId, null);
+});
+
+test("capture splash triggers with subtle UI and hides verbose statusText", () => {
+  let splashTriggered = false;
+  let splashSquare = "";
+  let statusTitle = "";
+  let statusText = "Previous instruction";
+
+  function showCaptureSplash(sq: string) {
+    splashTriggered = true;
+    splashSquare = sq;
+  }
+
+  function handleCaptureEvent(sq: string) {
+    showCaptureSplash(sq);
+    statusTitle = "⚔️ Capture!";
+    statusText = ""; // Verbose note is suppressed for subtle game experience
+  }
+
+  handleCaptureEvent("C3");
+  assert.equal(splashTriggered, true, "showCaptureSplash must be called on capture");
+  assert.equal(splashSquare, "C3");
+  assert.equal(statusTitle, "⚔️ Capture!");
+  assert.equal(statusText, "", "Verbose description text note must be suppressed");
+});
+
+

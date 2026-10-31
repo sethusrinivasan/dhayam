@@ -343,6 +343,10 @@
         speakDemo(message);
         if (demoMode === "multiplayer" && typeof displayFloatingEmote === "function") {
           if (captures) {
+            if (typeof showCaptureSplash === "function") {
+              const capSquare = ROUTES[player.seat][move.test.progress];
+              showCaptureSplash(capSquare);
+            }
             displayFloatingEmote("😎", player.name);
             const victim = move.test.targets[0]?.other;
             if (victim) {

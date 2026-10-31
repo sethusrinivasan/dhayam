@@ -450,6 +450,61 @@
   }
 }
 
+.capture-splash {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(185, 28, 28, 0.94);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 14px rgba(239, 68, 68, 0.6);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  animation: captureSplashAnim 1.25s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+.capture-splash.centered {
+  left: 50% !important;
+  top: 50% !important;
+}
+
+.capture-splash-icon {
+  font-size: 1.15rem;
+}
+
+@keyframes captureSplashAnim {
+  0% {
+    transform: translate(-50%, -40%) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+  }
+  35% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  75% {
+    transform: translate(-50%, -65%) scale(1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-50%, -85%) scale(0.9);
+    opacity: 0;
+  }
+}
+
 .boardlegend {
   flex: 0 0 auto;
   margin-top: clamp(3px, 0.5vh, 6px);

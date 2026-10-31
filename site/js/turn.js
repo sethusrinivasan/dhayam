@@ -132,7 +132,13 @@
         }
         rollTimer = setTimeout(() => {
           rollTimer = null;
-          finishRoll(d);
+          try {
+            finishRoll(d);
+          } catch (err) {
+            console.error("Error during finishRoll:", err);
+            rolling = false;
+            render();
+          }
         }, 1220);
       }
 
@@ -289,55 +295,58 @@
         movingPieceId = piece.id;
         speakGame(commentary);
 
-        if (multiplayer.active && multiplayer.isHost && multiplayer.transport !== "cf_ws") {
-          multiplayer.connections.forEach((conn) => {
-            if (conn.open) {
-              conn.send({
-                type: "MOVE_START",
-                seat: game.current,
-                pieceId: piece.id,
-                fromProgress: piece.progress,
-                targetProgress: opt.test.progress,
-                destination: opt.test.destination || node(player, piece),
-                captures: capturedPieces,
-                commentary,
-                winner: willFinish && player.pieces.filter((q) => q.id !== piece.id).every((q) => q.progress === 43) ? player.name : null
-              });
+        try {
+          if (multiplayer.active && multiplayer.isHost && multiplayer.transport !== "cf_ws") {
+            multiplayer.connections.forEach((conn) => {
+              if (conn.open) {
+                conn.send({
+                  type: "MOVE_START",
+                  seat: game.current,
+                  pieceId: piece.id,
+                  fromProgress: piece.progress,
+                  targetProgress: opt.test.progress,
+                  destination: opt.test.destination || node(player, piece),
+                  captures: capturedPieces,
+                  commentary,
+                  winner: willFinish && player.pieces.filter((q) => q.id !== piece.id).every((q) => q.progress === 43) ? player.name : null
+                });
+              }
+            });
+          }
+
+          await animatePiece(player, piece, opt.test.progress);
+          if (
+            wasReserve &&
+            game.turn <= game.players.length &&
+            !game.openingEntryPlayers.includes(player.id)
+          )
+            game.openingEntryPlayers.push(player.id);
+          player.captured = opt.test.captured;
+          if (captureCount) {
+            const capSquare = ROUTES[player.seat][opt.test.progress];
+            capturedPieceIds = opt.test.targets.map((hit) => hit.q.id);
+            capturedPlayerIds = opt.test.targets.map((hit) => hit.other.id);
+            render();
+            if (typeof showCaptureSplash === "function") {
+              showCaptureSplash(capSquare);
             }
-          });
+            $("statusTitle").textContent = "⚔️ Capture!";
+            if ($("statusText")) $("statusText").textContent = "";
+            await waitForCaptureAnimation();
+            for (const hit of opt.test.targets) hit.q.progress = -1;
+            capturedPieceIds = [];
+            capturedPlayerIds = [];
+          }
+          game.pool = game.pool.filter(
+            (_, index) => !opt.indices.includes(index),
+          );
+        } catch (err) {
+          console.error("Error during move execution:", err);
+        } finally {
+          moving = false;
+          movingPieceId = null;
         }
 
-        await animatePiece(player, piece, opt.test.progress);
-        if (
-          wasReserve &&
-          game.turn <= game.players.length &&
-          !game.openingEntryPlayers.includes(player.id)
-        )
-          game.openingEntryPlayers.push(player.id);
-        player.captured = opt.test.captured;
-        if (captureCount) {
-          capturedPieceIds = opt.test.targets.map((hit) => hit.q.id);
-          capturedPlayerIds = opt.test.targets.map((hit) => hit.other.id);
-          render();
-          const capturedLabels = capturedPieces
-            .map((hit) => hit.playerName + "’s piece #" + hit.pieceNumber)
-            .join(" and ");
-          $("statusTitle").textContent = "Capture!";
-          $("statusText").textContent =
-            player.name +
-            " sends " +
-            capturedLabels +
-            " from the board back to the family table.";
-          await waitForCaptureAnimation();
-          for (const hit of opt.test.targets) hit.q.progress = -1;
-          capturedPieceIds = [];
-          capturedPlayerIds = [];
-        }
-        game.pool = game.pool.filter(
-          (_, index) => !opt.indices.includes(index),
-        );
-        moving = false;
-        movingPieceId = null;
         recordAudit("MOVE", {
           pieceId: piece.id,
           pieceNumber: player.pieces.indexOf(piece) + 1,
@@ -396,8 +405,8 @@
           !active().computer
         )
           return;
-        const naturalDelay = 1400 + Math.floor(Math.random() * 700),
-          speechDelay = Math.max(0, commentaryUntil - Date.now() + 700);
+        const naturalDelay = 750 + Math.floor(Math.random() * 400),
+          speechDelay = Math.min(900, Math.max(0, commentaryUntil - Date.now()));
         computerTimer = setTimeout(
           runComputerAction,
           Math.max(naturalDelay, speechDelay),
@@ -563,55 +572,65 @@
         moving = true;
         movingPieceId = piece.id;
 
-        const avName =
-          typeof getPlayerAvatarSpeechName === "function"
-            ? getPlayerAvatarSpeechName(player)
-            : "piece";
-        const wasReserve = piece.progress < 0;
-        let commentary =
-          data.commentary ||
-          player.name +
-            (wasReserve ? " enters a " + avName + " and " : " moves a " + avName + " ") +
-            "to " +
-            (data.destination || "the next square") +
-            ".";
-        if (data.captures && data.captures.length) {
-          const victimDesc = data.captures
-            .map((c) => {
-              const victimPlayer = game.players.find(
-                (p) => p.id === (c.playerId || c.other?.id),
-              );
-              const victimAv =
-                typeof getPlayerAvatarSpeechName === "function"
-                  ? getPlayerAvatarSpeechName(victimPlayer)
-                  : "piece";
-              return (
-                (victimPlayer ? victimPlayer.name : "An opponent") +
-                "’s " +
-                victimAv
-              );
-            })
-            .join(" and ");
-          commentary += " " + victimDesc + " is captured and returns to reserve!";
-        }
-        if (data.winner) {
-          commentary +=
-            " " + player.name + " finishes all six pieces and wins the game!";
-        }
-        speakGame(commentary);
+        try {
+          const avName =
+            typeof getPlayerAvatarSpeechName === "function"
+              ? getPlayerAvatarSpeechName(player)
+              : "piece";
+          const wasReserve = piece.progress < 0;
+          let commentary =
+            data.commentary ||
+            player.name +
+              (wasReserve ? " enters a " + avName + " and " : " moves a " + avName + " ") +
+              "to " +
+              (data.destination || "the next square") +
+              ".";
+          if (data.captures && data.captures.length) {
+            const victimDesc = data.captures
+              .map((c) => {
+                const victimPlayer = game.players.find(
+                  (p) => p.id === (c.playerId || c.other?.id),
+                );
+                const victimAv =
+                  typeof getPlayerAvatarSpeechName === "function"
+                    ? getPlayerAvatarSpeechName(victimPlayer)
+                    : "piece";
+                return (
+                  (victimPlayer ? victimPlayer.name : "An opponent") +
+                  "’s " +
+                  victimAv
+                );
+              })
+              .join(" and ");
+            commentary += " " + victimDesc + " is captured and returns to reserve!";
+          }
+          if (data.winner) {
+            commentary +=
+              " " + player.name + " finishes all six pieces and wins the game!";
+          }
+          speakGame(commentary);
 
-        await animatePiece(player, piece, data.targetProgress);
+          await animatePiece(player, piece, data.targetProgress);
 
-        moving = false;
-        movingPieceId = null;
-
-        if (data.captures && data.captures.length) {
-          capturedPieceIds = data.captures.map((c) => c.pieceId || c.q?.id || c);
-          capturedPlayerIds = data.captures.map((c) => c.playerId || c.other?.id || c);
-          render();
-          await waitForCaptureAnimation();
-          capturedPieceIds = [];
-          capturedPlayerIds = [];
+          if (data.captures && data.captures.length) {
+            const capSquare = ROUTES[player.seat][data.targetProgress];
+            capturedPieceIds = data.captures.map((c) => c.pieceId || c.q?.id || c);
+            capturedPlayerIds = data.captures.map((c) => c.playerId || c.other?.id || c);
+            render();
+            if (typeof showCaptureSplash === "function") {
+              showCaptureSplash(capSquare);
+            }
+            $("statusTitle").textContent = "⚔️ Capture!";
+            if ($("statusText")) $("statusText").textContent = "";
+            await waitForCaptureAnimation();
+            capturedPieceIds = [];
+            capturedPlayerIds = [];
+          }
+        } catch (err) {
+          console.error("Error during synchronized move execution:", err);
+        } finally {
+          moving = false;
+          movingPieceId = null;
         }
 
         if (typeof checkPendingRemoteState === "function" && checkPendingRemoteState()) {

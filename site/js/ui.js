@@ -38,6 +38,7 @@
             const sq = row + col,
               el = document.createElement("button");
             el.type = "button";
+            el.dataset.sq = sq;
             el.className =
               "cell" +
               (SAFE.has(sq) ? " safe" : "") +
@@ -415,17 +416,25 @@
         const moveBtn = $("moveBtn");
         if (moveBtn) {
           moveBtn.hidden = false;
-          moveBtn.textContent = moving
-            ? "Moving…"
-            : targetMove && targetMove.piece.progress < 0
-              ? "Enter Piece"
+          if (moving) {
+            moveBtn.textContent = "Moving…";
+            moveBtn.disabled = true;
+            moveBtn.onclick = null;
+          } else if (canMove && targetMove) {
+            moveBtn.textContent = targetMove.piece.progress < 0
+              ? "✨ Enter Piece"
               : "Move selected piece";
-          moveBtn.disabled = !canMove;
-          moveBtn.onclick = () => {
-            if (canMove && targetMove) {
-              apply(targetMove, "move-button");
-            }
-          };
+            moveBtn.disabled = false;
+            moveBtn.onclick = () => {
+              if (canMove && targetMove && !moving) {
+                apply(targetMove, "move-button");
+              }
+            };
+          } else {
+            moveBtn.textContent = "Move selected piece";
+            moveBtn.disabled = true;
+            moveBtn.onclick = null;
+          }
         }
 
         // 2. Roll Dice Button (#actionBtn)
@@ -434,35 +443,77 @@
           if (game.phase === "done") {
             actionBtn.textContent = "🏆 New match";
             actionBtn.disabled = false;
-            actionBtn.onclick = () => newGame(game.players.length);
-          } else if (game.phase === "move" && isHumanTurn && !moving && targetMove) {
-            actionBtn.textContent = targetMove.piece.progress < 0
-              ? "✨ Enter Piece"
-              : "👉 Move Selected Piece";
+            actionBtn.classList.remove("disabled");
+            actionBtn.onclick = () => newGame(game.players.length, game.computerCount);
+          } else if (demo) {
+            actionBtn.textContent = "Demo playing…";
+            actionBtn.disabled = true;
+            actionBtn.classList.add("disabled");
+            actionBtn.onclick = null;
+          } else if (multiplayer.active && !isMyTurn()) {
+            actionBtn.textContent = "Waiting for " + p.name + "…";
+            actionBtn.disabled = true;
+            actionBtn.classList.add("disabled");
+            actionBtn.onclick = null;
+          } else if (p.computer) {
+            actionBtn.textContent = rolling
+              ? p.name + " rolling…"
+              : moving
+                ? p.name + " moving…"
+                : p.name + " is thinking…";
+            actionBtn.disabled = true;
+            actionBtn.classList.add("disabled");
+            actionBtn.onclick = null;
+          } else if (rolling) {
+            actionBtn.textContent = "🎲 Rolling…";
+            actionBtn.disabled = true;
+            actionBtn.classList.add("disabled");
+            actionBtn.onclick = null;
+          } else if (moving) {
+            actionBtn.textContent = "Moving…";
+            actionBtn.disabled = true;
+            actionBtn.classList.add("disabled");
+            actionBtn.onclick = null;
+          } else if (game.phase === "move") {
+            if (targetMove) {
+              actionBtn.textContent = targetMove.piece.progress < 0
+                ? "✨ Enter Piece"
+                : "👉 Move Selected Piece";
+              actionBtn.disabled = false;
+              actionBtn.classList.remove("disabled");
+              actionBtn.onclick = () => {
+                if (targetMove && !moving) {
+                  apply(targetMove, "action-button-move");
+                }
+              };
+            } else if (opts.length === 0) {
+              actionBtn.textContent = "Pass turn";
+              actionBtn.disabled = false;
+              actionBtn.classList.remove("disabled");
+              actionBtn.onclick = () => passRemainingRolls();
+            } else {
+              actionBtn.textContent = "👉 Move Piece";
+              actionBtn.disabled = false;
+              actionBtn.classList.remove("disabled");
+              actionBtn.onclick = () => {
+                const first = opts[0];
+                if (first && !moving) apply(first, "action-button-fallback");
+              };
+            }
+          } else if (game.phase === "roll") {
+            actionBtn.textContent = game.history.length > 0
+              ? "🎲 Roll Dice (Bonus throw!)"
+              : "🎲 Roll Dice";
             actionBtn.disabled = false;
             actionBtn.classList.remove("disabled");
             actionBtn.onclick = () => {
-              if (targetMove && !moving) {
-                apply(targetMove, "action-button-move");
-              }
+              if (canRoll) roll();
             };
           } else {
-            actionBtn.textContent = rolling
-              ? "🎲 Rolling…"
-              : demo
-                ? "Demo playing…"
-                : p.computer
-                  ? p.name + " is thinking…"
-                  : "🎲 Roll Dice";
-            actionBtn.disabled = rolling;
-            actionBtn.classList.toggle("disabled", !canRoll);
-            actionBtn.onclick = () => {
-              if (canRoll) {
-                roll();
-              } else if (game.phase === "move" && isHumanTurn && !moving) {
-                warnDiceAlreadyRolled();
-              }
-            };
+            actionBtn.textContent = "🎲 Roll Dice";
+            actionBtn.disabled = true;
+            actionBtn.classList.add("disabled");
+            actionBtn.onclick = null;
           }
         }
 
@@ -554,7 +605,7 @@
           }
 
           diceEl.onclick = () => {
-            if (game.phase === "move") {
+            if (game.phase === "move" && isHumanTurn && !moving) {
               warnDiceAlreadyRolled();
             } else if (canRollDice) {
               roll();
@@ -569,18 +620,38 @@
           };
         }
 
-        const controlActions = document.querySelector(".controlactions");
-        if (controlActions && !controlActions._warnBound) {
-          controlActions._warnBound = true;
-          controlActions.addEventListener("click", (e) => {
-            if (game && game.phase === "move" && (e.target.id === "actionBtn" || e.target.closest("#actionBtn"))) {
-              warnDiceAlreadyRolled();
-            }
-          });
-        }
         updateAudioToggle();
         scheduleComputerIfNeeded();
       }
+
+      function showCaptureSplash(square) {
+        const board = $("board");
+        if (!board) return;
+        const splash = document.createElement("div");
+        splash.className = "capture-splash";
+        splash.innerHTML = '<span class="capture-splash-icon">⚔️</span><span class="capture-splash-text">Captured!</span>';
+        
+        let sqEl = null;
+        if (square) {
+          sqEl = board.querySelector('.cell[data-sq="' + square + '"]');
+        }
+        if (sqEl) {
+          const rect = sqEl.getBoundingClientRect();
+          const boardRect = board.getBoundingClientRect();
+          splash.style.left = (rect.left - boardRect.left + rect.width / 2) + "px";
+          splash.style.top = (rect.top - boardRect.top + rect.height / 2) + "px";
+        } else {
+          splash.classList.add("centered");
+        }
+        board.appendChild(splash);
+        if (typeof playTone === "function") {
+          playTone(587.33, 0.16, "triangle");
+        }
+        setTimeout(() => {
+          if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 1300);
+      }
+      window.showCaptureSplash = showCaptureSplash;
 
       function warnDiceAlreadyRolled() {
         const diceEl = document.querySelector(".dice");
