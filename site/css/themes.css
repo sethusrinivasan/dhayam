@@ -158,6 +158,27 @@ body[data-theme="halloween"] .pathflow,
   stroke: #ffa94d;
 }
 
+body[data-theme="halloween"] .lastroll-container,
+:root:not([data-theme]) .lastroll-container {
+  background: #19092499;
+  border-color: #ff751844;
+  box-shadow: 0 4px 16px #09020e88, inset 0 0 10px #ff75181a;
+}
+
+body[data-theme="halloween"] .lastroll-number,
+:root:not([data-theme]) .lastroll-number {
+  color: #ffa94d;
+  text-shadow: 0 0 18px #ff7518cc, 0 2px 6px #000;
+}
+
+body[data-theme="halloween"] .lastroll-status.bonus,
+:root:not([data-theme]) .lastroll-status.bonus {
+  background: #ff751833;
+  color: #ffc078;
+  border-color: #ff922baa;
+  box-shadow: 0 0 12px #ff751866;
+}
+
 /* ==========================================================================
    2. Heritage Wood Theme (Classic Teak & Brass)
    ========================================================================== */

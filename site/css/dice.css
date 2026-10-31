@@ -173,69 +173,182 @@
 }
 
 .die:nth-child(2) .diecube.rolling {
-  animation-delay: 0.07s;
+  animation-delay: 0.05s;
 }
 
-.die.tumbling {
-  animation: dieHop 1.15s cubic-bezier(0.22, 0.72, 0.3, 1);
+.die:nth-child(1).tumbling {
+  animation: dieBounceA 1.18s cubic-bezier(0.2, 0.8, 0.25, 1);
 }
 
 .die:nth-child(2).tumbling {
-  animation-delay: 0.07s;
+  animation: dieBounceB 1.22s cubic-bezier(0.2, 0.8, 0.25, 1);
+  animation-delay: 0.05s;
 }
 
-.die.tumbling:after {
-  animation: dieShadow 1.15s ease-out;
+.die:nth-child(1).tumbling:after {
+  animation: dieShadowA 1.18s cubic-bezier(0.2, 0.8, 0.25, 1);
 }
 
 .die:nth-child(2).tumbling:after {
-  animation-delay: 0.07s;
+  animation: dieShadowB 1.22s cubic-bezier(0.2, 0.8, 0.25, 1);
+  animation-delay: 0.05s;
 }
 
 @keyframes cubeRoll0 {
   0% { transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0); }
-  22% { transform: rotateX(180deg) rotateY(145deg) rotateZ(55deg); }
-  52% { transform: rotateX(455deg) rotateY(390deg) rotateZ(185deg); }
-  78% { transform: rotateX(650deg) rotateY(625deg) rotateZ(310deg); }
+  22% { transform: rotateX(190deg) rotateY(165deg) rotateZ(65deg); }
+  52% { transform: rotateX(465deg) rotateY(400deg) rotateZ(195deg); }
+  78% { transform: rotateX(655deg) rotateY(630deg) rotateZ(315deg); }
   100% { transform: rotateX(712deg) rotateY(710deg) rotateZ(360deg); }
 }
 
 @keyframes cubeRoll1 {
   0% { transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0); }
-  22% { transform: rotateX(205deg) rotateY(120deg) rotateZ(80deg); }
-  52% { transform: rotateX(470deg) rotateY(410deg) rotateZ(205deg); }
-  78% { transform: rotateX(675deg) rotateY(660deg) rotateZ(325deg); }
+  22% { transform: rotateX(215deg) rotateY(135deg) rotateZ(90deg); }
+  52% { transform: rotateX(480deg) rotateY(420deg) rotateZ(215deg); }
+  78% { transform: rotateX(680deg) rotateY(665deg) rotateZ(330deg); }
   100% { transform: rotateX(712deg) rotateY(890deg) rotateZ(360deg); }
 }
 
 @keyframes cubeRoll2 {
   0% { transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0); }
-  22% { transform: rotateX(155deg) rotateY(175deg) rotateZ(45deg); }
-  52% { transform: rotateX(430deg) rotateY(435deg) rotateZ(170deg); }
-  78% { transform: rotateX(630deg) rotateY(705deg) rotateZ(295deg); }
+  22% { transform: rotateX(165deg) rotateY(185deg) rotateZ(55deg); }
+  52% { transform: rotateX(440deg) rotateY(445deg) rotateZ(180deg); }
+  78% { transform: rotateX(635deg) rotateY(710deg) rotateZ(300deg); }
   100% { transform: rotateX(712deg) rotateY(980deg) rotateZ(360deg); }
 }
 
 @keyframes cubeRoll3 {
   0% { transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0); }
-  22% { transform: rotateX(195deg) rotateY(155deg) rotateZ(70deg); }
-  52% { transform: rotateX(450deg) rotateY(455deg) rotateZ(195deg); }
-  78% { transform: rotateX(665deg) rotateY(690deg) rotateZ(315deg); }
+  22% { transform: rotateX(205deg) rotateY(165deg) rotateZ(80deg); }
+  52% { transform: rotateX(460deg) rotateY(465deg) rotateZ(205deg); }
+  78% { transform: rotateX(670deg) rotateY(695deg) rotateZ(320deg); }
   100% { transform: rotateX(712deg) rotateY(800deg) rotateZ(360deg); }
 }
 
-@keyframes dieHop {
-  0%, 100% { transform: translateY(0) rotateZ(0); }
-  18% { transform: translateY(-16px) rotateZ(4deg); }
-  48% { transform: translateY(-5px) rotateZ(-3deg); }
-  68% { transform: translateY(-10px) rotateZ(2deg); }
-  86% { transform: translateY(2px) rotateZ(-1deg); }
+/* Die A: High initial airborne arc, crisp primary landing, secondary hop, settling wobble */
+@keyframes dieBounceA {
+  0% {
+    transform: translateY(0) rotateZ(0) scale(1);
+  }
+  24% {
+    transform: translateY(-46px) rotateZ(6deg) scale(1.04);
+  }
+  48% {
+    transform: translateY(0) rotateZ(-3deg) scaleY(0.94) scaleX(1.03);
+  }
+  68% {
+    transform: translateY(-18px) rotateZ(2deg) scale(1.01);
+  }
+  84% {
+    transform: translateY(0) rotateZ(-1deg) scaleY(0.98);
+  }
+  92% {
+    transform: translateY(-5px) rotateZ(0.5deg) scale(1);
+  }
+  100% {
+    transform: translateY(0) rotateZ(0) scale(1);
+  }
 }
 
-@keyframes dieShadow {
-  0%, 100% { transform: scale(0.9); opacity: 1; }
-  18% { transform: scale(0.45); opacity: 0.35; }
-  48% { transform: scale(0.72); opacity: 0.65; }
-  68% { transform: scale(0.55); opacity: 0.45; }
-  86% { transform: scale(1); opacity: 1; }
+/* Die B: Higher asynchronous launch, reverse tilt, and trailing bounce */
+@keyframes dieBounceB {
+  0% {
+    transform: translateY(0) rotateZ(0) scale(1);
+  }
+  22% {
+    transform: translateY(-52px) rotateZ(-7deg) scale(1.05);
+  }
+  46% {
+    transform: translateY(0) rotateZ(4deg) scaleY(0.93) scaleX(1.04);
+  }
+  66% {
+    transform: translateY(-22px) rotateZ(-3deg) scale(1.02);
+  }
+  82% {
+    transform: translateY(0) rotateZ(1.5deg) scaleY(0.97);
+  }
+  92% {
+    transform: translateY(-6px) rotateZ(-0.5deg) scale(1);
+  }
+  100% {
+    transform: translateY(0) rotateZ(0) scale(1);
+  }
+}
+
+/* Dynamic Shadows tied to realistic bounce elevation */
+@keyframes dieShadowA {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.85;
+    filter: blur(4px);
+  }
+  24% {
+    transform: scale(0.42);
+    opacity: 0.3;
+    filter: blur(8px);
+  }
+  48% {
+    transform: scale(1.12);
+    opacity: 0.95;
+    filter: blur(2.5px);
+  }
+  68% {
+    transform: scale(0.65);
+    opacity: 0.55;
+    filter: blur(5px);
+  }
+  84% {
+    transform: scale(1.04);
+    opacity: 0.9;
+    filter: blur(3px);
+  }
+  92% {
+    transform: scale(0.85);
+    opacity: 0.75;
+    filter: blur(4px);
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.88;
+    filter: blur(4px);
+  }
+}
+
+@keyframes dieShadowB {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.85;
+    filter: blur(4px);
+  }
+  22% {
+    transform: scale(0.38);
+    opacity: 0.28;
+    filter: blur(9px);
+  }
+  46% {
+    transform: scale(1.15);
+    opacity: 0.96;
+    filter: blur(2.5px);
+  }
+  66% {
+    transform: scale(0.62);
+    opacity: 0.52;
+    filter: blur(5.5px);
+  }
+  82% {
+    transform: scale(1.05);
+    opacity: 0.9;
+    filter: blur(3px);
+  }
+  92% {
+    transform: scale(0.82);
+    opacity: 0.75;
+    filter: blur(4px);
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.88;
+    filter: blur(4px);
+  }
 }

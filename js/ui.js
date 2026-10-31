@@ -408,16 +408,36 @@
         else if (moving) $("actionBtn").textContent = "Moving…";
         else if (p.computer)
           $("actionBtn").textContent = p.name + " is thinking…";
-        $("diceHint").textContent = game.last
-          ? "Last roll: " +
-            game.last.value +
-            " · " +
-            (game.last.bonus
-              ? "bonus throw"
-              : game.last.specialRoll
-                ? "bonus chain ended"
-                : "no bonus")
-          : "Two long dice · bonus chance falls each chain";
+        const diceHintEl = $("diceHint");
+        if (diceHintEl) {
+          if (game.last) {
+            const val = game.last.value;
+            const isDhayam = val === 1;
+            const isBonus = Boolean(game.last.bonus);
+            const isChainEnded = Boolean(game.last.specialRoll && !game.last.bonus);
+            const badgeClass = isBonus ? "lastroll-status bonus" : "lastroll-status";
+            const badgeText = isDhayam
+              ? "✨ Dhayam! · Bonus throw"
+              : isBonus
+                ? "✨ Bonus throw (" + val + ")"
+                : isChainEnded
+                  ? "Bonus chain complete"
+                  : "Normal roll";
+
+            diceHintEl.className = "lastroll-container";
+            diceHintEl.innerHTML =
+              '<div class="lastroll-header">Last Roll</div>' +
+              '<div class="lastroll-main">' +
+              '<span class="lastroll-number">' + val + "</span>" +
+              (isDhayam ? '<span class="lastroll-name">Dhayam</span>' : "") +
+              "</div>" +
+              '<div class="' + badgeClass + '">' + badgeText + "</div>";
+          } else {
+            diceHintEl.className = "lastroll-container";
+            diceHintEl.innerHTML =
+              '<div class="lastroll-helper-init">Two traditional dice · Click dice to roll.<br>Roll 1, 5, 6, or 12 for a bonus throw.</div>';
+          }
+        }
         const canRollDice = game.phase === "roll" && !rolling && !moving && !demo && !p.computer;
         const diceEl = document.querySelector(".dice");
         if (diceEl) {

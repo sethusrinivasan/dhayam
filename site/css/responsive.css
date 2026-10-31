@@ -252,8 +252,28 @@
     font-size: 16px;
     border-radius: 5px;
   }
-  #diceHint, .side .helper, .side .divider {
+  .side .helper, .side .divider {
     display: none;
+  }
+  .lastroll-container {
+    margin-top: 1px;
+    padding: 1px 4px;
+    background: transparent;
+    border: none;
+  }
+  .lastroll-header, .lastroll-helper-init {
+    display: none;
+  }
+  .lastroll-number {
+    font-size: 16px;
+  }
+  .lastroll-name {
+    font-size: 11px;
+  }
+  .lastroll-status {
+    font-size: 8.5px;
+    padding: 1px 5px;
+    margin-top: 1px;
   }
   #editPlayersBtn, #copyAuditBtn, #audioToggle {
     display: none;

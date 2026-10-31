@@ -29,23 +29,38 @@
   color: #f7e0bc;
 }
 
-/* Family Table takes balanced vertical space on desktop */
+/* Family Table dynamically sizes to fit players without a scrollbar when screen estate allows */
 .side .panel:first-child {
-  flex: 0 0 auto;
-  max-height: clamp(230px, 34vh, 300px);
+  flex: 0 1 auto;
+  max-height: min(65%, calc(100% - 220px));
   display: flex;
   flex-direction: column;
+  min-height: 0;
   overflow: hidden;
 }
 
 #players {
-  flex: 1 1 0%;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: clamp(2px, 0.5vh, 5px);
   padding-right: 2px;
+  scrollbar-width: thin;
+}
+
+#players::-webkit-scrollbar {
+  width: 4px;
+}
+
+#players::-webkit-scrollbar-thumb {
+  background: #ffffff22;
+  border-radius: 4px;
+}
+
+#players::-webkit-scrollbar-thumb:hover {
+  background: #ffffff44;
 }
 
 .player {
@@ -152,4 +167,88 @@
 .side .panel:last-child h2 {
   text-align: center;
   margin-bottom: clamp(6px, 1vh, 12px);
+}
+
+/* High-Visibility Last Roll Outcome Card */
+.lastroll-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: clamp(6px, 1vh, 12px);
+  padding: clamp(6px, 1vh, 10px) clamp(10px, 1.4vw, 16px);
+  border-radius: 12px;
+  background: #00000028;
+  border: 1px solid #ffffff1a;
+  text-align: center;
+  width: 100%;
+  max-width: 290px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.lastroll-header {
+  font-size: clamp(10px, 1.3vh, 12px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #d2c1aa;
+  margin-bottom: 2px;
+}
+
+.lastroll-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lastroll-number {
+  font-size: clamp(30px, 4.4vh, 44px);
+  font-weight: 950;
+  line-height: 1;
+  color: #ffdaa5;
+  text-shadow: 0 0 16px #ffbd5988, 0 2px 6px #000000aa;
+  letter-spacing: -0.5px;
+}
+
+.lastroll-name {
+  font-size: clamp(14px, 1.9vh, 18px);
+  font-weight: 800;
+  color: #ffe6ba;
+}
+
+.lastroll-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: clamp(10px, 1.35vh, 12px);
+  font-weight: 750;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: #ffffff14;
+  color: #f7e0bc;
+  border: 1px solid #ffffff24;
+}
+
+.lastroll-status.bonus {
+  background: #ff950028;
+  color: #ffd880;
+  border-color: #ffa72688;
+  box-shadow: 0 0 10px #ff950044;
+  animation: bonusBadgeGlow 1.6s infinite ease-in-out;
+}
+
+@keyframes bonusBadgeGlow {
+  0%, 100% { box-shadow: 0 0 8px #ff950044; border-color: #ffa72666; }
+  50% { box-shadow: 0 0 16px #ff950088; border-color: #ffbd59; }
+}
+
+.lastroll-helper-init {
+  font-size: clamp(10px, 1.3vh, 11.5px);
+  color: #d2c1aa;
+  line-height: 1.4;
+  text-align: center;
+  padding: 4px 0;
 }
