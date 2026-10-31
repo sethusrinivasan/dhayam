@@ -1,93 +1,154 @@
-      :root {
-        font-family:
-          ui-sans-serif,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        color: #fff7e9;
-        background: #211912;
-        font-synthesis: none;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        background: radial-gradient(
-          ellipse at 50% 0%,
-          #57402c 0%,
-          #271c15 55%,
-          #1b1410 100%
-        );
-      }
-      button,
-      select,
-      input {
-        font: inherit;
-      }
-      button {
-        cursor: pointer;
-      }
-      button:disabled {
-        opacity: 0.43;
-        cursor: not-allowed;
-      }
-      .shell {
-        max-width: 1250px;
-        margin: auto;
-        padding: 22px 20px 35px;
-      }
-      .top {
-        display: flex;
-        gap: 16px;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-bottom: 22px;
-      }
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      .logo {
-        display: grid;
-        place-items: center;
-        width: 49px;
-        height: 49px;
-        border-radius: 15px;
-        background: #d8a05d;
-        color: #402716;
-        font-size: 27px;
-      }
-      .brand h1 {
-        font-family: Georgia, serif;
-        font-size: 31px;
-        line-height: 1;
-        margin: 0;
-        letter-spacing: -0.6px;
-      }
-      .sub {
-        color: #cdbda8;
-        font-size: 12px;
-        margin-top: 6px;
-      }
-      .topnav {
-        display: flex;
-        gap: 9px;
-        flex-wrap: wrap;
-      }
-      .pill {
-        border: 1px solid #ffffff24;
-        background: #ffffff0b;
-        color: #fff1db;
-        border-radius: 14px;
-        padding: 11px 14px;
-        font-size: 13px;
-      }
-      .pill:hover {
-        background: #ffffff18;
-      }
-      .layout {
+/**
+ * base.css - Viewport Boundaries, Typography & Shell Layout
+ *
+ * Implements a strict 100dvh viewport-fitted container with zero vertical
+ * scrolling, flexible header, and responsive pill navigation.
+ */
+:root {
+  font-family:
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: #fff7e9;
+  background: #211912;
+  font-synthesis: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Strict no-scroll constraint */
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    #57402c 0%,
+    #271c15 55%,
+    #1b1410 100%
+  );
+}
+
+button,
+select,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.43;
+  cursor: not-allowed;
+}
+
+.shell {
+  height: 100%;
+  height: 100dvh;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: clamp(4px, 1vh, 12px) clamp(8px, 1.5vw, 18px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.top {
+  flex: 0 0 auto;
+  display: flex;
+  gap: clamp(8px, 1.2vw, 16px);
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: nowrap;
+  margin-bottom: clamp(4px, 0.8vh, 10px);
+  min-height: 38px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1vw, 12px);
+  min-width: 0;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: clamp(34px, 4.4vh, 46px);
+  height: clamp(34px, 4.4vh, 46px);
+  border-radius: clamp(10px, 1.4vh, 14px);
+  background: #d8a05d;
+  color: #402716;
+  font-size: clamp(20px, 2.7vh, 26px);
+  flex-shrink: 0;
+}
+
+.brand h1 {
+  font-family: Georgia, serif;
+  font-size: clamp(19px, 2.7vh, 28px);
+  line-height: 1;
+  margin: 0;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+
+.sub {
+  color: #cdbda8;
+  font-size: clamp(10px, 1.3vh, 12px);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topnav {
+  display: flex;
+  gap: clamp(5px, 0.8vw, 8px);
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.pill {
+  border: 1px solid #ffffff24;
+  background: #ffffff0b;
+  color: #fff1db;
+  border-radius: 12px;
+  padding: clamp(6px, 0.9vh, 9px) clamp(8px, 1.1vw, 13px);
+  font-size: clamp(11px, 1.4vh, 13px);
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.pill:hover {
+  background: #ffffff18;
+}
+
+.footer {
+  flex: 0 0 auto;
+  font-size: clamp(9px, 1.1vh, 10.5px);
+  color: #ad9a82;
+  text-align: center;
+  padding: 3px 0 0;
+  margin-top: auto;
+}
+
+.footer a {
+  color: #f3c774;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer a:hover {
+  color: #ffffff;
+}

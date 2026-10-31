@@ -1,105 +1,145 @@
-        display: grid;
-        gap: 14px;
-      }
-      .panel {
-        border: 1px solid #f8dfb124;
-        background: #ffffff0b;
-        backdrop-filter: blur(12px);
-        border-radius: 20px;
-        padding: 18px;
-      }
-      .panel h2 {
-        font-size: 15px;
-        margin: 0 0 14px;
-      }
-      .player {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px;
-        border-radius: 12px;
-        border: 1px solid transparent;
-        margin-bottom: 5px;
-      }
-      .player.active {
-        background: #fff8d921;
-        border-color: #f6d588;
-        box-shadow: 0 0 0 2px #f6d58822;
-      }
-      .player.captureloss {
-        animation: captureLoss 0.75s ease-in-out;
-        border-color: #ffbf72;
-      }
-      @keyframes captureLoss {
-        0%,
-        100% {
-          background: transparent;
-        }
-        45% {
-          background: #c050353d;
-          box-shadow: 0 0 0 3px #ffb26b42;
-        }
-      }
-      .avatar {
-        width: 42px;
-        height: 42px;
-        flex: 0 0 42px;
-        border-radius: 14px;
-        display: grid;
-        place-items: center;
-        color: #1d130f;
-        font-size: 23px;
-        font-weight: 800;
-        border: 2px solid #fff5ce80;
-        box-shadow: 0 3px 8px #0005;
-      }
-      .pname {
-        font-size: 14px;
-        font-weight: 650;
-      }
-      .pmeta {
-        font-size: 11px;
-        color: #c8b49d;
-        margin-top: 2px;
-      }
-      .piecestatus {
-        display: grid;
-        gap: 2px;
-        margin-top: 5px;
-        color: #e6d3ba;
-        font-size: 10px;
-        line-height: 1.35;
-      }
-      .piecestatus b {
-        color: #ffe3a6;
-        font-weight: 750;
-      }
-      .turn {
-        color: #f2d18d;
-        font-size: 12px;
-      }
-      .btn {
-        border: 0;
-        border-radius: 15px;
-        padding: 11px 14px;
-        font-weight: 750;
-        font-size: 13px;
-        color: #fff;
-        background: linear-gradient(120deg, #dc7554, #b94342);
-        box-shadow: 0 6px 15px #140b0840;
-      }
-      .btn.secondary {
-        background: #ffffff16;
-        box-shadow: none;
-        border: 1px solid #ffffff24;
-      }
-      .btn:focus-visible,
-      .pill:focus-visible,
-      .cell:focus-visible {
-        outline: 3px solid #ffe6a3;
-        outline-offset: 3px;
-      }
-      .btn.full {
-        width: 100%;
-      }
-      .controls {
+/**
+ * panels.css - Side Area, Family Table & Player Cards
+ *
+ * Implements a vertically bounded side panel where the player list flexes
+ * smoothly and handles arbitrary player counts without page overflow.
+ */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.9vh, 10px);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel {
+  border: 1px solid #f8dfb124;
+  background: #ffffff0b;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: clamp(12px, 1.6vh, 18px);
+  padding: clamp(8px, 1.2vh, 13px);
+  box-sizing: border-box;
+}
+
+.panel h2 {
+  font-size: clamp(12px, 1.6vh, 14px);
+  margin: 0 0 clamp(4px, 0.7vh, 8px);
+  color: #f7e0bc;
+}
+
+/* Family Table takes available vertical flex space */
+.side .panel:first-child {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#players {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2px, 0.5vh, 5px);
+  padding-right: 2px;
+}
+
+.player {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 0.8vw, 9px);
+  padding: clamp(4px, 0.7vh, 7px) clamp(6px, 1vw, 9px);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #00000014;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.player.active {
+  background: #fff8d921;
+  border-color: #f6d588;
+  box-shadow: 0 0 0 1px #f6d58844;
+}
+
+.player.captureloss {
+  animation: captureLoss 0.75s ease-in-out;
+  border-color: #ffbf72;
+}
+
+@keyframes captureLoss {
+  0%, 100% { background: transparent; }
+  45% { background: #c050353d; box-shadow: 0 0 0 2px #ffb26b42; }
+}
+
+.avatar {
+  width: clamp(26px, 3.8vh, 34px);
+  height: clamp(26px, 3.8vh, 34px);
+  flex: 0 0 clamp(26px, 3.8vh, 34px);
+  border-radius: clamp(8px, 1.1vh, 11px);
+  display: grid;
+  place-items: center;
+  color: #1d130f;
+  font-size: clamp(13px, 2vh, 18px);
+  font-weight: 800;
+  border: 1.5px solid #fff5ce80;
+  box-shadow: 0 2px 5px #0004;
+}
+
+.pname {
+  font-size: clamp(11.5px, 1.5vh, 13px);
+  font-weight: 650;
+  line-height: 1.1;
+}
+
+.pmeta {
+  font-size: clamp(9px, 1.15vh, 10.5px);
+  color: #c8b49d;
+  margin-top: 1px;
+}
+
+.piecestatus {
+  display: grid;
+  gap: 1px;
+  margin-top: 2px;
+  color: #e6d3ba;
+  font-size: clamp(8px, 1.05vh, 9.5px);
+  line-height: 1.25;
+}
+
+.piecestatus b {
+  color: #ffe3a6;
+  font-weight: 750;
+}
+
+.turn {
+  color: #f2d18d;
+  font-size: clamp(10px, 1.3vh, 11px);
+  white-space: nowrap;
+}
+
+.divider {
+  height: 1px;
+  background: #ffffff1c;
+  margin: clamp(4px, 0.7vh, 8px) 0;
+  flex-shrink: 0;
+}
+
+.helper {
+  font-size: clamp(9.5px, 1.2vh, 11px);
+  color: #d2c1aa;
+  line-height: 1.4;
+}
+
+.small {
+  font-size: clamp(8.5px, 1.1vh, 10px);
+  color: #c5b097;
+}
+
+/* Dayakattai Dice Panel */
+.side .panel:last-child {
+  flex: 0 0 auto;
+}

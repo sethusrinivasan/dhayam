@@ -1,146 +1,178 @@
-        margin-top: 16px;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 12px;
-        align-items: center;
-      }
-      .controlactions {
-        display: grid;
-        gap: 8px;
-        min-width: 205px;
-      }
-      #actionBtn {
-        min-height: 52px;
-        padding: 14px 18px;
-        font-size: 14px;
-      }
-      .movechoice {
-        width: 100%;
-        border: 1px solid #ffffff30;
-        border-radius: 10px;
-        padding: 9px 10px;
-        color: #fff2d7;
-        background: #2b1b12;
-        font-size: 12px;
-      }
-      .status {
-        border: 1px solid #fff4d21c;
-        background: #130d0a88;
-        border-radius: 18px;
-        padding: 16px;
-      }
-      .status strong {
-        display: block;
-        font-size: 15px;
-      }
-      .status span {
-        font-size: 12px;
-        color: #d6c1a9;
-        display: block;
-        margin-top: 5px;
-        line-height: 1.5;
-      }
-      .dice {
+/**
+ * controls.css - Status Bar, Action Buttons, Roll Chips & Demobar
+ *
+ * Implements a streamlined control dock that preserves full accessible
+ * interactions within a compact vertical footprint.
+ */
+.controls {
+  flex: 0 0 auto;
+  margin-top: clamp(4px, 0.7vh, 8px);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: clamp(6px, 1vw, 12px);
+  align-items: center;
+}
 
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        margin-top: 12px;
-        padding: 12px 14px;
-        border: 1px solid #f4cf7c66;
-        background: #2b1b12;
-        border-radius: 16px;
-      }
-      .demoinfo {
-        display: grid;
-        gap: 3px;
-      }
-      .demoinfo strong {
-        font-size: 13px;
-        color: #ffe6ac;
-      }
-      .demoinfo span {
-        font-size: 11px;
-        color: #cdbb9f;
-      }
-      .demoactions {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        flex-wrap: wrap;
-      }
-      .demospeed {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        padding: 5px 9px;
-        border: 1px solid #ffffff2e;
-        border-radius: 10px;
-        color: #fff1d7;
-        font-size: 12px;
-        font-weight: 700;
-      }
-      .demospeed input {
-        width: 92px;
-        accent-color: #e1b45e;
-      }
-      .demospeed output {
-        min-width: 28px;
-        color: #ffe6ac;
-      }
-      .demobtn {
-        border: 1px solid #ffffff2e;
-        background: #ffffff12;
-        color: #fff1d7;
-        border-radius: 10px;
-        padding: 8px 11px;
-        font-size: 12px;
-        font-weight: 700;
-      }
-      .demobtn:hover {
-        background: #ffffff20;
-      }
-      .demobtn:disabled {
-        opacity: 0.5;
-      }
-      .legenditem {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-      }
-      .legendplayers {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-      }
-      .legendplayer {
-        display: inline-grid;
-        place-items: center;
-        width: 18px;
-        height: 18px;
-        border-radius: 6px;
-        border: 1px solid #fff7;
-        font-size: 11px;
-        color: #28170f;
-      }
-      .legendarrow {
-        font-size: 18px;
-        color: #f7cf8b;
-      }
-      .legendmove {
-        width: 17px;
-        height: 17px;
-        border: 3px solid #fff8a5;
-        border-radius: 5px;
-      }
-      .legendsafe {
-        font-size: 16px;
-        color: #ffd995;
-      }
-      .divider {
-        height: 1px;
-        background: #ffffff20;
-        margin: 14px 0;
-      }
-      .modalback {
+.status {
+  border: 1px solid #fff4d21c;
+  background: #130d0a88;
+  border-radius: clamp(10px, 1.4vh, 14px);
+  padding: clamp(5px, 0.9vh, 9px) clamp(8px, 1.2vw, 12px);
+  min-width: 0;
+}
+
+.status strong {
+  display: block;
+  font-size: clamp(12px, 1.6vh, 14px);
+  color: #fff6eb;
+}
+
+.status span {
+  font-size: clamp(10px, 1.25vh, 11px);
+  color: #d6c1a9;
+  display: block;
+  margin-top: 1px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  max-height: 38px;
+  overflow-y: auto;
+}
+
+.chip {
+  background: #ffffff16;
+  border: 1px solid #ffffff30;
+  color: #fff2d7;
+  padding: clamp(3px, 0.5vh, 5px) clamp(6px, 0.9vw, 9px);
+  border-radius: 8px;
+  font-size: clamp(10px, 1.3vh, 12px);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.chip.selected {
+  background: #d5a65a;
+  color: #21150e;
+  font-weight: 750;
+}
+
+.controlactions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.movechoice {
+  border: 1px solid #ffffff38;
+  background: #201710;
+  color: white;
+  padding: clamp(6px, 1vh, 8px) clamp(8px, 1vw, 10px);
+  border-radius: 10px;
+  font-size: clamp(11px, 1.3vh, 12.5px);
+  max-width: 170px;
+}
+
+.btn {
+  border: 0;
+  border-radius: clamp(10px, 1.4vh, 13px);
+  padding: clamp(7px, 1.1vh, 10px) clamp(10px, 1.4vw, 14px);
+  font-weight: 750;
+  font-size: clamp(11px, 1.4vh, 13px);
+  color: #fff;
+  background: linear-gradient(120deg, #dc7554, #b94342);
+  box-shadow: 0 4px 10px #140b0840;
+  white-space: nowrap;
+  transition: filter 0.15s, transform 0.1s;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn.secondary {
+  background: #ffffff16;
+  box-shadow: none;
+  border: 1px solid #ffffff24;
+}
+
+.btn:focus-visible,
+.pill:focus-visible,
+.cell:focus-visible {
+  outline: 3px solid #ffe6a3;
+  outline-offset: 2px;
+}
+
+.btn.full {
+  width: 100%;
+}
+
+/* Demobar */
+.demobar[hidden] {
+  display: none !important;
+}
+
+.demobar {
+  flex: 0 0 auto;
+  margin-top: 4px;
+  border: 1px solid #d4a55d44;
+  background: #20130be6;
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.demoinfo strong {
+  display: block;
+  font-size: clamp(10px, 1.3vh, 12px);
+  color: #ffe0a3;
+}
+
+.demoinfo span {
+  font-size: clamp(9px, 1.1vh, 10.5px);
+  color: #d8c2aa;
+}
+
+.demoactions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.demobtn {
+  border: 1px solid #ffffff2e;
+  background: #ffffff14;
+  color: #fff0d6;
+  border-radius: 8px;
+  padding: 4px 7px;
+  font-size: clamp(9px, 1.2vh, 11px);
+}
+
+.demospeed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: clamp(9px, 1.2vh, 11px);
+  color: #eedcc9;
+}
+
+.demospeed input {
+  width: 60px;
+}

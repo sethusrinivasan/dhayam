@@ -1,0 +1,178 @@
+/**
+ * controls.css - Status Bar, Action Buttons, Roll Chips & Demobar
+ *
+ * Implements a streamlined control dock that preserves full accessible
+ * interactions within a compact vertical footprint.
+ */
+.controls {
+  flex: 0 0 auto;
+  margin-top: clamp(4px, 0.7vh, 8px);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: clamp(6px, 1vw, 12px);
+  align-items: center;
+}
+
+.status {
+  border: 1px solid #fff4d21c;
+  background: #130d0a88;
+  border-radius: clamp(10px, 1.4vh, 14px);
+  padding: clamp(5px, 0.9vh, 9px) clamp(8px, 1.2vw, 12px);
+  min-width: 0;
+}
+
+.status strong {
+  display: block;
+  font-size: clamp(12px, 1.6vh, 14px);
+  color: #fff6eb;
+}
+
+.status span {
+  font-size: clamp(10px, 1.25vh, 11px);
+  color: #d6c1a9;
+  display: block;
+  margin-top: 1px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  max-height: 38px;
+  overflow-y: auto;
+}
+
+.chip {
+  background: #ffffff16;
+  border: 1px solid #ffffff30;
+  color: #fff2d7;
+  padding: clamp(3px, 0.5vh, 5px) clamp(6px, 0.9vw, 9px);
+  border-radius: 8px;
+  font-size: clamp(10px, 1.3vh, 12px);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.chip.selected {
+  background: #d5a65a;
+  color: #21150e;
+  font-weight: 750;
+}
+
+.controlactions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.movechoice {
+  border: 1px solid #ffffff38;
+  background: #201710;
+  color: white;
+  padding: clamp(6px, 1vh, 8px) clamp(8px, 1vw, 10px);
+  border-radius: 10px;
+  font-size: clamp(11px, 1.3vh, 12.5px);
+  max-width: 170px;
+}
+
+.btn {
+  border: 0;
+  border-radius: clamp(10px, 1.4vh, 13px);
+  padding: clamp(7px, 1.1vh, 10px) clamp(10px, 1.4vw, 14px);
+  font-weight: 750;
+  font-size: clamp(11px, 1.4vh, 13px);
+  color: #fff;
+  background: linear-gradient(120deg, #dc7554, #b94342);
+  box-shadow: 0 4px 10px #140b0840;
+  white-space: nowrap;
+  transition: filter 0.15s, transform 0.1s;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn.secondary {
+  background: #ffffff16;
+  box-shadow: none;
+  border: 1px solid #ffffff24;
+}
+
+.btn:focus-visible,
+.pill:focus-visible,
+.cell:focus-visible {
+  outline: 3px solid #ffe6a3;
+  outline-offset: 2px;
+}
+
+.btn.full {
+  width: 100%;
+}
+
+/* Demobar */
+.demobar[hidden] {
+  display: none !important;
+}
+
+.demobar {
+  flex: 0 0 auto;
+  margin-top: 4px;
+  border: 1px solid #d4a55d44;
+  background: #20130be6;
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.demoinfo strong {
+  display: block;
+  font-size: clamp(10px, 1.3vh, 12px);
+  color: #ffe0a3;
+}
+
+.demoinfo span {
+  font-size: clamp(9px, 1.1vh, 10.5px);
+  color: #d8c2aa;
+}
+
+.demoactions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.demobtn {
+  border: 1px solid #ffffff2e;
+  background: #ffffff14;
+  color: #fff0d6;
+  border-radius: 8px;
+  padding: 4px 7px;
+  font-size: clamp(9px, 1.2vh, 11px);
+}
+
+.demospeed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: clamp(9px, 1.2vh, 11px);
+  color: #eedcc9;
+}
+
+.demospeed input {
+  width: 60px;
+}

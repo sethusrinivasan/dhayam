@@ -1,0 +1,215 @@
+/**
+ * dice.css - 3D CSS Cuboidal Dice Transforms, Faces & Rolling Physics
+ *
+ * Implements 3D Dayakattai dice transforms with responsive sizing,
+ * realistic perspective, surface lighting, and tumbling keyframes.
+ */
+.dice {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(14px, 2vw, 24px);
+  margin: clamp(4px, 0.8vh, 12px) 0 clamp(6px, 1.2vh, 14px);
+  padding: clamp(4px, 0.6vh, 8px) 5px;
+  perspective: 1000px;
+  perspective-origin: 50% 20%;
+}
+
+.die {
+  --die-size: clamp(50px, 6.8vh, 70px);
+  --cube-size: clamp(42px, 5.7vh, 58px);
+  --cube-depth: clamp(21px, 2.85vh, 29px);
+  --cube-inset: 4px;
+  position: relative;
+  width: var(--die-size);
+  height: var(--die-size);
+  perspective: 700px;
+  filter: drop-shadow(0 8px 7px #0008);
+}
+
+.die:after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -10px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0905038c;
+  filter: blur(4px);
+  transform: scale(0.9);
+}
+
+.diecube {
+  position: absolute;
+  inset: var(--cube-inset);
+  width: var(--cube-size);
+  height: var(--cube-size);
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+  will-change: transform;
+}
+
+.dieface {
+  position: absolute;
+  width: var(--cube-size);
+  height: var(--cube-size);
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffe6baaa;
+  border-radius: clamp(8px, 1.2vh, 12px);
+  background: linear-gradient(
+    145deg,
+    #ffdaa5 0%,
+    #d88745 52%,
+    #955027 100%
+  );
+  box-shadow:
+    inset 4px 4px 7px #fff7,
+    inset -5px -5px 8px #6d321f77;
+  color: #4c2413;
+  font-size: clamp(22px, 3.2vh, 30px);
+  font-weight: 950;
+  line-height: 1;
+  backface-visibility: hidden;
+}
+
+.dieface:after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 6px;
+  border-top: 2px solid #fff7;
+  border-left: 1px solid #fff4;
+}
+
+.diefront {
+  transform: rotateY(0deg) translateZ(var(--cube-depth));
+}
+
+.dieback {
+  transform: rotateY(180deg) translateZ(var(--cube-depth));
+}
+
+.dieright {
+  transform: rotateY(90deg) translateZ(var(--cube-depth));
+}
+
+.dieleft {
+  transform: rotateY(-90deg) translateZ(var(--cube-depth));
+}
+
+.dietop {
+  transform: rotateX(90deg) translateZ(var(--cube-depth));
+}
+
+.diebottom {
+  transform: rotateX(-90deg) translateZ(var(--cube-depth));
+}
+
+.diecube.show-0 {
+  transform: rotateX(-8deg) rotateY(-10deg);
+}
+
+.diecube.show-1 {
+  transform: rotateX(-8deg) rotateY(170deg);
+}
+
+.diecube.show-2 {
+  transform: rotateX(-8deg) rotateY(-100deg);
+}
+
+.diecube.show-3 {
+  transform: rotateX(-8deg) rotateY(80deg);
+}
+
+.diecube.rolling {
+  transition: none;
+  animation-duration: 1.15s;
+  animation-timing-function: cubic-bezier(0.18, 0.72, 0.25, 1);
+  animation-fill-mode: forwards;
+}
+
+.diecube.rolling.show-0 {
+  animation-name: cubeRoll0;
+}
+
+.diecube.rolling.show-1 {
+  animation-name: cubeRoll1;
+}
+
+.diecube.rolling.show-2 {
+  animation-name: cubeRoll2;
+}
+
+.diecube.rolling.show-3 {
+  animation-name: cubeRoll3;
+}
+
+.die:nth-child(2) .diecube.rolling {
+  animation-delay: 0.07s;
+}
+
+.die.tumbling {
+  animation: dieHop 1.15s cubic-bezier(0.22, 0.72, 0.3, 1);
+}
+
+.die:nth-child(2).tumbling {
+  animation-delay: 0.07s;
+}
+
+.die.tumbling:after {
+  animation: dieShadow 1.15s ease-out;
+}
+
+.die:nth-child(2).tumbling:after {
+  animation-delay: 0.07s;
+}
+
+@keyframes cubeRoll0 {
+  0% { transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0); }
+  22% { transform: rotateX(180deg) rotateY(145deg) rotateZ(55deg); }
+  52% { transform: rotateX(455deg) rotateY(390deg) rotateZ(185deg); }
+  78% { transform: rotateX(650deg) rotateY(625deg) rotateZ(310deg); }
+  100% { transform: rotateX(712deg) rotateY(710deg) rotateZ(360deg); }
+}
+
+@keyframes cubeRoll1 {
+  0% { transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0); }
+  22% { transform: rotateX(205deg) rotateY(120deg) rotateZ(80deg); }
+  52% { transform: rotateX(470deg) rotateY(410deg) rotateZ(205deg); }
+  78% { transform: rotateX(675deg) rotateY(660deg) rotateZ(325deg); }
+  100% { transform: rotateX(712deg) rotateY(890deg) rotateZ(360deg); }
+}
+
+@keyframes cubeRoll2 {
+  0% { transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0); }
+  22% { transform: rotateX(155deg) rotateY(175deg) rotateZ(45deg); }
+  52% { transform: rotateX(430deg) rotateY(435deg) rotateZ(170deg); }
+  78% { transform: rotateX(630deg) rotateY(705deg) rotateZ(295deg); }
+  100% { transform: rotateX(712deg) rotateY(980deg) rotateZ(360deg); }
+}
+
+@keyframes cubeRoll3 {
+  0% { transform: rotateX(-8deg) rotateY(-10deg) rotateZ(0); }
+  22% { transform: rotateX(195deg) rotateY(155deg) rotateZ(70deg); }
+  52% { transform: rotateX(450deg) rotateY(455deg) rotateZ(195deg); }
+  78% { transform: rotateX(665deg) rotateY(690deg) rotateZ(315deg); }
+  100% { transform: rotateX(712deg) rotateY(800deg) rotateZ(360deg); }
+}
+
+@keyframes dieHop {
+  0%, 100% { transform: translateY(0) rotateZ(0); }
+  18% { transform: translateY(-16px) rotateZ(4deg); }
+  48% { transform: translateY(-5px) rotateZ(-3deg); }
+  68% { transform: translateY(-10px) rotateZ(2deg); }
+  86% { transform: translateY(2px) rotateZ(-1deg); }
+}
+
+@keyframes dieShadow {
+  0%, 100% { transform: scale(0.9); opacity: 1; }
+  18% { transform: scale(0.45); opacity: 0.35; }
+  48% { transform: scale(0.72); opacity: 0.65; }
+  68% { transform: scale(0.55); opacity: 0.45; }
+  86% { transform: scale(1); opacity: 1; }
+}

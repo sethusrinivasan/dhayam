@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#251a14" />
+    <title>Dhayam · Heritage Edition</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/board.css" />
+    <link rel="stylesheet" href="css/dice.css" />
+    <link rel="stylesheet" href="css/controls.css" />
+    <link rel="stylesheet" href="css/panels.css" />
+    <link rel="stylesheet" href="css/modals.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
+  </head>
+</head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">✺</div>
+          <div>
+            <h1>Dhayam</h1>
+            <div class="sub">Heritage Edition · Play · Connect · Celebrate</div>
+          </div>
+        </div>
+        <nav class="topnav">
+          <button class="pill" id="newBtn">＋ New game</button
+          ><button class="pill" id="guideBtn">? How to play</button
+          ><button class="pill" id="demoBtn">✦ Guided demo</button>
+        </nav>
+      </header>
+      <div class="layout">
+        <section aria-label="Game board and controls">
+          <div class="boardcard">
+            <div class="boardwrap">
+              <div
+                class="board"
+                id="board"
+                role="grid"
+                aria-label="Dhayam 7 by 7 game board"
+              ></div>
+              <svg
+                class="pathoverlay"
+                viewBox="0 0 700 700"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <defs>
+                  <marker
+                    id="routeArrow"
+                    viewBox="0 0 10 10"
+                    refX="8"
+                    refY="5"
+                    markerWidth="8"
+                    markerHeight="8"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#fff8c9" />
+                  </marker>
+                </defs>
+                <path
+                  class="pathbase"
+                  d="M350 50 L650 50 L650 650 L50 650 L50 50 Z"
+                />
+                <path
+                  class="pathflow"
+                  d="M350 50 L650 50 L650 650 L50 650 L50 50 Z"
+                />
+                <path
+                  class="pathbase"
+                  d="M350 150 L150 150 L150 550 L550 550 L550 150 Z"
+                />
+                <path
+                  class="pathflow"
+                  d="M350 150 L150 150 L150 550 L550 550 L550 150 Z"
+                />
+                <path
+                  class="pathbase pathapproach"
+                  d="M350 250 L350 350 M450 350 L350 350 M350 450 L350 350 M250 350 L350 350"
+                />
+                <path
+                  class="pathflow pathapproach"
+                  d="M350 250 L350 350 M450 350 L350 350 M350 450 L350 350 M250 350 L350 350"
+                />
+                <path
+                  class="patharrows"
+                  d="M350 50 L600 50 M650 100 L650 600 M600 650 L100 650 M50 600 L50 100 M100 50 L320 50 M350 150 L180 150 M150 180 L150 520 M180 550 L520 550 M550 520 L550 180 M520 150 L380 150 M350 250 L350 330 M450 350 L370 350 M350 450 L350 370 M250 350 L330 350"
+                />
+              </svg>
+            </div>
+            <div class="boardlegend" aria-label="Board legend">
+              <span class="legenditem"
+                ><span class="legendarrow">〰</span> Flowing travel path</span
+              ><span class="legenditem"
+                ><span class="legendmove"></span> Available piece</span
+              ><span class="legenditem"
+                ><span class="legendsafe">✿</span> Safe square</span
+              ><span class="legenditem" id="playerLegend">Player colors</span>
+            </div>
+          </div>
+          <div class="controls">
+            <div class="status" aria-live="polite">
+              <strong id="statusTitle">Welcome to Dhayam</strong
+              ><span id="statusText">Start a game to play.</span>
+              <div class="chips" id="rollChips" style="margin-top: 9px"></div>
+            </div>
+            <div class="controlactions">
+              <select
+                class="movechoice"
+                id="moveChoice"
+                aria-label="Choose a legal piece to move"
+                hidden
+              ></select>
+              <button class="btn" id="moveBtn" type="button" hidden>
+                Move selected piece
+              </button>
+              <button class="btn" id="actionBtn">Roll Dayakattai</button>
+            </div>
+          </div>
+          <div class="demobar" id="demoBar" hidden>
+            <div class="demoinfo">
+              <strong>Guided demo is playing</strong
+              ><span id="demoProgress">Preparing…</span>
+            </div>
+            <div class="demoactions">
+              <label class="demospeed" for="demoSpeed">
+                Speed
+                <input
+                  id="demoSpeed"
+                  type="range"
+                  min="0.5"
+                  max="2"
+                  step="0.25"
+                  value="1"
+                  aria-label="Guided demo speed"
+                />
+                <output id="demoSpeedValue" for="demoSpeed">1×</output>
+              </label>
+              <button
+                class="demobtn"
+                id="demoSuperSpeed"
+                type="button"
+                aria-pressed="false"
+              >
+                ⚡ Super speed
+              </button>
+              <button class="demobtn" id="demoPause" type="button">Pause</button
+              ><button
+                class="demobtn"
+                id="demoAudioToggle"
+                type="button"
+                aria-pressed="true"
+              >
+                🔊 Audio on</button
+              ><button class="demobtn" id="demoRestart" type="button">
+                Restart</button
+              ><button class="demobtn" id="demoExit" type="button">
+                Exit demo
+              </button>
+            </div>
+          </div>
+        </section>
+        <aside class="side">
+          <div class="panel">
+            <h2>Family table</h2>
+            <div id="players"></div>
+            <div class="divider"></div>
+            <div class="small" id="gameInfo">
+              Local pass-and-play · House variant
+            </div>
+            <div style="height: 10px"></div>
+            <button
+              class="btn secondary full"
+              id="editPlayersBtn"
+              type="button"
+            >
+              ✎ Rename players
+            </button>
+          </div>
+          <div class="panel">
+            <h2>Dayakattai dice</h2>
+            <div class="dice">
+              <div
+                class="die"
+                id="dieA"
+                role="img"
+                aria-label="First die not rolled"
+              >
+                <div class="diecube show-0">
+                  <span class="dieface diefront">0</span
+                  ><span class="dieface dieback">1</span
+                  ><span class="dieface dieright">2</span
+                  ><span class="dieface dieleft">3</span
+                  ><span class="dieface dietop">✦</span
+                  ><span class="dieface diebottom">✦</span>
+                </div>
+              </div>
+              <div
+                class="die"
+                id="dieB"
+                role="img"
+                aria-label="Second die not rolled"
+              >
+                <div class="diecube show-0">
+                  <span class="dieface diefront">0</span
+                  ><span class="dieface dieback">1</span
+                  ><span class="dieface dieright">2</span
+                  ><span class="dieface dieleft">3</span
+                  ><span class="dieface dietop">✦</span
+                  ><span class="dieface diebottom">✦</span>
+                </div>
+              </div>
+            </div>
+            <div class="helper" id="diceHint">
+              Two long dice · bonus chance falls each chain
+            </div>
+            <div class="divider"></div>
+            <div class="helper">
+              <strong>Ruleset:</strong> Heritage 7×7 house variant.<br />Six
+              pieces per player. Capture once before entering home. Exact
+              finish. Safe floral squares protect pieces.
+            </div>
+            <div class="divider"></div>
+            <button
+              class="btn secondary full"
+              id="audioToggle"
+              type="button"
+              aria-pressed="true"
+            >
+              🔊 Commentary on
+            </button>
+            <div style="height: 8px"></div>
+            <button class="btn secondary full" id="copyAuditBtn" type="button">
+              📋 Copy game audit
+            </button>
+            <div class="small" id="auditHint" style="margin-top: 7px">
+              Records rolls, moves, captures, passes, and board states.
+            </div>
+            <div style="height: 8px"></div>
+            <button class="btn secondary full" id="resetBtn">
+              Reset match
+            </button>
+          </div>
+        </aside>
+      </div>
+      <footer class="footer" role="contentinfo">
+        <span>Dhayam Heritage Edition · <a href="https://github.com/sethusrinivasan/dhayam" target="_blank" rel="noopener">⭐ View Project & Rules on GitHub</a></span>
+      </footer>
+    </main>
+    <div class="splashback" id="splashback" role="presentation">
+      <section
+        class="splash"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="splashTitle"
+      >
+        <p class="eyebrow">Welcome to Dhayam</p>
+        <h2 id="splashTitle">A table, two dice, and a journey home.</h2>
+        <p class="lead">
+          Dayakattai is part of a long South Indian tradition of social board
+          play: a game of chance, counting, routes, and lively table talk. This
+          edition is a contemporary house variant built to make each move,
+          capture, and finish easy to follow together.
+        </p>
+        <div class="splashfacts" aria-label="Game highlights">
+          <div class="splashfact">
+            <strong>6 pieces</strong
+            ><span>Guide every numbered piece home.</span>
+          </div>
+          <div class="splashfact">
+            <strong>1 winner</strong
+            ><span>Finish all six to end the match.</span>
+          </div>
+          <div class="splashfact">
+            <strong>One table</strong
+            ><span>Play locally, together, at your pace.</span>
+          </div>
+        </div>
+        <p class="small">
+          Start a game, explore the guided demo, or use the game audit to study
+          every roll and decision afterward.
+        </p>
+        <label class="splashremember" for="hideSplash">
+          <input id="hideSplash" type="checkbox" />
+          Do not show this welcome again on this browser
+        </label>
+        <div class="actions">
+          <button class="btn" id="splashStart" type="button">
+            Begin the game
+          </button>
+        </div>
+      </section>
+    </div>
+    <div class="modalback" id="modalback" role="presentation">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <h2 id="modalTitle">New family game</h2>
+        <div id="modalContent"></div>
+        <div class="actions">
+          <button class="btn secondary" id="modalCancel">Close</button
+          ><button class="btn" id="modalConfirm">Start game</button>
+        </div>
+      </div>
+    </div>
+    <!-- Modular Dhayam Architecture: Separation of Concerns -->
+    <script src="js/config.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/dice.js"></script>
+    <script src="js/audit.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/turn.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/demo.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

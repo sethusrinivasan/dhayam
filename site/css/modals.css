@@ -1,157 +1,182 @@
-        position: fixed;
-        inset: 0;
-        background: #080604bd;
-        display: none;
-        place-items: center;
-        padding: 20px;
-        z-index: 10;
-      }
-      .modalback.open {
-        display: grid;
-      }
-      .modal {
-        max-width: 530px;
-        width: 100%;
-        background: #332319;
-        border: 1px solid #b8895b88;
-        border-radius: 24px;
-        padding: 25px;
-        box-shadow: 0 25px 70px #000a;
-      }
-      .modal h2 {
-        margin: 0 0 8px;
-        font-family: Georgia, serif;
-      }
-      .modal p {
-        color: #d8c4ab;
-        line-height: 1.6;
-      }
-      .modal label {
-        display: block;
-        margin: 13px 0 6px;
-        color: #e6d0b3;
-        font-size: 13px;
-      }
-      .modal select,
-      .modal input {
-        width: 100%;
-        border: 1px solid #ffffff38;
-        background: #201710;
-        color: white;
-        padding: 12px;
-        border-radius: 10px;
-      }
-      .modal .actions {
-        display: flex;
-        gap: 10px;
-        justify-content: flex-end;
-        margin-top: 20px;
-      }
-      .splashback {
-        position: fixed;
-        inset: 0;
-        z-index: 30;
-        display: none;
-        place-items: center;
-        padding: 20px;
-        background: #100907dc;
-        backdrop-filter: blur(8px);
-      }
-      .splashback.open {
-        display: grid;
-      }
-      .splash {
-        width: min(680px, 100%);
-        max-height: min(760px, calc(100vh - 40px));
-        overflow: auto;
-        padding: clamp(24px, 5vw, 48px);
-        border: 1px solid #f6d17b8c;
-        border-radius: 28px;
-        color: #f8e8cb;
-        background:
-          radial-gradient(circle at 84% 12%, #d88a3e38, transparent 32%),
-          linear-gradient(145deg, #432416, #1e130f 72%);
-        box-shadow:
-          0 28px 90px #000b,
-          inset 0 0 0 2px #f0b96424;
-      }
-      .splash .eyebrow {
-        margin: 0 0 10px;
-        color: #f3c66f;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-      .splash h2 {
-        margin: 0;
-        font:
-          800 clamp(34px, 7vw, 58px) / 0.95 Georgia,
-          serif;
-        color: #fff0c8;
-      }
-      .splash .lead {
-        max-width: 57ch;
-        margin: 20px 0;
-        color: #e8d1af;
-        font-size: 16px;
-        line-height: 1.65;
-      }
-      .splashfacts {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
-        margin: 20px 0 24px;
-      }
-      .splashfact {
-        padding: 13px;
-        border: 1px solid #fff0c42b;
-        border-radius: 14px;
-        background: #ffffff0a;
-      }
-      .splashfact strong,
-      .splashfact span {
-        display: block;
-      }
-      .splashfact strong {
-        color: #ffe19a;
-        font-size: 19px;
-      }
-      .splashfact span {
-        margin-top: 4px;
-        color: #d9c2a4;
-        font-size: 11px;
-        line-height: 1.35;
-      }
-      .splashremember {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 15px;
-        color: #d9c2a4;
-        font-size: 12px;
-      }
-      .splashremember input {
-        accent-color: #e2ae59;
-      }
-      .splash .actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 20px;
-      }
-      .notice {
-        margin-top: 14px;
-        font-size: 12px;
-        color: #d2bd9d;
-      }
-      .footer {
-        font-size: 11px;
-        color: #bba88f;
-        margin-top: 18px;
-        text-align: center;
-      }
-      @media (max-width: 1100px) and (min-width: 861px) {
-        .shell {
-          padding-inline: 16px;
-        }
-        .layout {
+/**
+ * modals.css - Splash Welcome Screen, Dialogs & Player Rename Modal
+ *
+ * Implements accessible, centered modal backdrops and content dialogs
+ * with smooth entrance animations and scrollable constraints.
+ */
+.modalback {
+  position: fixed;
+  inset: 0;
+  background: #080604bd;
+  display: none;
+  place-items: center;
+  padding: 18px;
+  z-index: 100;
+}
+
+.modalback.open {
+  display: grid;
+}
+
+.modal {
+  max-width: 530px;
+  width: 100%;
+  max-height: min(90vh, 600px);
+  overflow-y: auto;
+  background: #332319;
+  border: 1px solid #b8895b88;
+  border-radius: 22px;
+  padding: clamp(16px, 2.5vh, 25px);
+  box-shadow: 0 25px 70px #000c;
+}
+
+.modal h2 {
+  margin: 0 0 8px;
+  font-family: Georgia, serif;
+  color: #fff2db;
+}
+
+.modal p {
+  color: #d8c4ab;
+  line-height: 1.55;
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.modal label {
+  display: block;
+  margin: 11px 0 5px;
+  color: #e6d0b3;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.modal select,
+.modal input {
+  width: 100%;
+  border: 1px solid #ffffff38;
+  background: #201710;
+  color: white;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.modal .actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+/* Splash Welcome Screen */
+.splashback {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: none;
+  place-items: center;
+  padding: 16px;
+  background: #100907dc;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.splashback.open {
+  display: grid;
+}
+
+.splash {
+  width: min(640px, 100%);
+  max-height: min(720px, calc(100dvh - 32px));
+  overflow-y: auto;
+  padding: clamp(18px, 3vh, 36px);
+  border: 1px solid #f6d17b8c;
+  border-radius: 24px;
+  color: #f8e8cb;
+  background:
+    radial-gradient(circle at 84% 12%, #d88a3e38, transparent 32%),
+    linear-gradient(145deg, #432416, #1e130f 72%);
+  box-shadow:
+    0 28px 90px #000c,
+    inset 0 0 0 2px #f0b96424;
+}
+
+.splash .eyebrow {
+  margin: 0 0 8px;
+  color: #f3c66f;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.splash h2 {
+  margin: 0;
+  font: 800 clamp(24px, 4.5vh, 44px) / 1.05 Georgia, serif;
+  color: #fff0c8;
+}
+
+.splash .lead {
+  max-width: 57ch;
+  margin: 14px 0;
+  color: #e8d1af;
+  font-size: clamp(12.5px, 1.6vh, 15px);
+  line-height: 1.55;
+}
+
+.splashfacts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0 18px;
+}
+
+.splashfact {
+  padding: 10px;
+  border: 1px solid #fff0c42b;
+  border-radius: 12px;
+  background: #ffffff0a;
+}
+
+.splashfact strong,
+.splashfact span {
+  display: block;
+}
+
+.splashfact strong {
+  color: #ffe19a;
+  font-size: clamp(14px, 2vh, 17px);
+}
+
+.splashfact span {
+  margin-top: 3px;
+  color: #d9c2a4;
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.splashremember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: #d9c2a4;
+  font-size: 11.5px;
+}
+
+.splashremember input {
+  accent-color: #e2ae59;
+}
+
+.splash .actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.notice {
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: #d2bd9d;
+}
