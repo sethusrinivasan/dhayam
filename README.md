@@ -5,6 +5,7 @@
 [![Tests Passing](https://img.shields.io/badge/tests-48%20passing-brightgreen.svg)](https://github.com/sethusrinivasan/dhayam/actions)
 [![Built with Codex](https://img.shields.io/badge/Built%20with-Codex-000000?logo=openai&logoColor=white)](#)
 [![Enhanced with Gemini](https://img.shields.io/badge/Enhanced%20with-Google%20Gemini-4285F4?logo=google&logoColor=white)](#)
+[![Reasoned with Claude](https://img.shields.io/badge/Reasoned%20with-Claude%20Sonnet%204.6%20Thinking-D97706?logo=anthropic&logoColor=white)](#)
 [![License: MIT](https://img.shields.io/badge/license-MIT-8a2be2)](LICENSE)
 
 An authentic, modern web rendition of **Dhayam** (தாயக்கட்டை), the ancient Tamil race-and-capture strategy board game. Built for cross-device real-time online multiplayer, pass-and-play family tabletop, or solo play against intelligent computer opponents.
