@@ -170,7 +170,7 @@
         }
         return lines.join("\n");
       }
-      async function copyGameAudit() {
+      async function copyGameAudit(feedbackEl = null) {
         const text = auditText();
         try {
           await navigator.clipboard.writeText(text);
@@ -185,8 +185,14 @@
           area.remove();
         }
         const button = $("copyAuditBtn");
-        button.textContent = "✓ Audit copied";
-        $("auditHint").textContent =
-          audit.events.length + " timestamped events copied as plain text.";
-        setTimeout(() => (button.textContent = "📋 Copy game audit"), 2200);
+        if (button) button.textContent = "✓ Audit copied";
+        if ($("auditHint")) {
+          $("auditHint").textContent =
+            audit.events.length + " timestamped events copied as plain text.";
+        }
+        if (feedbackEl) {
+          feedbackEl.textContent = "✓ " + audit.events.length + " audit events copied to clipboard!";
+          setTimeout(() => { feedbackEl.textContent = ""; }, 2500);
+        }
+        if (button) setTimeout(() => (button.textContent = "📋 Copy game audit"), 2200);
       }

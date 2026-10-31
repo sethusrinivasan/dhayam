@@ -28,24 +28,123 @@
   }
 }
 
-/* Tablets & Mobile Screens (<= 860px) */
-@media (max-width: 860px) {
+/* Tablet Portrait Screens (681px - 860px, e.g. iPad Mini, iPad Air) */
+@media (max-width: 860px) and (min-width: 681px) {
   .shell {
-    padding: 6px 8px;
+    padding: 8px 12px;
   }
   .top {
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    min-height: 36px;
+  }
+  .brand h1 {
+    font-size: 22px;
+  }
+  .pill {
+    padding: 6px 10px;
+    font-size: 11.5px;
+  }
+  .layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    gap: 6px;
+    overflow: hidden;
+  }
+  .layout > section {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .boardcard {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 8px;
+    border-radius: 18px;
+  }
+  .boardwrap {
+    height: min(88vw, calc(100dvh - 290px));
+    width: min(88vw, calc(100dvh - 290px));
+    max-height: 56vh;
+    max-width: 56vh;
+  }
+  .boardlegend {
+    display: flex;
+    font-size: 11px;
+    padding: 3px 8px;
+    margin-top: 5px;
+  }
+  .controls {
+    flex: 0 0 auto;
+    margin-top: 6px;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+  }
+  .side {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 8px;
+    max-height: 165px;
+    overflow: hidden;
+  }
+  .side .panel {
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+  #players {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  .player {
+    padding: 4px 6px;
+    gap: 6px;
+  }
+  .avatar {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    font-size: 13px;
+  }
+  .die {
+    --die-size: 46px;
+    --cube-size: 38px;
+    --cube-depth: 19px;
+  }
+  .dieface {
+    font-size: 20px;
+  }
+}
+
+/* Phones & Small Touchscreens (<= 680px) */
+@media (max-width: 680px) {
+  .shell {
+    padding: 4px 6px;
+  }
+  .top {
+    margin-bottom: 3px;
     min-height: 32px;
   }
   .brand h1 {
-    font-size: 20px;
+    font-size: 18px;
   }
   .sub {
-    font-size: 10px;
+    display: none;
+  }
+  .logo {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
   }
   .pill {
-    padding: 5px 8px;
-    font-size: 11px;
+    padding: 4px 7px;
+    font-size: 10px;
   }
   .layout {
     display: flex;
@@ -66,21 +165,24 @@
     flex: 1 1 auto;
     min-height: 0;
     padding: 4px;
-    border-width: 4px;
-    border-radius: 16px;
+    border-width: 3px;
+    border-radius: 14px;
   }
   .boardwrap {
-    height: min(86vw, calc(100dvh - 280px));
-    width: min(86vw, calc(100dvh - 280px));
-    max-height: 48vh;
-    max-width: 48vh;
+    height: min(92vw, calc(100dvh - 250px));
+    width: min(92vw, calc(100dvh - 250px));
+    max-height: 46vh;
+    max-width: 46vh;
   }
   .boardlegend {
-    display: none; /* Hide legend on small touch screens to preserve board size */
+    display: none;
+  }
+  .cell.legal:after {
+    display: none;
   }
   .controls {
     flex: 0 0 auto;
-    margin-top: 4px;
+    margin-top: 3px;
     grid-template-columns: 1fr;
     gap: 4px;
   }
@@ -91,65 +193,61 @@
   .controlactions .btn {
     flex: 1;
     min-height: 38px;
-    padding: 6px 10px;
   }
   .side {
     flex: 0 0 auto;
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 6px;
-    max-height: 145px;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 4px;
+    max-height: 125px;
     overflow: hidden;
   }
   .side .panel {
-    padding: 6px 8px;
-    border-radius: 12px;
+    padding: 5px 6px;
+    border-radius: 10px;
   }
   .side .panel h2 {
-    font-size: 11px;
-    margin: 0 0 3px;
+    font-size: 10.5px;
+    margin: 0 0 2px;
   }
   #players {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 3px;
-    max-height: 95px;
+    gap: 2.5px;
+    max-height: 80px;
     overflow-y: auto;
   }
   .player {
-    padding: 3px 5px;
-    gap: 5px;
+    padding: 2.5px 4px;
+    gap: 4px;
   }
   .avatar {
-    width: 22px;
-    height: 22px;
-    flex: 0 0 22px;
-    font-size: 11px;
-    border-radius: 6px;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    font-size: 10px;
+    border-radius: 5px;
   }
   .pname {
-    font-size: 11px;
+    font-size: 10px;
   }
   .pmeta, .piecestatus {
-    display: none; /* Keep player card ultra-compact on mobile */
-  }
-  .turn {
-    font-size: 9.5px;
+    display: none;
   }
   .die {
-    --die-size: 42px;
-    --cube-size: 34px;
-    --cube-depth: 17px;
+    --die-size: 38px;
+    --cube-size: 31px;
+    --cube-depth: 15.5px;
     --cube-inset: 3px;
   }
   .dice {
-    margin: 2px 0 4px;
-    gap: 10px;
+    margin: 2px 0;
+    gap: 8px;
     padding: 2px;
   }
   .dieface {
-    font-size: 18px;
-    border-radius: 6px;
+    font-size: 16px;
+    border-radius: 5px;
   }
   #diceHint, .side .helper, .side .divider {
     display: none;
@@ -158,61 +256,50 @@
     display: none;
   }
   #resetBtn {
-    padding: 4px 8px;
-    font-size: 10px;
+    padding: 3px 6px;
+    font-size: 9.5px;
   }
 }
 
-/* Phones & Very Narrow Screens (<= 520px) */
-@media (max-width: 520px) {
+/* Very Compact Phones (<= 390px, e.g. iPhone SE, Galaxy S20) */
+@media (max-width: 390px) {
   .shell {
-    padding: 4px 6px;
+    padding: 3px 4px;
   }
   .top {
-    margin-bottom: 2px;
+    min-height: 28px;
   }
   .brand h1 {
-    font-size: 18px;
-  }
-  .sub {
-    display: none;
+    font-size: 16px;
   }
   .logo {
-    width: 30px;
-    height: 30px;
-    font-size: 18px;
+    width: 26px;
+    height: 26px;
+    font-size: 15px;
   }
   .pill {
-    padding: 4px 7px;
-    font-size: 10px;
+    padding: 3px 5px;
+    font-size: 9.5px;
   }
   .boardwrap {
-    height: min(90vw, calc(100dvh - 250px));
-    width: min(90vw, calc(100dvh - 250px));
+    height: min(94vw, calc(100dvh - 240px));
+    width: min(94vw, calc(100dvh - 240px));
     max-height: 44vh;
     max-width: 44vh;
   }
-  .cell.legal:after {
-    display: none; /* Hide 'MOVE' label on mobile to keep cell clear */
-  }
   .side {
-    max-height: 120px;
-    grid-template-columns: 1fr auto;
+    max-height: 115px;
   }
   #players {
-    grid-template-columns: 1fr 1fr;
-    max-height: 75px;
+    max-height: 70px;
   }
   .die {
-    --die-size: 36px;
-    --cube-size: 30px;
-    --cube-depth: 15px;
+    --die-size: 34px;
+    --cube-size: 28px;
+    --cube-depth: 14px;
   }
   .dieface {
-    font-size: 16px;
-  }
-  .splashfacts {
-    grid-template-columns: 1fr;
+    font-size: 14px;
   }
 }
 

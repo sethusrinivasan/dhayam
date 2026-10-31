@@ -78,44 +78,104 @@
       function closeModal() {
         $("modalback").classList.remove("open");
       }
-      function openPlayerEditor() {
+      function openSettingsModal() {
         const fields = game.players
           .map(
             (player, index) =>
+              '<div style="margin-bottom:8px;">' +
               '<label for="playerName' +
               index +
-              '">' +
+              '" style="display:flex;align-items:center;gap:6px;font-size:0.85rem;color:#f3dfc6;margin-bottom:3px;">' +
+              '<span style="background:' +
+              player.color +
+              ';border-radius:4px;width:18px;height:18px;display:inline-grid;place-items:center;font-size:11px;">' +
               player.avatar +
-              " Player " +
+              "</span>" +
+              "Player " +
               (index + 1) +
-              '</label><input id="playerName' +
+              " (" +
+              escapeHtml(player.name) +
+              ")" +
+              "</label>" +
+              '<input id="playerName' +
               index +
               '" maxlength="18" value="' +
               escapeHtml(player.name) +
-              '">',
+              '" style="width:100%;box-sizing:border-box;" />' +
+              "</div>",
           )
           .join("");
-        showModal(
-          "Rename players",
-          "<p>Names apply to this match, commentary, and its game audit.</p>" +
-            fields,
-          "Save names",
-          () => {
-            game.players.forEach((player, index) => {
-              player.name = cleanPlayerName(
-                $("playerName" + index).value,
-                player.name,
+
+        const content =
+          '<div class="settings-modal-content">' +
+          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">👥 Player Names</h3>' +
+          '<p style="font-size:0.8rem;color:#cdbda8;margin:0 0 8px 0;">Names appear in the match, spoken turns, and the game audit transcript.</p>' +
+          fields +
+          '<div class="divider" style="margin:12px 0;"></div>' +
+          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">🔊 Voice Commentary</h3>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0;">' +
+          '<div>' +
+          '<strong style="font-size:0.88rem;color:#fff1db;">Spoken Moves & Captures</strong>' +
+          '<p style="margin:2px 0 0;font-size:0.78rem;color:#cdbda8;">Speaks rolls, legal moves, and captures aloud.</p>' +
+          '</div>' +
+          '<button type="button" class="pill" id="settingsAudioBtn" style="padding:6px 12px;font-weight:700;">' +
+          (audioEnabled ? "🔊 Enabled" : "🔇 Muted") +
+          '</button>' +
+          '</div>' +
+          '<div class="divider" style="margin:12px 0;"></div>' +
+          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">📋 Match Audit & Export</h3>' +
+          '<p style="font-size:0.78rem;color:#cdbda8;margin:0 0 8px 0;">Copy the full timestamped JSON audit recording every roll, capture, and state.</p>' +
+          '<button type="button" class="btn secondary full" id="settingsCopyAuditBtn" style="width:100%;">📋 Copy Game Audit JSON</button>' +
+          '<p id="settingsAuditFeedback" style="margin:4px 0 0;font-size:0.82rem;color:#a3e635;min-height:1.2em;"></p>' +
+          '<div class="divider" style="margin:12px 0;"></div>' +
+          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">↺ Reset Match</h3>' +
+          '<button type="button" class="btn secondary full" id="settingsResetBtn" style="width:100%;border-color:#b9434288;color:#ffb3b3;">↺ Reset Current Match</button>' +
+          '</div>';
+
+        showModal("⚙️ Match Settings", content, "Save Settings", () => {
+          game.players.forEach((player, index) => {
+            const input = $("playerName" + index);
+            if (input) {
+              player.name = cleanPlayerName(input.value, player.name);
+            }
+          });
+          recordAudit("PLAYER_NAMES_UPDATED", {
+            players: game.players.map((player) => ({
+              playerId: player.id,
+              playerName: player.name,
+            })),
+          });
+          render();
+        });
+
+        setTimeout(() => {
+          const audioBtn = $("settingsAudioBtn");
+          if (audioBtn) {
+            audioBtn.onclick = () => {
+              toggleAudio();
+              audioBtn.textContent = audioEnabled ? "🔊 Enabled" : "🔇 Muted";
+            };
+          }
+          const copyBtn = $("settingsCopyAuditBtn");
+          const feedback = $("settingsAuditFeedback");
+          if (copyBtn) {
+            copyBtn.onclick = () => {
+              copyGameAudit(feedback);
+            };
+          }
+          const resetBtn = $("settingsResetBtn");
+          if (resetBtn) {
+            resetBtn.onclick = () => {
+              closeModal();
+              showModal(
+                "Reset Match?",
+                "<p>This clears the current match state and begins a fresh board. Copy your audit first if needed.</p>",
+                "Confirm Reset",
+                () => newGame(game.players.length, game.computerCount),
               );
-            });
-            recordAudit("PLAYER_NAMES_UPDATED", {
-              players: game.players.map((player) => ({
-                playerId: player.id,
-                playerName: player.name,
-              })),
-            });
-            render();
-          },
-        );
+            };
+          }
+        }, 40);
       }
       $("demoPause").onclick = toggleDemoPause;
       $("demoSuperSpeed").onclick = toggleSuperSpeed;
@@ -129,10 +189,11 @@
         }
 
       };
-      $("demoAudioToggle").onclick = toggleAudio;
-      $("audioToggle").onclick = toggleAudio;
-      $("copyAuditBtn").onclick = copyGameAudit;
-      $("editPlayersBtn").onclick = openPlayerEditor;
+      if ($("demoAudioToggle")) $("demoAudioToggle").onclick = toggleAudio;
+      if ($("audioToggle")) $("audioToggle").onclick = toggleAudio;
+      if ($("settingsBtn")) $("settingsBtn").onclick = openSettingsModal;
+      if ($("copyAuditBtn")) $("copyAuditBtn").onclick = copyGameAudit;
+      if ($("editPlayersBtn")) $("editPlayersBtn").onclick = openSettingsModal;
       $("demoRestart").onclick = restartGuidedDemo;
       $("demoExit").onclick = exitGuidedDemo;
       $("modalCancel").onclick = closeModal;
@@ -202,13 +263,15 @@
           };
         }, 30);
       };
-      $("resetBtn").onclick = () =>
-        showModal(
-          "Reset the match?",
-          "<p>This clears the current game and its audit. Copy the game audit first if you want to keep it for analysis.</p>",
-          "Reset match",
-          () => newGame(game.players.length, game.computerCount),
-        );
+      if ($("resetBtn")) {
+        $("resetBtn").onclick = () =>
+          showModal(
+            "Reset the match?",
+            "<p>This clears the current game and its audit. Copy the game audit first if you want to keep it for analysis.</p>",
+            "Reset match",
+            () => newGame(game.players.length, game.computerCount),
+          );
+      }
       $("guideBtn").onclick = () =>
         showModal(
           "How to play",

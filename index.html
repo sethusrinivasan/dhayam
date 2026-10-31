@@ -32,6 +32,8 @@
           <button class="pill" id="newBtn">＋ New game</button>
           <button class="pill" id="guideBtn">? How to play</button>
           <button class="pill" id="demoBtn">✦ Guided demo</button>
+          <button class="pill icon-pill" id="audioToggle" aria-label="Toggle voice commentary" title="Toggle voice commentary">🔇</button>
+          <button class="pill icon-pill" id="settingsBtn" aria-label="Game settings" title="Open game settings">⚙️</button>
         </nav>
       </header>
       <div class="layout">
@@ -174,14 +176,6 @@
             <div class="small" id="gameInfo">
               Local pass-and-play · House variant
             </div>
-            <div style="height: 10px"></div>
-            <button
-              class="btn secondary full"
-              id="editPlayersBtn"
-              type="button"
-            >
-              ✎ Rename players
-            </button>
           </div>
           <div class="panel">
             <h2>Dayakattai dice</h2>
@@ -193,12 +187,12 @@
                 aria-label="First die not rolled"
               >
                 <div class="diecube show-0">
-                  <span class="dieface diefront">0</span
-                  ><span class="dieface dieback">1</span
-                  ><span class="dieface dieright">2</span
-                  ><span class="dieface dieleft">3</span
-                  ><span class="dieface dietop">✦</span
-                  ><span class="dieface diebottom">✦</span>
+                  <span class="dieface diefront">0</span>
+                  <span class="dieface dieback">1</span>
+                  <span class="dieface dieright">2</span>
+                  <span class="dieface dieleft">3</span>
+                  <span class="dieface dietop">✦</span>
+                  <span class="dieface diebottom">✦</span>
                 </div>
               </div>
               <div
@@ -208,44 +202,18 @@
                 aria-label="Second die not rolled"
               >
                 <div class="diecube show-0">
-                  <span class="dieface diefront">0</span
-                  ><span class="dieface dieback">1</span
-                  ><span class="dieface dieright">2</span
-                  ><span class="dieface dieleft">3</span
-                  ><span class="dieface dietop">✦</span
-                  ><span class="dieface diebottom">✦</span>
+                  <span class="dieface diefront">0</span>
+                  <span class="dieface dieback">1</span>
+                  <span class="dieface dieright">2</span>
+                  <span class="dieface dieleft">3</span>
+                  <span class="dieface dietop">✦</span>
+                  <span class="dieface diebottom">✦</span>
                 </div>
               </div>
             </div>
             <div class="helper" id="diceHint">
               Two long dice · bonus chance falls each chain
             </div>
-            <div class="divider"></div>
-            <div class="helper">
-              <strong>Ruleset:</strong> Heritage 7×7 house variant.<br />Six
-              pieces per player. Capture once before entering home. Exact
-              finish. Safe floral squares protect pieces.
-            </div>
-            <div class="divider"></div>
-            <button
-              class="btn secondary full"
-              id="audioToggle"
-              type="button"
-              aria-pressed="true"
-            >
-              🔊 Commentary on
-            </button>
-            <div style="height: 8px"></div>
-            <button class="btn secondary full" id="copyAuditBtn" type="button">
-              📋 Copy game audit
-            </button>
-            <div class="small" id="auditHint" style="margin-top: 7px">
-              Records rolls, moves, captures, passes, and board states.
-            </div>
-            <div style="height: 8px"></div>
-            <button class="btn secondary full" id="resetBtn">
-              Reset match
-            </button>
           </div>
         </aside>
       </div>

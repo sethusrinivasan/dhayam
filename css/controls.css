@@ -93,13 +93,19 @@
 .btn {
   border: 0;
   border-radius: clamp(10px, 1.4vh, 13px);
-  padding: clamp(7px, 1.1vh, 10px) clamp(10px, 1.4vw, 14px);
+  padding: clamp(6px, 1vh, 10px) clamp(10px, 1.4vw, 14px);
+  min-height: clamp(38px, 4.8vh, 44px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 750;
   font-size: clamp(11px, 1.4vh, 13px);
   color: #fff;
   background: linear-gradient(120deg, #dc7554, #b94342);
   box-shadow: 0 4px 10px #140b0840;
   white-space: nowrap;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: filter 0.15s, transform 0.1s;
 }
 

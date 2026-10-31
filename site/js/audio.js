@@ -108,12 +108,23 @@
         if (!$("audioToggle")) return;
         $("audioToggle").textContent = available
           ? audioEnabled
-            ? "🔊 Commentary on"
-            : "🔇 Commentary off"
+            ? "🔊"
+            : "🔇"
+          : "🔇";
+        $("audioToggle").setAttribute(
+          "aria-label",
+          available
+            ? audioEnabled
+              ? "Voice commentary: ON. Click to mute."
+              : "Voice commentary: MUTED. Click to turn on."
+            : "Commentary unavailable",
+        );
+        $("audioToggle").title = available
+          ? audioEnabled
+            ? "Voice commentary: ON (Click to mute)"
+            : "Voice commentary: MUTED (Click to unmute)"
           : "Commentary unavailable";
         $("audioToggle").setAttribute("aria-pressed", String(audioEnabled));
-        $("audioToggle").title =
-          "Players alternate between available feminine and masculine voices";
         $("audioToggle").disabled = !available || (demo && superSpeed);
       }
       function toggleAudio() {

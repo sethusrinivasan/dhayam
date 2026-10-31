@@ -41,6 +41,8 @@ button,
 select,
 input {
   font: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button {
@@ -57,7 +59,10 @@ button:disabled {
   height: 100dvh;
   max-width: 1440px;
   margin: 0 auto;
-  padding: clamp(4px, 1vh, 12px) clamp(8px, 1.5vw, 18px);
+  padding-top: max(clamp(4px, 1vh, 12px), env(safe-area-inset-top, 4px));
+  padding-bottom: max(clamp(4px, 0.8vh, 8px), env(safe-area-inset-bottom, 4px));
+  padding-left: max(clamp(8px, 1.5vw, 18px), env(safe-area-inset-left, 8px));
+  padding-right: max(clamp(8px, 1.5vw, 18px), env(safe-area-inset-right, 8px));
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -114,9 +119,16 @@ button:disabled {
 
 .topnav {
   display: flex;
-  gap: clamp(5px, 0.8vw, 8px);
+  gap: clamp(4px, 0.8vw, 8px);
   flex-wrap: nowrap;
   flex-shrink: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.topnav::-webkit-scrollbar {
+  display: none;
 }
 
 .pill {
@@ -132,6 +144,16 @@ button:disabled {
 
 .pill:hover {
   background: #ffffff18;
+}
+
+.pill.icon-pill {
+  padding: clamp(4px, 0.7vh, 7px) clamp(7px, 1vw, 10px);
+  font-size: clamp(13px, 1.8vh, 16px);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
 }
 
 .footer {
