@@ -1,0 +1,10 @@
+name = "dhayam"
+main = "cloudflare/worker.js"
+compatibility_date = "2024-09-23"
+
+# Frugal static asset hosting: serves site/ directly on Cloudflare Edge CDN
+[assets]
+directory = "./site"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "single-page-application"

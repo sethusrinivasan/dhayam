@@ -1,0 +1,34 @@
+name: Deploy to Cloudflare (Frugal CDN & MCP)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-cloudflare:
+    name: Deploy Cloudflare Worker & Static Assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify secrets configured
+        id: check_secrets
+        run: |
+          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "has_token=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_token=false" >> $GITHUB_OUTPUT
+            echo "::notice::CLOUDFLARE_API_TOKEN secret not found. Skipping Cloudflare deployment. See docs/cloudflare-deployment.md to configure."
+          fi
+
+      - name: Deploy with Wrangler
+        if: steps.check_secrets.outputs.has_token == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
