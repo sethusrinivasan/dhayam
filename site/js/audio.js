@@ -149,7 +149,7 @@
         await update();
         render();
         recordAudit("DEMO_SCENE", { message });
-        $("statusTitle").textContent = "Guided demo";
+        $("statusTitle").textContent = "Demo";
         $("statusText").textContent = message;
         speakDemo(message);
         if (message.toLowerCase().includes("roll")) triggerDiceAnimation();

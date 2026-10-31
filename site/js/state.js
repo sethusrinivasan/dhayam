@@ -21,6 +21,7 @@
         demoStep = 0,
         demoMode = "classic",
         demoPlayerCount = 2,
+        demoWebSockets = [],
         demoSpeed = 1,
         superSpeed = false,
         savedDemoSpeed = 1,

@@ -78,8 +78,8 @@
         if (multiplayer.active && multiplayer.isHost) {
           broadcastState();
         }
-        if (typeof checkPendingRemoteState === "function") {
-          checkPendingRemoteState();
+        if (typeof checkPendingRemoteState === "function" && checkPendingRemoteState()) {
+          // Applied pending remote state which already called render()
         } else {
           render();
         }
@@ -530,8 +530,8 @@
               );
             }
 
-            if (typeof checkPendingRemoteState === "function") {
-              checkPendingRemoteState();
+            if (typeof checkPendingRemoteState === "function" && checkPendingRemoteState()) {
+              // Applied pending remote state
             } else {
               render();
             }
@@ -614,8 +614,8 @@
           capturedPlayerIds = [];
         }
 
-        if (typeof checkPendingRemoteState === "function") {
-          checkPendingRemoteState();
+        if (typeof checkPendingRemoteState === "function" && checkPendingRemoteState()) {
+          // Applied pending remote state which already called render()
         } else {
           render();
         }

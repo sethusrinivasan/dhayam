@@ -109,7 +109,8 @@
   transition: filter 0.15s, transform 0.1s;
 }
 
-.btn:disabled {
+.btn:disabled,
+.btn.disabled {
   opacity: 0.42;
   cursor: not-allowed !important;
   box-shadow: none !important;

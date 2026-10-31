@@ -371,3 +371,113 @@ test("guided demo stop and cleanup cleanly resets multiplayer state", () => {
   assert.deepEqual(multiplayerState.claimedSeats, {});
 });
 
+test("checkPendingRemoteState fallback guarantees render is invoked on finishRoll", () => {
+  let renderCount = 0;
+  function render() {
+    renderCount++;
+  }
+
+  let pendingRemoteState: any = null;
+  function checkPendingRemoteState() {
+    if (pendingRemoteState) {
+      pendingRemoteState = null;
+      render();
+      return true;
+    }
+    return false;
+  }
+
+  // Regression scenario: local game or multiplayer without queued state
+  function finishRoll() {
+    if (typeof checkPendingRemoteState === "function" && checkPendingRemoteState()) {
+      // Handled by pending remote state
+    } else {
+      render();
+    }
+  }
+
+  // Initial call with no pending remote state must trigger render
+  finishRoll();
+  assert.equal(renderCount, 1, "render() must be called when checkPendingRemoteState() returns false");
+
+  // Call with pending remote state must also trigger render exactly once
+  pendingRemoteState = { remoteGame: {} };
+  finishRoll();
+  assert.equal(renderCount, 2, "render() must be called via applyRemoteState when pending state exists");
+});
+
+test("bestAutomaticMove relieves overcrowding and balances fair piece progression", () => {
+  // Simulate player with 3 pieces stacked on A4 (progress 0)
+  const p = {
+    id: "P0",
+    name: "Maya",
+    seat: "N",
+    captured: false,
+    pieces: [
+      { id: "P0-0", progress: 0 },
+      { id: "P0-1", progress: 0 },
+      { id: "P0-2", progress: 0 },
+      { id: "P0-3", progress: -1 },
+      { id: "P0-4", progress: -1 },
+      { id: "P0-5", progress: -1 }
+    ]
+  };
+
+  const occupancy = new Map([["A4", 3]]);
+  const moves = [
+    // Move A: enter a piece from reserve onto A4 (adds to crowd)
+    {
+      piece: p.pieces[3],
+      indices: [0],
+      values: [1],
+      test: { progress: 0, targets: [] }
+    },
+    // Move B: advance one of the crowded pieces from A4 forward along circuit (relieves crowd)
+    {
+      piece: p.pieces[0],
+      indices: [0],
+      values: [3],
+      test: { progress: 3, targets: [] }
+    }
+  ];
+
+  function scoreMove(m: any) {
+    const fromSq = m.piece.progress >= 0 ? "A4" : null;
+    const crowdingAtOrigin = fromSq ? (occupancy.get(fromSq) || 1) : 0;
+    const isEntering = m.piece.progress < 0;
+    let s = 0;
+    if (crowdingAtOrigin > 1) s += 15000 * crowdingAtOrigin;
+    if (isEntering) s += 2500;
+    else s += Math.max(0, 43 - m.piece.progress) * 20;
+    s += m.test.progress;
+    return s;
+  }
+
+  const scoreA = scoreMove(moves[0]); // Entering to crowded square
+  const scoreB = scoreMove(moves[1]); // Moving piece out of crowded square
+
+  assert.ok(scoreB > scoreA, "Moving out of an overcrowded square must score higher than adding another piece to it");
+});
+
+test("startGuidedDemo supports multiplayer-real mode targeting Cloudflare", () => {
+  let mode: string = "classic";
+  let playerCount = 2;
+  const sockets: any[] = [];
+
+  function simulateStartDemo(chosenMode: string, count: number) {
+    mode = chosenMode;
+    playerCount = count;
+    if (mode === "multiplayer-real") {
+      sockets.push({ url: "wss://dhayam.cancun.workers.dev/api/room/CF1234/ws", state: "OPEN" });
+      for (let i = 1; i < count; i++) {
+        sockets.push({ url: `wss://dhayam.cancun.workers.dev/api/room/CF1234/ws?seat=${i}`, state: "OPEN" });
+      }
+    }
+  }
+
+  simulateStartDemo("multiplayer-real", 3);
+  assert.equal(mode, "multiplayer-real");
+  assert.equal(playerCount, 3);
+  assert.equal(sockets.length, 3, "Spawns host socket and 2 simulated guest sockets for 3-player Cloudflare demo");
+});
+

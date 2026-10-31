@@ -438,78 +438,105 @@
           () => {},
         );
       $("demoBtn").onclick = () => {
-        let selectedMode = "multiplayer";
+        let selectedMode = "multiplayer-real";
         let selectedCount = 2;
 
         const content =
-          '<div style="display:flex;flex-direction:column;gap:12px;text-align:left;">' +
-            '<p style="margin:0 0 4px;font-size:0.88rem;color:#f2dec5;">Choose an interactive guided experience:</p>' +
-            '<div class="demo-card selected" id="cardDemoMp" role="button" tabindex="0" style="cursor:pointer;padding:12px 14px;border-radius:10px;border:2px solid #f59e0b;background:#f59e0b1a;transition:all 0.2s ease;">' +
-              '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
-                '<div style="display:flex;align-items:center;gap:8px;">' +
-                  '<span style="font-size:1.3rem;">🌐</span>' +
-                  '<strong style="font-size:0.95rem;color:#fcd34d;">Online Multiplayer Simulation</strong>' +
+          '<div style="display:flex;flex-direction:column;gap:10px;text-align:left;">' +
+            '<p style="margin:0 0 2px;font-size:0.86rem;color:#f2dec5;">Choose an interactive demo experience:</p>' +
+            '<div class="demo-card selected" id="cardDemoReal" role="button" tabindex="0" style="cursor:pointer;padding:11px 13px;border-radius:10px;border:2px solid #f59e0b;background:#f59e0b1a;transition:all 0.2s ease;">' +
+              '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">' +
+                '<div style="display:flex;align-items:center;gap:7px;">' +
+                  '<span style="font-size:1.25rem;">🌐</span>' +
+                  '<strong style="font-size:0.92rem;color:#fcd34d;">Real Cloudflare Online Match</strong>' +
                 '</div>' +
-                '<span style="background:#f59e0b;color:#180b05;font-weight:700;font-size:0.68rem;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:0.5px;">Recommended</span>' +
+                '<span style="background:#f59e0b;color:#180b05;font-weight:700;font-size:0.65rem;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:0.5px;">Live Cloudflare Edge</span>' +
               '</div>' +
-              '<p style="margin:0 0 10px;font-size:0.82rem;color:#f2dec5;line-height:1.4;">' +
-                'Simulate a live online match powered by Cloudflare Durable Objects + WebSockets. Watch simulated players join via mobile QR code, synchronize 3D dice rolls across devices, and send live floating emoji banter.' +
+              '<p style="margin:0 0 8px;font-size:0.8rem;color:#f2dec5;line-height:1.35;">' +
+                'Targets the live Cloudflare Worker & Durable Objects endpoint (dhayam.cancun.workers.dev). Spawns a real online room over live WebSockets with authoritative server rolls, QR share link, and multi-device edge sync.' +
               '</p>' +
-              '<div style="display:flex;align-items:center;gap:10px;font-size:0.82rem;color:#e2cbb2;" id="demoPcountRow">' +
+              '<div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#e2cbb2;" id="demoRealPcountRow">' +
                 '<span>Simulate:</span>' +
-                '<div style="display:flex;gap:6px;" id="demoPlayerCountGroup">' +
-                  '<button type="button" class="pill demo-pcount-btn" data-count="2" style="padding:3px 10px;font-size:0.8rem;font-weight:700;border-color:#f59e0b;background:#f59e0b44;color:#fff;">2 Players</button>' +
-                  '<button type="button" class="pill demo-pcount-btn" data-count="3" style="padding:3px 10px;font-size:0.8rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">3 Players</button>' +
-                  '<button type="button" class="pill demo-pcount-btn" data-count="4" style="padding:3px 10px;font-size:0.8rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">4 Players</button>' +
+                '<div style="display:flex;gap:5px;">' +
+                  '<button type="button" class="pill demo-pcount-btn real-pcount selected" data-count="2" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#f59e0b;background:#f59e0b44;color:#fff;">2 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="3" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">3 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="4" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">4 Players</button>' +
                 '</div>' +
               '</div>' +
             '</div>' +
-            '<div class="demo-card" id="cardDemoClassic" role="button" tabindex="0" style="cursor:pointer;padding:12px 14px;border-radius:10px;border:1px solid #7a4623;background:#27140b66;transition:all 0.2s ease;">' +
-              '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
-                '<div style="display:flex;align-items:center;gap:8px;">' +
-                  '<span style="font-size:1.3rem;">📖</span>' +
-                  '<strong style="font-size:0.95rem;color:#fff1db;">Classic Rules Tutorial</strong>' +
+            '<div class="demo-card" id="cardDemoMp" role="button" tabindex="0" style="cursor:pointer;padding:11px 13px;border-radius:10px;border:1px solid #7a4623;background:#27140b66;transition:all 0.2s ease;">' +
+              '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">' +
+                '<div style="display:flex;align-items:center;gap:7px;">' +
+                  '<span style="font-size:1.25rem;">⚡</span>' +
+                  '<strong style="font-size:0.92rem;color:#fff1db;">Instant Offline Simulation</strong>' +
                 '</div>' +
-                '<span style="border:1px solid #a87d4d;color:#cdbda8;font-size:0.68rem;padding:2px 6px;border-radius:10px;">Tabletop</span>' +
+                '<span style="border:1px solid #a87d4d;color:#cdbda8;font-size:0.65rem;padding:2px 6px;border-radius:10px;">Offline Demo</span>' +
               '</div>' +
-              '<p style="margin:0;font-size:0.82rem;color:#cdbda8;line-height:1.4;">' +
-                'Traditional 2-player walkthrough explaining piece entry on roll of 1, bonus rolls, board progression, and safe floral squares before auto-playing to victory.' +
+              '<p style="margin:0 0 8px;font-size:0.8rem;color:#cdbda8;line-height:1.35;">' +
+                'Instant client-side simulation of Cloudflare room CF88, mobile QR joins, 3D dice physics, and live floating emoji banter without requiring network connectivity.' +
+              '</p>' +
+              '<div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#e2cbb2;" id="demoSimPcountRow">' +
+                '<span>Simulate:</span>' +
+                '<div style="display:flex;gap:5px;">' +
+                  '<button type="button" class="pill demo-pcount-btn sim-pcount selected" data-count="2" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#f59e0b;background:#f59e0b44;color:#fff;">2 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="3" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">3 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="4" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">4 Players</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="demo-card" id="cardDemoClassic" role="button" tabindex="0" style="cursor:pointer;padding:11px 13px;border-radius:10px;border:1px solid #7a4623;background:#27140b66;transition:all 0.2s ease;">' +
+              '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">' +
+                '<div style="display:flex;align-items:center;gap:7px;">' +
+                  '<span style="font-size:1.25rem;">📖</span>' +
+                  '<strong style="font-size:0.92rem;color:#fff1db;">Classic Rules Walkthrough</strong>' +
+                '</div>' +
+                '<span style="border:1px solid #a87d4d;color:#cdbda8;font-size:0.65rem;padding:2px 6px;border-radius:10px;">Tabletop</span>' +
+              '</div>' +
+              '<p style="margin:0;font-size:0.8rem;color:#cdbda8;line-height:1.35;">' +
+                'Traditional 2-player walkthrough explaining piece entry on roll of 1, bonus rolls, board circuits, and safe floral squares.' +
               '</p>' +
             '</div>' +
           '</div>';
 
         showModal(
-          "✦ Select Guided Demo",
+          "✦ Select Demo Experience",
           content,
           "Start demo",
           () => startGuidedDemo(selectedMode, selectedCount),
         );
 
         setTimeout(() => {
+          const cardReal = $("cardDemoReal");
           const cardMp = $("cardDemoMp");
           const cardClassic = $("cardDemoClassic");
-          const countBtns = document.querySelectorAll(".demo-pcount-btn");
+          const realBtns = document.querySelectorAll(".real-pcount");
+          const simBtns = document.querySelectorAll(".sim-pcount");
 
           function updateCardSelection() {
-            if (selectedMode === "multiplayer") {
-              if (cardMp) {
-                cardMp.style.borderColor = "#f59e0b";
-                cardMp.style.background = "#f59e0b1a";
+            [cardReal, cardMp, cardClassic].forEach((card) => {
+              if (card) {
+                card.style.borderColor = "#7a4623";
+                card.style.background = "#27140b66";
               }
-              if (cardClassic) {
-                cardClassic.style.borderColor = "#7a4623";
-                cardClassic.style.background = "#27140b66";
-              }
-            } else {
-              if (cardClassic) {
-                cardClassic.style.borderColor = "#f59e0b";
-                cardClassic.style.background = "#f59e0b1a";
-              }
-              if (cardMp) {
-                cardMp.style.borderColor = "#7a4623";
-                cardMp.style.background = "#27140b66";
-              }
+            });
+            if (selectedMode === "multiplayer-real" && cardReal) {
+              cardReal.style.borderColor = "#f59e0b";
+              cardReal.style.background = "#f59e0b1a";
+            } else if (selectedMode === "multiplayer" && cardMp) {
+              cardMp.style.borderColor = "#f59e0b";
+              cardMp.style.background = "#f59e0b1a";
+            } else if (selectedMode === "classic" && cardClassic) {
+              cardClassic.style.borderColor = "#f59e0b";
+              cardClassic.style.background = "#f59e0b1a";
             }
+          }
+
+          if (cardReal) {
+            cardReal.onclick = (e) => {
+              if (e.target.closest(".demo-pcount-btn")) return;
+              selectedMode = "multiplayer-real";
+              updateCardSelection();
+            };
           }
 
           if (cardMp) {
@@ -527,20 +554,25 @@
             };
           }
 
-          countBtns.forEach((btn) => {
-            btn.onclick = (e) => {
-              e.stopPropagation();
-              selectedMode = "multiplayer";
-              selectedCount = parseInt(btn.dataset.count, 10) || 2;
-              updateCardSelection();
-              countBtns.forEach((b) => {
-                const isCur = b === btn;
-                b.style.borderColor = isCur ? "#f59e0b" : "#7a4623";
-                b.style.background = isCur ? "#f59e0b44" : "transparent";
-                b.style.color = isCur ? "#fff" : "#f2dec5";
-              });
-            };
-          });
+          function setupCountGroup(btns, mode) {
+            btns.forEach((btn) => {
+              btn.onclick = (e) => {
+                e.stopPropagation();
+                selectedMode = mode;
+                selectedCount = parseInt(btn.dataset.count, 10) || 2;
+                updateCardSelection();
+                btns.forEach((b) => {
+                  const isCur = b === btn;
+                  b.style.borderColor = isCur ? "#f59e0b" : "#7a4623";
+                  b.style.background = isCur ? "#f59e0b44" : "transparent";
+                  b.style.color = isCur ? "#fff" : "#f2dec5";
+                });
+              };
+            });
+          }
+
+          setupCountGroup(realBtns, "multiplayer-real");
+          setupCountGroup(simBtns, "multiplayer");
         }, 40);
       };
       function showQrModal() {

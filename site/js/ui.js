@@ -82,6 +82,7 @@
                 const hasAnyMove = pieces.some((piece) => opts.some((o) => o.piece.id === piece.id));
                 const selectable = isCurrentPlayer && (hasAnyMove || pieces.some((piece) => legal.has(piece.id)));
                 const t = document.createElement("span");
+                const isCrowded = pieces.length >= 2;
                 t.className =
                   "token" +
                   (isCurrentPlayer ? " current" : "") +
@@ -91,7 +92,8 @@
                   (pieces.some((piece) => capturedPieceIds.includes(piece.id))
                     ? " captured"
                     : "") +
-                  (selectable ? " selectable" : "");
+                  (selectable ? " selectable" : "") +
+                  (isCrowded ? " crowded" : "");
                 t.style.background = p.color;
                 t.innerHTML = '<span class="tokenemoji">' + p.avatar + "</span>";
                 const pieceNumbers = pieces.map(
@@ -103,7 +105,12 @@
                 );
                 const ids = document.createElement("span");
                 ids.className = "tokenids";
-                ids.textContent = pieceNumbers.join("·");
+                ids.textContent = pieces.length >= 4
+                  ? "×" + pieces.length
+                  : pieceNumbers.join("·");
+                if (isCrowded) {
+                  ids.title = "Stacked pieces: #" + pieceNumbers.join(", #");
+                }
                 t.appendChild(ids);
 
                 // Direct piece click or touch: immediately initiate "move selected piece" action
@@ -422,9 +429,14 @@
                 : p.computer
                   ? p.name + " is thinking…"
                   : "🎲 Roll Dice";
-            actionBtn.disabled = !canRoll;
+            actionBtn.disabled = rolling;
+            actionBtn.classList.toggle("disabled", !canRoll);
             actionBtn.onclick = () => {
-              if (canRoll) roll();
+              if (canRoll) {
+                roll();
+              } else if (game.phase === "move" && isHumanTurn && !moving) {
+                warnDiceAlreadyRolled();
+              }
             };
           }
         }

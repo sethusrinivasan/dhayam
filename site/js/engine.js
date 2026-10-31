@@ -138,17 +138,66 @@
       }
 
       function bestAutomaticMove() {
-        // Computer players prefer finishing, then capturing, entering a piece,
-        // combining rolls, and finally the move with the greatest progress.
+        // Evaluates legal moves ensuring fair progression across all 6 pieces
+        // and aggressively relieving overcrowding when pieces bunch up on the same square.
         const moves = options();
+        if (!moves.length) return null;
+        const p = active();
+
+        // 1. Calculate occupancy per square for this player's active pieces
+        const occupancy = new Map();
+        for (const piece of p.pieces) {
+          if (piece.progress >= 0 && piece.progress < 43) {
+            const sq = node(p, piece);
+            if (sq) occupancy.set(sq, (occupancy.get(sq) || 0) + 1);
+          }
+        }
+
+        const startSq = START[p.seat];
+        const startCrowd = occupancy.get(startSq) || 0;
+
         return (
           moves.sort((a, b) => {
-            const score = (m) =>
-              (m.test.progress === 43 ? 100000 : 0) +
-              (m.test.targets.length ? 50000 : 0) +
-              (m.piece.progress < 0 ? 8000 : 0) +
-              (m.indices.length > 1 ? 1000 : 0) +
-              m.test.progress;
+            const score = (m) => {
+              const fromSq = m.piece.progress >= 0 ? node(p, m.piece) : null;
+              const crowdingAtOrigin = fromSq ? (occupancy.get(fromSq) || 1) : 0;
+              const willFinish = m.test.progress === 43;
+              const willCapture = m.test.targets.length > 0;
+              const isEntering = m.piece.progress < 0;
+
+              let s = 0;
+
+              // Priority 1: Finishing a piece in goal (exact count)
+              if (willFinish) s += 100000;
+
+              // Priority 2: Capturing opponent piece
+              if (willCapture) s += 50000;
+
+              // Priority 3: Relieve overcrowding. If 2 or more pieces are stacked
+              // on the same square, heavily prioritize moving a piece OUT of that square.
+              if (crowdingAtOrigin > 1) {
+                s += 15000 * crowdingAtOrigin;
+              }
+
+              // Priority 4: Reserve Entry vs Circuit Advancement
+              if (isEntering) {
+                // If starting square is already congested, prioritize moving existing pieces off it
+                s += startCrowd >= 2 ? 2500 : 8000;
+              } else {
+                // Fair piece progression: ensure all 6 pieces advance as a balanced team
+                // rather than single-piece hyper-focus leaving others stranded behind.
+                // Pieces lagging behind receive a catch-up boost.
+                const lagBoost = Math.max(0, 43 - m.piece.progress) * 20;
+                s += lagBoost;
+              }
+
+              // Priority 5: Efficient multi-dice roll combination
+              if (m.indices.length > 1) s += 1000;
+
+              // Tie-breaker: overall destination progress
+              s += m.test.progress;
+              return s;
+            };
             return score(b) - score(a);
           })[0] || null
         );
