@@ -76,6 +76,10 @@
         status: "offline",
         roomTargetCount: 2,
         claimedSeats: {},
+        transport: "cf_ws",
+        ws: null,
+        token: null,
+        presence: {},
       };
 
       function isMyTurn() {

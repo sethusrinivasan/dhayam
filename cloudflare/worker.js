@@ -1,14 +1,16 @@
+import { DurableObject } from "cloudflare:workers";
+
 /**
  * Dhayam Cloudflare Worker & Streamable HTTP MCP Server
  *
  * Frugal, zero-dependency Cloudflare Worker that:
  * 1. Serves the static Dhayam game on Cloudflare's Global Edge CDN (via env.ASSETS)
- * 2. Exposes the Model Context Protocol (MCP) Streamable HTTP endpoint at /mcp
- * 3. Provides uptime monitoring at /health
+ * 2. Hosts real-time multiplayer rooms via Cloudflare Durable Objects with WebSocket Hibernation
+ * 3. Exposes the Model Context Protocol (MCP) Streamable HTTP endpoint at /mcp
+ * 4. Provides uptime monitoring at /health
  *
  * Deployable on Cloudflare Free Tier (100,000 req/day, 0ms cold starts, <1MB bundle).
  */
-"use strict";
 
 const SAFE_SQUARES = new Set(["A4", "B2", "B6", "D1", "D7", "F2", "F6", "G4"]);
 const GOAL_SQUARE = "D4";
@@ -242,7 +244,14 @@ class DhayamEngine {
 
     const p = this.activePlayer();
     const piece = p.pieces.find((q) => q.id === pieceId);
+    const fromProgress = piece ? piece.progress : -1;
     const test = this.testMove(p, piece, match.dice_values);
+
+    const captureTargets = test.targets.map((hit) => ({
+      playerId: hit.other.id,
+      playerName: hit.other.name,
+      pieceId: hit.q.id
+    }));
 
     piece.progress = test.progress;
     if (test.captured) {
@@ -279,7 +288,17 @@ class DhayamEngine {
       p.rank = 1;
       this.phase = "done";
       this.audit.push({ event: "WINNER", winner: p.name });
-      return { status: "win", winner: p.name, summary: this.getSummary() };
+      return {
+        status: "win",
+        winner: p.name,
+        pieceId,
+        fromProgress,
+        targetProgress: test.progress,
+        destination: test.destination,
+        diceValues: match.dice_values,
+        captures: captureTargets,
+        summary: this.getSummary()
+      };
     }
 
     if (!this.pool.length || !this.getLegalMoves().length) {
@@ -288,7 +307,12 @@ class DhayamEngine {
 
     return {
       status: "success",
+      pieceId,
+      fromProgress,
+      targetProgress: test.progress,
       destination: test.destination,
+      diceValues: match.dice_values,
+      captures: captureTargets,
       remainingPool: [...this.pool],
       phase: this.phase,
       current_player: this.activePlayer().name
@@ -465,12 +489,393 @@ const CORS_HEADERS = {
   "Content-Type": "application/json"
 };
 
+/**
+ * DhayamRoom - Durable Object with WebSocket Hibernation & SQLite persistence
+ *
+ * Coordinates real-time online multiplayer game rooms on Cloudflare Edge.
+ * Highly frugal, zero idle cost via WebSocket Hibernation, sub-50ms latency.
+ */
+export class DhayamRoom extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.ctx = ctx;
+    this.env = env;
+    this.roomCode = null;
+    this.engine = null;
+    this.targetPlayers = 2;
+    this.claimedSeats = {};
+
+    this.ctx.blockConcurrencyWhile(async () => {
+      this.ctx.storage.sql.exec(`
+        CREATE TABLE IF NOT EXISTS room_state (
+          key TEXT PRIMARY KEY,
+          value TEXT
+        )
+      `);
+      const rows = this.ctx.storage.sql.exec("SELECT value FROM room_state WHERE key = 'state'").toArray();
+      if (rows.length > 0 && rows[0].value) {
+        try {
+          const saved = JSON.parse(rows[0].value);
+          this.roomCode = saved.roomCode;
+          this.targetPlayers = saved.targetPlayers || 2;
+          this.claimedSeats = saved.claimedSeats || {};
+          if (saved.game) {
+            this.engine = new DhayamEngine(saved.game);
+          }
+        } catch (e) {
+          console.warn("Failed to parse restored SQLite room state:", e);
+        }
+      }
+    });
+  }
+
+  persist() {
+    try {
+      const data = JSON.stringify({
+        roomCode: this.roomCode,
+        targetPlayers: this.targetPlayers,
+        claimedSeats: this.claimedSeats,
+        game: this.engine ? this.engine.serialize() : null
+      });
+      this.ctx.storage.sql.exec("INSERT OR REPLACE INTO room_state (key, value) VALUES ('state', ?)", data);
+    } catch (e) {
+      console.warn("SQLite persist error:", e);
+    }
+  }
+
+  ensureInitialized(targetCount = 2, code = "") {
+    if (!this.engine) {
+      this.roomCode = code;
+      this.targetPlayers = Math.min(Math.max(targetCount, 2), 4);
+      const names = Array.from({ length: this.targetPlayers }, (_, i) => "Player " + (i + 1));
+      this.engine = new DhayamEngine();
+      this.engine.initNewMatch(names);
+      this.claimedSeats = {};
+      this.persist();
+    }
+  }
+
+  getSeatsInfo() {
+    if (!this.engine || !this.engine.players) return [];
+    return this.engine.players.map((p, idx) => {
+      const claim = this.claimedSeats[idx];
+      return {
+        seat: idx,
+        name: p.name,
+        avatar: p.avatar,
+        color: p.color,
+        claimed: Boolean(claim),
+        claimedBy: claim ? claim.name : "",
+        isHost: idx === 0,
+        connected: Boolean(claim && claim.connected)
+      };
+    });
+  }
+
+  broadcast(payload, excludeWs = null) {
+    const text = typeof payload === "string" ? payload : JSON.stringify(payload);
+    for (const ws of this.ctx.getWebSockets()) {
+      if (ws !== excludeWs) {
+        try {
+          ws.send(text);
+        } catch (e) {}
+      }
+    }
+  }
+
+  async fetch(request) {
+    const url = new URL(request.url);
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: CORS_HEADERS });
+    }
+
+    // WebSocket upgrade
+    if (request.headers.get("Upgrade") === "websocket") {
+      const parts = url.pathname.split("/").filter(Boolean);
+      // /api/room/:code/ws
+      const codeFromPath = parts.length >= 3 ? parts[2] : "";
+      const code = (url.searchParams.get("code") || codeFromPath || "ROOM").toUpperCase();
+      const targetCount = parseInt(url.searchParams.get("players") || "2", 10);
+      this.ensureInitialized(targetCount, code);
+
+      const pair = new WebSocketPair();
+      const [client, server] = Object.values(pair);
+
+      this.ctx.acceptWebSocket(server);
+
+      const token = url.searchParams.get("token") || "";
+      const seatParam = url.searchParams.get("seat");
+      const seat = seatParam !== null && seatParam !== "" ? Number(seatParam) : null;
+
+      server.serializeAttachment({ token, seat, name: "" });
+
+      // Immediate response with room state
+      server.send(JSON.stringify({
+        type: "ROOM_STATE",
+        roomCode: this.roomCode,
+        targetPlayers: this.targetPlayers,
+        seats: this.getSeatsInfo(),
+        game: this.engine.serialize(),
+        audit: this.engine.audit
+      }));
+
+      return new Response(null, { status: 101, webSocket: client, headers: CORS_HEADERS });
+    }
+
+    // Room info GET endpoint
+    return new Response(JSON.stringify({
+      roomCode: this.roomCode,
+      targetPlayers: this.targetPlayers,
+      seats: this.getSeatsInfo(),
+      phase: this.engine ? this.engine.phase : "uninitialized",
+      current: this.engine ? this.engine.current : 0
+    }), { headers: CORS_HEADERS });
+  }
+
+  async webSocketMessage(ws, message) {
+    try {
+      const text = typeof message === "string" ? message : new TextDecoder().decode(message);
+      const data = JSON.parse(text);
+      const attachment = ws.deserializeAttachment() || {};
+
+      if (data.type === "CLAIM_SEAT") {
+        const seat = Number(data.seat);
+        const name = (data.name || "").trim().slice(0, 15);
+        const token = data.token || attachment.token || crypto.randomUUID();
+
+        // 1. Reconnect with matching token
+        const existingClaim = this.claimedSeats[seat];
+        if (existingClaim && existingClaim.token === token) {
+          existingClaim.connected = true;
+          if (name) {
+            existingClaim.name = name;
+            this.engine.players[seat].name = name;
+          }
+          attachment.seat = seat;
+          attachment.token = token;
+          attachment.name = existingClaim.name;
+          ws.serializeAttachment(attachment);
+          this.persist();
+
+          ws.send(JSON.stringify({
+            type: "INIT",
+            seat,
+            token,
+            roomCode: this.roomCode,
+            totalPlayers: this.targetPlayers,
+            game: this.engine.serialize(),
+            audit: this.engine.audit,
+            seats: this.getSeatsInfo()
+          }));
+
+          this.broadcast({
+            type: "PRESENCE",
+            seat,
+            connected: true,
+            name: existingClaim.name,
+            seats: this.getSeatsInfo()
+          });
+          return;
+        }
+
+        // 2. Reject if claimed and currently connected by another player
+        if (existingClaim && existingClaim.connected) {
+          ws.send(JSON.stringify({
+            type: "CHOOSE_SEAT",
+            roomCode: this.roomCode,
+            seats: this.getSeatsInfo(),
+            error: "Player slot " + (seat + 1) + " is already occupied. Please select an available slot."
+          }));
+          return;
+        }
+
+        // 3. New Claim
+        const chosenName = name || this.engine.players[seat].name;
+        this.engine.players[seat].name = chosenName;
+        this.claimedSeats[seat] = {
+          token,
+          name: chosenName,
+          connected: true
+        };
+
+        attachment.seat = seat;
+        attachment.token = token;
+        attachment.name = chosenName;
+        ws.serializeAttachment(attachment);
+        this.persist();
+
+        ws.send(JSON.stringify({
+          type: "INIT",
+          seat,
+          token,
+          roomCode: this.roomCode,
+          totalPlayers: this.targetPlayers,
+          game: this.engine.serialize(),
+          audit: this.engine.audit,
+          seats: this.getSeatsInfo()
+        }));
+
+        this.broadcast({
+          type: "ROOM_UPDATE",
+          seats: this.getSeatsInfo(),
+          message: chosenName + " joined as Player " + (seat + 1)
+        });
+      }
+
+      else if (data.type === "ROLL") {
+        const seat = attachment.seat;
+        if (seat === undefined || seat === null || this.engine.current !== seat || this.engine.phase !== "roll") {
+          return;
+        }
+
+        const res = this.engine.rollDice();
+        if (res.error) {
+          ws.send(JSON.stringify({ type: "ERROR", message: res.error }));
+          return;
+        }
+
+        this.persist();
+
+        // Broadcast synchronized ROLL_START so all players see 3D dice tumble together
+        this.broadcast({
+          type: "ROLL_START",
+          seat,
+          player: this.engine.players[seat].name,
+          dice: { a: res.roll.a, b: res.roll.b },
+          value: res.roll.value,
+          bonus: res.bonusEarned
+        });
+
+        // Broadcast SYNC_STATE
+        this.broadcast({
+          type: "SYNC_STATE",
+          game: this.engine.serialize(),
+          audit: this.engine.audit,
+          seats: this.getSeatsInfo()
+        });
+      }
+
+      else if (data.type === "MOVE") {
+        const seat = attachment.seat;
+        if (seat === undefined || seat === null || this.engine.current !== seat || this.engine.phase !== "move") {
+          return;
+        }
+
+        const { pieceId, diceValues } = data;
+        const res = this.engine.applyMove(pieceId, diceValues);
+        if (res.error) {
+          ws.send(JSON.stringify({ type: "ERROR", message: res.error }));
+          return;
+        }
+
+        this.persist();
+
+        // Broadcast synchronized MOVE_START
+        this.broadcast({
+          type: "MOVE_START",
+          seat,
+          player: this.engine.players[seat].name,
+          pieceId: res.pieceId,
+          fromProgress: res.fromProgress,
+          targetProgress: res.targetProgress,
+          destination: res.destination,
+          captures: res.captures,
+          winner: res.winner
+        });
+
+        // Broadcast SYNC_STATE
+        this.broadcast({
+          type: "SYNC_STATE",
+          game: this.engine.serialize(),
+          audit: this.engine.audit,
+          seats: this.getSeatsInfo()
+        });
+      }
+
+      else if (data.type === "PASS") {
+        const seat = attachment.seat;
+        if (seat === undefined || seat === null || this.engine.current !== seat) {
+          return;
+        }
+
+        this.engine.passTurn();
+        this.persist();
+
+        this.broadcast({
+          type: "SYNC_STATE",
+          game: this.engine.serialize(),
+          audit: this.engine.audit,
+          seats: this.getSeatsInfo()
+        });
+      }
+
+      else if (data.type === "EMOTE") {
+        const seat = attachment.seat;
+        const name = attachment.name || (seat !== null && this.engine.players[seat] ? this.engine.players[seat].name : "Player");
+        this.broadcast({
+          type: "EMOTE",
+          emote: data.emote,
+          name,
+          seat
+        });
+      }
+
+      else if (data.type === "RESET_GAME") {
+        this.engine.initNewMatch(this.engine.players.map((p) => p.name));
+        this.persist();
+        this.broadcast({
+          type: "INIT",
+          roomCode: this.roomCode,
+          totalPlayers: this.targetPlayers,
+          game: this.engine.serialize(),
+          audit: this.engine.audit,
+          seats: this.getSeatsInfo()
+        });
+      }
+    } catch (err) {
+      console.error("Durable Object webSocketMessage error:", err);
+    }
+  }
+
+  async webSocketClose(ws, code, reason, wasClean) {
+    const attachment = ws.deserializeAttachment() || {};
+    if (attachment.seat !== undefined && attachment.seat !== null) {
+      const claim = this.claimedSeats[attachment.seat];
+      if (claim) {
+        claim.connected = false;
+        this.persist();
+        this.broadcast({
+          type: "PRESENCE",
+          seat: attachment.seat,
+          connected: false,
+          name: claim.name,
+          seats: this.getSeatsInfo()
+        });
+      }
+    }
+  }
+
+  async webSocketError(ws, error) {
+    console.warn("Durable Object webSocketError:", error);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: CORS_HEADERS });
+    }
+
+    // 1. Multiplayer WebSocket & Info endpoint: /api/room/:code/...
+    const roomMatch = url.pathname.match(/^\/api\/room\/([A-Za-z0-9_-]+)(?:\/(ws|info))?$/);
+    if (roomMatch && env && env.DHAYAM_ROOM) {
+      const roomCode = roomMatch[1].toUpperCase();
+      const id = env.DHAYAM_ROOM.idFromName(roomCode);
+      const stub = env.DHAYAM_ROOM.get(id);
+      return stub.fetch(request);
     }
 
     // 1. Health check endpoint

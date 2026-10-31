@@ -1,0 +1,37 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dhayam: Start local server",
+      "type": "process",
+      "command": "python3",
+      "args": [
+        "-u",
+        "-m",
+        "http.server",
+        "8000",
+        "--directory",
+        "${workspaceFolder}/site"
+      ],
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "owner": "dhayam-server",
+          "pattern": {
+            "regexp": "^$"
+          },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "^Serving HTTP on",
+            "endsPattern": "^Serving HTTP on"
+          }
+        }
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "Dhayam"
+      }
+    }
+  ]
+}

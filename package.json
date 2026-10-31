@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test",
+    "test": "tsx --test test/game.test.ts",
     "test:coverage": "node --test --experimental-test-coverage"
   },
   "engines": {
     "node": ">=22.18"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
   }
 }

@@ -8,3 +8,12 @@ directory = "./site"
 binding = "ASSETS"
 html_handling = "auto-trailing-slash"
 not_found_handling = "single-page-application"
+
+[durable_objects]
+bindings = [
+  { name = "DHAYAM_ROOM", class_name = "DhayamRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DhayamRoom"]

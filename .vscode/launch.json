@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Dhayam: Debug browser game",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:8000/",
+      "webRoot": "${workspaceFolder}/site",
+      "preLaunchTask": "Dhayam: Start local server",
+      "presentation": {
+        "group": "Dhayam",
+        "order": 1
+      }
+    },
+    {
+      "name": "Dhayam: Debug rules tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--import",
+        "tsx",
+        "--test"
+      ],
+      "args": [
+        "${workspaceFolder}/test/game.test.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "presentation": {
+        "group": "Dhayam",
+        "order": 2
+      }
+    }
+  ]
+}
