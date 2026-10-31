@@ -38,7 +38,10 @@
                 .map((piece) => ({ p, piece })),
             );
             const canEntry = Boolean(entry && sq === START[active().seat]);
-            const can = occupied.some((o) => legal.has(o.piece.id)) || canEntry;
+            const canMoveOccupied = occupied.some(
+              (o) => o.p === active() && opts.some((opt) => opt.piece.id === o.piece.id),
+            );
+            const can = occupied.some((o) => legal.has(o.piece.id)) || canMoveOccupied || canEntry;
             if (can) el.classList.add("legal");
             el.setAttribute(
               "aria-label",
@@ -75,11 +78,13 @@
                   .filter((group) => group.pieces.length);
               holder.className = "tokens count-" + Math.min(groups.length, 4);
               for (const { p, pieces } of groups) {
-                const selectable = pieces.some((piece) => legal.has(piece.id)),
-                  t = document.createElement("span");
+                const isCurrentPlayer = p === active();
+                const hasAnyMove = pieces.some((piece) => opts.some((o) => o.piece.id === piece.id));
+                const selectable = isCurrentPlayer && (hasAnyMove || pieces.some((piece) => legal.has(piece.id)));
+                const t = document.createElement("span");
                 t.className =
                   "token" +
-                  (p === active() ? " current" : "") +
+                  (isCurrentPlayer ? " current" : "") +
                   (pieces.some((piece) => piece.id === movingPieceId)
                     ? " moving"
                     : "") +
@@ -88,7 +93,7 @@
                     : "") +
                   (selectable ? " selectable" : "");
                 t.style.background = p.color;
-                t.innerHTML = '<span class="tokenemoji">' + p.avatar + '</span>';
+                t.innerHTML = '<span class="tokenemoji">' + p.avatar + "</span>";
                 const pieceNumbers = pieces.map(
                   (piece) => p.pieces.indexOf(piece) + 1,
                 );
@@ -101,30 +106,60 @@
                 ids.textContent = pieceNumbers.join("·");
                 t.appendChild(ids);
 
-                // Direct piece click or touch to move selected token
-                if (selectable && !demo && !active().computer && !moving) {
+                // Direct piece click or touch: immediately initiate "move selected piece" action
+                if (isCurrentPlayer && !demo && !active().computer && !moving) {
                   t.style.cursor = "pointer";
-                  t.title = "Click or tap to move piece " + pieceNumbers.join(", ");
+                  t.title = "Click to move piece " + pieceNumbers.join(", ");
                   t.setAttribute("role", "button");
                   t.setAttribute("tabindex", "0");
                   const onPieceTouch = (e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    let moveOpt = pieces.map((piece) => legal.get(piece.id)).find(Boolean);
+                    if (game.phase === "roll") {
+                      $("statusText").textContent =
+                        "Roll the dice first to see legal moves.";
+                      const diceEl = document.querySelector(".dice");
+                      if (diceEl)
+                        diceEl.scrollIntoView({
+                          behavior: "smooth",
+                          block: "nearest",
+                        });
+                      return;
+                    }
+                    if (game.phase !== "move") return;
+
+                    let moveOpt = pieces
+                      .map((piece) => legal.get(piece.id))
+                      .find(Boolean);
                     if (!moveOpt) {
-                      const anyOpt = opts.find((o) => pieces.some((p) => p.id === o.piece.id));
+                      const anyOpt = opts.find((o) =>
+                        pieces.some((piece) => piece.id === o.piece.id),
+                      );
                       if (anyOpt) {
-                        selectedRoll = anyOpt.indices.length === 1 ? anyOpt.indices[0] : -1;
-                        selectedPieceId = anyOpt.piece.id;
+                        selectedRoll =
+                          anyOpt.indices.length === 1 ? anyOpt.indices[0] : -1;
                         moveOpt = anyOpt;
                       }
                     }
+
                     if (moveOpt) {
                       selectedPieceId = moveOpt.piece.id;
+                      if ($("moveChoice")) $("moveChoice").value = moveOpt.piece.id;
                       if (typeof FlightRecorder !== "undefined") {
-                        FlightRecorder.record("PIECE_CLICKED", { pieceId: moveOpt.piece.id, source: "token" });
+                        FlightRecorder.record("PIECE_CLICK_INITIATE_MOVE", {
+                          pieceId: moveOpt.piece.id,
+                          square: sq,
+                          values: moveOpt.values,
+                        });
                       }
-                      apply(moveOpt, "token-touch");
+                      apply(moveOpt, "piece-click");
+                    } else {
+                      const pNum = p.pieces.indexOf(pieces[0]) + 1;
+                      $("statusText").textContent =
+                        p.name +
+                        "’s piece #" +
+                        pNum +
+                        " cannot move with the current dice rolls.";
                     }
                   };
                   t.onclick = onPieceTouch;

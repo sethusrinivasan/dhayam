@@ -284,8 +284,8 @@
 }
 
 .motif {
-  font-size: clamp(11px, 2.2vmin, 24px);
-  opacity: 0.85;
+  font-size: clamp(20px, 4.8vmin, 46px);
+  opacity: 0.88;
   line-height: 1;
 }
 
@@ -294,7 +294,13 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  font-size: clamp(22px, 5.2vmin, 50px);
   pointer-events: none;
+}
+
+.cell.goal .motif {
+  font-size: clamp(26px, 6.2vmin, 58px);
+  filter: drop-shadow(0 0 10px #ff9500aa);
 }
 
 .tokens {
@@ -311,20 +317,20 @@
 
 .token {
   position: relative;
-  width: clamp(26px, 5.8vmin, 52px);
-  height: clamp(26px, 5.8vmin, 52px);
-  max-width: 84%;
-  max-height: 84%;
+  width: clamp(32px, 7.8vmin, 68px);
+  height: clamp(32px, 7.8vmin, 68px);
+  max-width: 82%;
+  max-height: 82%;
   aspect-ratio: 1;
   border-radius: 50%;
-  border: clamp(1.5px, 0.35vmin, 3px) solid #fffbe0;
+  border: clamp(2px, 0.4vmin, 3.5px) solid #fffbe0;
   box-shadow:
-    0 3px 6px #27150ecc,
-    inset 0 2px 4px #ffffff99;
+    0 4px 10px #00000088,
+    inset 0 2px 5px #ffffffaa;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(15px, 3.4vmin, 30px);
+  font-size: clamp(20px, 4.8vmin, 42px);
   line-height: 1;
   color: #23140b;
   font-weight: 800;
@@ -337,14 +343,14 @@
 .tokens.count-2 {
   flex-direction: row;
   flex-wrap: wrap;
-  gap: clamp(2px, 0.3vmin, 3px);
+  gap: clamp(2px, 0.4vmin, 4px);
 }
 
 .tokens.count-2 .token {
-  width: clamp(18px, 3.8vmin, 34px);
-  height: clamp(18px, 3.8vmin, 34px);
-  font-size: clamp(10px, 2.2vmin, 18px);
-  border-width: clamp(1px, 0.25vmin, 2px);
+  width: clamp(22px, 4.8vmin, 42px);
+  height: clamp(22px, 4.8vmin, 42px);
+  font-size: clamp(14px, 2.8vmin, 24px);
+  border-width: clamp(1.5px, 0.3vmin, 2.5px);
 }
 
 .tokens.count-3,
@@ -353,14 +359,14 @@
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   place-items: center;
-  gap: clamp(1px, 0.25vmin, 2px);
+  gap: clamp(1px, 0.3vmin, 3px);
 }
 
 .tokens.count-3 .token,
 .tokens.count-4 .token {
-  width: clamp(14px, 3vmin, 26px);
-  height: clamp(14px, 3vmin, 26px);
-  font-size: clamp(8px, 1.6vmin, 14px);
+  width: clamp(16px, 3.5vmin, 30px);
+  height: clamp(16px, 3.5vmin, 30px);
+  font-size: clamp(10px, 2vmin, 18px);
   border-width: 1px;
 }
 
@@ -373,8 +379,8 @@
 
 .tokenids {
   position: absolute;
-  bottom: -3px;
-  right: -4px;
+  bottom: -2px;
+  right: -3px;
   background: #2b160be6;
   color: #ffeed1;
   border: 1px solid #ffda99;
