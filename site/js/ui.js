@@ -9,12 +9,25 @@
       function render() {
         if (!game) return;
         const opts = options();
+        if (opts.length > 0) {
+          const hasChosen = opts.some((o) =>
+            selectedRoll === -1
+              ? o.indices.length === game.pool.length
+              : o.indices.length === 1 && o.indices[0] === selectedRoll,
+          );
+          if (!hasChosen) {
+            const firstOpt = opts[0];
+            selectedRoll = firstOpt.indices.length === 1 ? firstOpt.indices[0] : -1;
+            selectedPieceId = firstOpt.piece.id;
+          }
+        }
         const chosen = opts.filter((o) =>
           selectedRoll === -1
             ? o.indices.length === game.pool.length
             : o.indices.length === 1 && o.indices[0] === selectedRoll,
         );
-        const entry = chosen.find((o) => o.piece.progress === -1);
+        const anyEntryOpt = opts.find((o) => o.piece.progress === -1);
+        const entry = chosen.find((o) => o.piece.progress === -1) || anyEntryOpt || null;
         const legal = new Map();
         for (const o of chosen) {
           if (!legal.has(o.piece.id)) legal.set(o.piece.id, o);
@@ -37,7 +50,7 @@
                 .filter((piece) => node(p, piece) === sq)
                 .map((piece) => ({ p, piece })),
             );
-            const canEntry = Boolean(entry && sq === START[active().seat]);
+            const canEntry = Boolean((entry || anyEntryOpt) && sq === START[active().seat]);
             const canMoveOccupied = occupied.some(
               (o) => o.p === active() && opts.some((opt) => opt.piece.id === o.piece.id),
             );
@@ -187,7 +200,7 @@
               el.onclick = () => {
                 let o = occupied
                   .map((x) => legal.get(x.piece.id))
-                  .find(Boolean) || (canEntry ? entry : null);
+                  .find(Boolean) || (canEntry ? (entry || anyEntryOpt) : null);
                 if (!o) {
                   const anyOccupiedOpt = opts.find((opt) =>
                     occupied.some((x) => x.piece.id === opt.piece.id)
@@ -229,7 +242,7 @@
               ),
               home = numbersFor((piece) => piece.progress === 43);
             const isCurrentActive = active() === p && game.phase !== "done";
-            const canCardEnter = Boolean(isCurrentActive && entry && !demo && !p.computer && !moving);
+            const canCardEnter = Boolean(isCurrentActive && (entry || anyEntryOpt) && !demo && !p.computer && !moving);
             return (
               '<div class="player ' +
               (isCurrentActive ? "active" : "") +
@@ -267,11 +280,12 @@
         const enterCards = $("players").querySelectorAll(".player[data-can-enter='true']");
         enterCards.forEach((card) => {
           card.onclick = () => {
-            if (entry && !moving) {
+            const entryMove = entry || anyEntryOpt;
+            if (entryMove && !moving) {
               if (typeof FlightRecorder !== "undefined") {
                 FlightRecorder.record("PLAYER_CARD_ENTER_CLICKED", { playerId: active().id });
               }
-              apply(entry, "family-table-entry");
+              apply(entryMove, "family-table-entry");
             }
           };
           card.onkeydown = (e) => {
@@ -359,7 +373,7 @@
           winner = game.players.find((player) => player.rank === 1),
           isHumanTurn = !demo && (multiplayer.active ? isMyTurn() : !p.computer),
           canRoll = game.phase === "roll" && !rolling && !moving && isHumanTurn && game.phase !== "done",
-          targetMove = (selectedPieceId ? legal.get(selectedPieceId) : null) || moveChoices[0] || (entry ? entry : null),
+          targetMove = (selectedPieceId ? legal.get(selectedPieceId) : null) || moveChoices[0] || entry || opts[0] || null,
           canMove = game.phase === "move" && Boolean(targetMove) && !rolling && !moving && isHumanTurn;
 
         if (!moveChoices.some((move) => move.piece.id === selectedPieceId))
@@ -421,6 +435,17 @@
             actionBtn.textContent = "🏆 New match";
             actionBtn.disabled = false;
             actionBtn.onclick = () => newGame(game.players.length);
+          } else if (game.phase === "move" && isHumanTurn && !moving && targetMove) {
+            actionBtn.textContent = targetMove.piece.progress < 0
+              ? "✨ Enter Piece"
+              : "👉 Move Selected Piece";
+            actionBtn.disabled = false;
+            actionBtn.classList.remove("disabled");
+            actionBtn.onclick = () => {
+              if (targetMove && !moving) {
+                apply(targetMove, "action-button-move");
+              }
+            };
           } else {
             actionBtn.textContent = rolling
               ? "🎲 Rolling…"
