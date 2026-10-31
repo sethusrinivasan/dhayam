@@ -85,7 +85,7 @@ npm test              # Runs 48 unit, regression, and MCP tests
 
 * 🏛️ **[Architecture & Design](docs/architecture.md)** — Modular design, zero runtime dependencies, and Cloudflare Edge Durable Objects.
 * ☁️ **[Hosting & Deployment](docs/cloudflare-deployment.md)** — Zero-cost Cloudflare Free Tier hosting setup.
-* 🛡️ **[OWASP Security Analysis](docs/owasp-security-analysis.md)** — Comprehensive security audit, XSS defense, and threat model.
+* 🛡️ **[OWASP Top 20 Security Evaluation](docs/owasp-top-20-security-evaluation.md)** — Comprehensive 2026 security audit, XSS defense, rate limiting, and threat model.
 * 🤖 **[MCP Integration Guide](docs/mcp-evaluation.md)** — Model Context Protocol endpoints for autonomous AI matches.
 * 📋 **[Project Roadmap & Gaps](PROJECTS.md)** — Multiplayer lobbies, reconnection resilience, and Tamil/Hindi/Telugu i18n localization.
 * 📖 **[Dhayam Wiki](wiki/)** — Strategy guides, rules variations, and developer reference.

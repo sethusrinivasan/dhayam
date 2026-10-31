@@ -16,6 +16,7 @@ Do not treat a copied audit as proof of fair play. A future authoritative multip
 ---
 
 ## OWASP Security Audit & Vulnerability Assessment
-For an in-depth security evaluation against the OWASP Top 10 (covering Cloudflare Worker, Durable Objects, WebSockets, SQLite, and XSS defense), see:
+For an in-depth security evaluation against the unified OWASP Top 20 (OWASP Web Top 10:2025/2026 + OWASP API Security Top 10 + OWASP LLM Top 10), covering Cloudflare Worker, Durable Objects, WebSockets, SQLite, and XSS defense, see:
+- [docs/owasp-top-20-security-evaluation.md](owasp-top-20-security-evaluation.md)
 - [docs/owasp-security-analysis.md](owasp-security-analysis.md)
 

@@ -942,7 +942,11 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Content-Type": "application/json"
+  "Content-Type": "application/json",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
 };
 
 /**
@@ -1147,13 +1151,25 @@ export class DhayamRoom extends DurableObject {
 
   async webSocketMessage(ws, message) {
     try {
+      if (typeof message === "string" && message.length > 4096) {
+        ws.send(JSON.stringify({ type: "ERROR", message: "Payload too large." }));
+        return;
+      }
       const text = typeof message === "string" ? message : new TextDecoder().decode(message);
+      if (text.length > 4096) {
+        ws.send(JSON.stringify({ type: "ERROR", message: "Payload too large." }));
+        return;
+      }
       const data = JSON.parse(text);
       const attachment = ws.deserializeAttachment() || {};
 
       if (data.type === "CLAIM_SEAT") {
         const seat = Number(data.seat);
-        const name = (data.name || "").trim().slice(0, 15);
+        if (isNaN(seat) || seat < 0 || seat >= this.targetPlayers) {
+          ws.send(JSON.stringify({ type: "ERROR", message: "Invalid seat number." }));
+          return;
+        }
+        const name = String(data.name || "").trim().slice(0, 15).replace(/[<>"'&]/g, "");
         const token = data.token || attachment.token || crypto.randomUUID();
 
         // 1. Reconnect with matching token
@@ -1237,7 +1253,9 @@ export class DhayamRoom extends DurableObject {
 
       else if (data.type === "ROLL") {
         const seat = attachment.seat;
-        if (seat === undefined || seat === null || this.engine.current !== seat || this.engine.phase !== "roll") {
+        const claim = seat !== null && seat !== undefined ? this.claimedSeats[seat] : null;
+        const tokenValid = Boolean(claim && attachment.token && claim.token === attachment.token);
+        if (seat === undefined || seat === null || !tokenValid || this.engine.current !== seat || this.engine.phase !== "roll") {
           ws.send(JSON.stringify({
             type: "ERROR",
             message: this.engine.current !== seat ? "Not your turn to roll." : "Cannot roll during " + this.engine.phase + " phase."
@@ -1291,7 +1309,9 @@ export class DhayamRoom extends DurableObject {
 
       else if (data.type === "MOVE") {
         const seat = attachment.seat;
-        if (seat === undefined || seat === null || this.engine.current !== seat || this.engine.phase !== "move") {
+        const claim = seat !== null && seat !== undefined ? this.claimedSeats[seat] : null;
+        const tokenValid = Boolean(claim && attachment.token && claim.token === attachment.token);
+        if (seat === undefined || seat === null || !tokenValid || this.engine.current !== seat || this.engine.phase !== "move") {
           ws.send(JSON.stringify({
             type: "ERROR",
             message: this.engine.current !== seat ? "Not your turn to move." : "Game is in " + this.engine.phase + " phase."
@@ -1344,7 +1364,9 @@ export class DhayamRoom extends DurableObject {
 
       else if (data.type === "PASS") {
         const seat = attachment.seat;
-        if (seat === undefined || seat === null || this.engine.current !== seat) {
+        const claim = seat !== null && seat !== undefined ? this.claimedSeats[seat] : null;
+        const tokenValid = Boolean(claim && attachment.token && claim.token === attachment.token);
+        if (seat === undefined || seat === null || !tokenValid || this.engine.current !== seat) {
           ws.send(JSON.stringify({
             type: "ERROR",
             message: "Not your turn."
@@ -1469,6 +1491,13 @@ export default {
       }
 
       if (request.method === "POST") {
+        const contentLength = parseInt(request.headers.get("content-length") || "0", 10);
+        if (contentLength > 65536) {
+          return new Response(
+            JSON.stringify({ jsonrpc: "2.0", error: { code: -32600, message: "Payload too large (max 64KB)" } }),
+            { status: 413, headers: CORS_HEADERS }
+          );
+        }
         try {
           const body = await request.json();
           const method = body.method;
