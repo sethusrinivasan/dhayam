@@ -88,7 +88,7 @@ An automated workflow is included in [`.github/workflows/cloudflare.yml`](file:/
    - **Build output directory**: `site`
 4. Click **Save and Deploy**.
 
-The included [`functions/mcp.js`](file:///home/home/github/dhayam/functions/mcp.js) automatically enables the `/mcp` edge endpoint at `https://<your-project>.pages.dev/mcp`.
+The included [`cloudflare/functions/mcp.js`](file:///home/home/github/dhayam/cloudflare/functions/mcp.js) automatically enables the `/mcp` edge endpoint when deploying with Cloudflare Pages.
 
 ---
 
