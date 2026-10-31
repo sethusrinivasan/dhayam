@@ -12,6 +12,7 @@ TARGET_FILE="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "${TARGET_FILE}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SITE_DIR="${ROOT_DIR}/site"
+cd "${ROOT_DIR}"
 
 # Colors
 GREEN='\033[0;32m'
@@ -42,8 +43,9 @@ check "Checking site/index.html exists" "[ -s '${SITE_DIR}/index.html' ]"
 check "Checking modular CSS files (>= 8 files)" "[ \$(ls -1 '${SITE_DIR}/css/'*.css 2>/dev/null | wc -l) -ge 8 ]"
 check "Checking modular JS files (>= 12 files)" "[ \$(ls -1 '${SITE_DIR}/js/'*.js 2>/dev/null | wc -l) -ge 12 ]"
 check "Checking board definition JSON exists" "[ -s '${SITE_DIR}/board-definition-v1-candidate.json' ]"
+check "JavaScript syntax integrity (node --check site/js/*.js)" "for f in '${SITE_DIR}/js/'*.js; do node --check \"\$f\" >/dev/null 2>&1 || exit 1; done"
 
-# 2. Browser Headless Verification (Headless Chrome)
+# 2. Browser Headless Verification (Headless Chrome + CDP Runtime Verification)
 if command -v google-chrome >/dev/null 2>&1; then
     CHROME_OUTPUT=$(google-chrome --headless --disable-gpu --virtual-time-budget=2000 --dump-dom "file://${SITE_DIR}/index.html" 2>&1)
     
@@ -51,7 +53,7 @@ if command -v google-chrome >/dev/null 2>&1; then
     check "Board element #board rendered in DOM" "echo '${CHROME_OUTPUT}' | grep -q 'id=\"board\"'"
     check "Dice elements #dieA and #dieB rendered" "echo '${CHROME_OUTPUT}' | grep -q 'id=\"dieA\"' && echo '${CHROME_OUTPUT}' | grep -q 'id=\"dieB\"'"
     check "Family table #players container rendered" "echo '${CHROME_OUTPUT}' | grep -q 'id=\"players\"'"
-    check "Zero JavaScript runtime errors" "! (echo '${CHROME_OUTPUT}' | grep -iE 'uncaught|syntaxerror|typeerror')"
+    check "Headless Chrome CDP zero runtime exceptions & interactive UI" "npx tsx --test test/frontend_integrity.test.ts"
 else
     echo "  (Skipping headless Chrome checks: google-chrome not found in PATH)"
 fi

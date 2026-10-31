@@ -575,7 +575,7 @@
               : isWaitingPeer
                 ? "Waiting for " + p.name + " to " + (game.phase === "roll" ? "roll dice" : "make a move") + "…"
                 : game.phase === "roll"
-                  ? "Roll the தாயக்கட்டை (dice)" +
+                  ? "Roll the Dayakattai dice" +
                     (game.history.length
                       ? " · bonus throw! Follow the glowing route around the board."
                       : " · Follow the glowing route around the board.")

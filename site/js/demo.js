@@ -354,7 +354,6 @@
               animateCapturedPiecesToTable(capSquare, move.test.targets);
             }
             displayFloatingEmote("😎", player.name);
-            const victim = move.test.targets[0]?.other;
             if (victim) {
               setTimeout(() => displayFloatingEmote("😱", victim.name), 450);
             }

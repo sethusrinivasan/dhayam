@@ -1,0 +1,40 @@
+name: Production Liveness & E2E Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run every 6 hours to continuously validate live production health
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-production:
+    name: Validate Live URLs & Cloudflare E2E
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify JavaScript syntax & browser integrity
+        run: npm test
+
+      - name: Validate GitHub Pages & Cloudflare Liveness and E2E
+        run: node scripts/e2e-live-check.js
+        env:
+          CLOUDFLARE_URL: "https://dhayam.cancun.workers.dev"
+          GITHUB_PAGES_URL: "https://sethusrinivasan.github.io/dhayam/"
