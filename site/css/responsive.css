@@ -1,0 +1,132 @@
+          grid-template-columns: minmax(0, 1fr) 270px;
+          gap: 16px;
+        }
+        .die {
+          --die-size: 72px;
+          --cube-size: 62px;
+          --cube-depth: 31px;
+          --cube-inset: 5px;
+        }
+        .dice {
+          gap: 17px;
+        }
+      }
+      @media (max-width: 860px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .side {
+          grid-template-columns: minmax(0, 1.2fr) minmax(230px, 0.8fr);
+        }
+        .boardcard {
+          max-width: 720px;
+          margin: auto;
+        }
+        .controls {
+          max-width: 720px;
+          margin: 14px auto;
+        }
+      }
+      @media (max-width: 680px) {
+        .top {
+          margin-bottom: 15px;
+        }
+        .side {
+          grid-template-columns: 1fr;
+        }
+        .dice {
+          justify-content: flex-start;
+          gap: 24px;
+        }
+      }
+      @media (max-width: 520px) {
+        .shell {
+          padding: 13px 9px;
+        }
+        .brand h1 {
+          font-size: 25px;
+        }
+        .topnav {
+          gap: 6px;
+        }
+        .pill {
+          padding: 9px;
+          font-size: 11px;
+        }
+        .boardcard {
+          border-width: 4px;
+          border-radius: 19px;
+          padding: 8px;
+        }
+        .board {
+          gap: 2px;
+          padding: 2px;
+          border-width: 2px;
+        }
+        .side {
+          grid-template-columns: 1fr;
+        }
+        .controls {
+          grid-template-columns: 1fr;
+        }
+        .controlactions {
+          grid-template-columns: 1fr 1fr;
+          min-width: 0;
+        }
+        .controlactions #actionBtn {
+          grid-column: span 2;
+        }
+        .movechoice {
+          grid-column: span 2;
+        }
+        .die {
+          --die-size: 72px;
+          --cube-size: 62px;
+          --cube-depth: 31px;
+          --cube-inset: 5px;
+        }
+        .dice {
+          justify-content: center;
+          gap: 20px;
+          margin-block: 8px 18px;
+        }
+        .btn {
+          padding: 10px 12px;
+        }
+        #actionBtn {
+          min-height: 48px;
+        }
+        .direction {
+          font-size: 17px;
+        }
+        .demobar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .demoactions {
+          width: 100%;
+        }
+        .demobtn {
+          flex: 1;
+        }
+        .cell.legal:after {
+          display: none;
+        }
+        .token {
+          border-width: 1px;
+        }
+        .panel {
+          padding: 13px;
+        }
+        .splashfacts {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *:before,
+        *:after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
