@@ -1281,7 +1281,7 @@ function updateMultiplayerBadge() {
           leaveBtn.onclick = () => {
             leaveMultiplayer();
             closeModal();
-            newGame(4);
+            newGame(2, 1);
           };
         }
       }, 40);

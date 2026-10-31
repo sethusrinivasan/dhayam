@@ -686,5 +686,5 @@
       }
 
       function exitGuidedDemo() {
-        newGame(4);
+        newGame(2, 1);
       }

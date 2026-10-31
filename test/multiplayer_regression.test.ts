@@ -686,4 +686,33 @@ test("capture splash triggers with subtle UI and hides verbose statusText", () =
   assert.equal(statusText, "", "Verbose description text note must be suppressed");
 });
 
+test("default game experience initializes Solo vs Computer (2 players, 1 computer opponent)", () => {
+  function createDefaultGame(count = 2, computerCount = 1) {
+    const seats = count === 2 ? ["N", "S"] : ["N", "E", "S"];
+    const players = seats.map((seat, i) => ({
+      id: "P" + i,
+      name: computerCount ? (i === 0 ? "You" : "Leo") : (i === 0 ? "Maya" : "Leo"),
+      computer: i > 0 && i <= computerCount,
+      seat,
+      pieces: Array.from({ length: 6 }, (_, j) => ({ id: `P${i}-${j}`, progress: -1 }))
+    }));
+    return {
+      players,
+      computerCount,
+      mode: computerCount ? "solo" : "local",
+      seats
+    };
+  }
+
+  const defaultGame = createDefaultGame();
+  assert.equal(defaultGame.players.length, 2, "Default match must have 2 players");
+  assert.equal(defaultGame.computerCount, 1, "Default match must have 1 computer opponent");
+  assert.equal(defaultGame.players[0].name, "You", "Human player must be 'You'");
+  assert.equal(defaultGame.players[0].computer, false, "Human player must not be computer");
+  assert.equal(defaultGame.players[1].computer, true, "Opponent must be computer");
+  assert.equal(defaultGame.mode, "solo", "Mode must be solo");
+  assert.deepEqual(defaultGame.seats, ["N", "S"], "2-player seating must be North and South");
+});
+
+
 

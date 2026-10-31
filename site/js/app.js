@@ -6,7 +6,7 @@
  */
 "use strict";
 
-      function newGame(count = 4, computerCount = 0) {
+      function newGame(count = 2, computerCount = 1) {
         stopDemo();
         if (rollTimer) clearTimeout(rollTimer);
         if (computerTimer) clearTimeout(computerTimer);
@@ -296,12 +296,12 @@
             '<div class="ng-pane" id="paneStartGame">' +
               '<label for="ngMode">Game Mode</label>' +
               '<select id="ngMode">' +
-                '<option value="online" selected>🌐 Online Multiplayer (P2P Room + QR Code)</option>' +
-                '<option value="solo">🤖 Solo vs Computer</option>' +
+                '<option value="solo" selected>🤖 Solo vs Computer</option>' +
+                '<option value="online">🌐 Online Multiplayer (P2P Room + QR Code)</option>' +
                 '<option value="local">👥 Local Pass & Play</option>' +
               '</select>' +
 
-              '<div id="ngOnlineHelp" class="ng-help-box">' +
+              '<div id="ngOnlineHelp" class="ng-help-box" style="display:none;">' +
                 '<p style="margin:0;font-size:0.84rem;color:#f3dfc6;">' +
                   'Generates a unique <strong>Game Code & QR Code</strong>. Opponents scan the QR code to <strong>auto-join and pick an unassigned player</strong>!' +
                 '</p>' +
@@ -314,18 +314,18 @@
                 '<option value="4">4 Players</option>' +
               '</select>' +
 
-              '<div id="ngSoloOpts" style="display:none;">' +
+              '<div id="ngSoloOpts" style="display:block;">' +
                 '<label for="ngAiCount">Computer Opponents</label>' +
                 '<select id="ngAiCount">' +
-                  '<option value="1">1 Computer</option>' +
+                  '<option value="1" selected>1 Computer</option>' +
                   '<option value="2">2 Computers</option>' +
-                  '<option value="3" selected>3 Computers</option>' +
+                  '<option value="3">3 Computers</option>' +
                 '</select>' +
               '</div>' +
 
               '<div class="ng-actions" style="margin-top:16px;">' +
                 '<button type="button" class="btn primary" id="btnConfirmStart" style="width:100%;padding:11px;font-size:0.95rem;font-weight:700;">' +
-                  '✨ Start Game & Get QR Code' +
+                  '🤖 Start Solo Match' +
                 '</button>' +
               '</div>' +
             '</div>' +
@@ -355,6 +355,8 @@
           const modeSelect = $("ngMode");
           const soloOpts = $("ngSoloOpts");
           const onlineHelp = $("ngOnlineHelp");
+          const playersSelect = $("ngPlayers");
+          const aiCountSelect = $("ngAiCount");
           const btnStart = $("btnConfirmStart");
           const btnJoin = $("btnConfirmJoin");
 
@@ -371,6 +373,21 @@
               paneJoin.style.display = "block";
               paneStart.style.display = "none";
               $("ngJoinCode")?.focus();
+            };
+          }
+
+          if (playersSelect && aiCountSelect) {
+            playersSelect.onchange = () => {
+              const p = Number(playersSelect.value);
+              if (modeSelect?.value === "solo") {
+                aiCountSelect.value = String(Math.max(1, p - 1));
+              }
+            };
+            aiCountSelect.onchange = () => {
+              const ai = Number(aiCountSelect.value);
+              if (modeSelect?.value === "solo") {
+                playersSelect.value = String(ai + 1);
+              }
             };
           }
 
@@ -392,7 +409,7 @@
 
           if (btnStart) {
             btnStart.onclick = () => {
-              const mode = modeSelect?.value || "online";
+              const mode = modeSelect?.value || "solo";
               const players = Number($("ngPlayers")?.value || 2);
               closeModal();
               if (mode === "online") {
@@ -656,7 +673,7 @@
       refreshVoices();
       if ("speechSynthesis" in window)
         speechSynthesis.addEventListener("voiceschanged", refreshVoices);
-      newGame(4);
+      newGame(2, 1);
       if (typeof initMultiplayerFromUrl === "function") {
         initMultiplayerFromUrl();
       }
