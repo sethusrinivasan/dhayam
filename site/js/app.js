@@ -6,6 +6,77 @@
  */
 "use strict";
 
+      /**
+       * Formats elapsed seconds into MM:SS or HH:MM:SS with second-level granularity.
+       * @param {number} totalSeconds - Total integer seconds elapsed.
+       * @returns {string} Formatted MM:SS or HH:MM:SS string.
+       */
+      function formatGameTimer(totalSeconds) {
+        const sec = Math.max(0, Math.floor(totalSeconds));
+        const hours = Math.floor(sec / 3600);
+        const mins = Math.floor((sec % 3600) / 60);
+        const secs = sec % 60;
+        const mm = String(mins).padStart(2, "0");
+        const ss = String(secs).padStart(2, "0");
+        if (hours > 0) {
+          const hh = String(hours).padStart(2, "0");
+          return `${hh}:${mm}:${ss}`;
+        }
+        return `${mm}:${ss}`;
+      }
+
+      /**
+       * Updates the liveliness timer pill every 30 seconds.
+       * Provides second-level granularity for checking browser page & script liveliness,
+       * flashes a pulse highlight to confirm event-loop responsiveness,
+       * and appends a HEARTBEAT diagnostic event to FlightRecorder.
+       */
+      function updateGameTimer() {
+        const el = $("gameTimer");
+        if (!el) return;
+        const elapsedSec = Math.floor((Date.now() - gameStartTime) / 1000);
+        const formatted = formatGameTimer(elapsedSec);
+        el.textContent = "⏱️ " + formatted;
+        el.setAttribute("aria-label", "Game liveliness timer: " + formatted + " elapsed");
+
+        // Visual heartbeat pulse confirming JavaScript event-loop liveliness
+        el.classList.remove("pulse");
+        void el.offsetWidth;
+        el.classList.add("pulse");
+        setTimeout(() => {
+          if (el) el.classList.remove("pulse");
+        }, 800);
+
+        if (typeof FlightRecorder !== "undefined" && typeof FlightRecorder.record === "function") {
+          FlightRecorder.record("HEARTBEAT", {
+            elapsedSeconds: elapsedSec,
+            formatted,
+            turn: game ? game.turn : null,
+            phase: game ? game.phase : null,
+            current: game ? game.current : null,
+            demo: Boolean(demo),
+            multiplayer: Boolean(multiplayer && multiplayer.active),
+          });
+        }
+      }
+
+      /**
+       * Resets the game liveliness timer when a new match begins or on page load.
+       */
+      function resetGameTimer() {
+        gameStartTime = Date.now();
+        const el = $("gameTimer");
+        if (el) {
+          el.textContent = "⏱️ 00:00";
+          el.setAttribute("aria-label", "Game liveliness timer: 00:00 elapsed");
+          el.classList.remove("pulse");
+        }
+        if (gameTimerInterval) {
+          clearInterval(gameTimerInterval);
+        }
+        gameTimerInterval = setInterval(updateGameTimer, GAME_TIMER_INTERVAL_MS);
+      }
+
       function newGame(count = 2, computerCount = 1) {
         stopDemo();
         if (rollTimer) clearTimeout(rollTimer);
@@ -93,6 +164,7 @@
         }
         selectedRoll = 0;
         selectedPieceId = null;
+        resetGameTimer();
         render();
       }
 

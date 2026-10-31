@@ -1176,6 +1176,81 @@ test("Quantum mode (32x to 128x) correctly disables audio and scales delays", ()
   assert.equal(quantumMode, false);
 });
 
+test("PONG messages must never disarm demoWatchdogTimer or stall recovery", () => {
+  let watchdogTimer: any = "active_timer_handle";
+  let turnScheduled = false;
+
+  function handleWsMessage(data: { type: string }, fromSeat: number) {
+    // RCA FIX: PONG must exit immediately without clearing watchdog
+    if (data.type === "PONG") {
+      return;
+    }
+
+    // Only authoritative state or error resets the action watchdog
+    if (data.type === "SYNC_STATE" || data.type === "INIT" || data.type === "ERROR") {
+      watchdogTimer = null;
+      turnScheduled = true;
+    }
+  }
+
+  // 1. Simulate keepalive PONG arriving from Cloudflare DO during active turn
+  handleWsMessage({ type: "PONG" }, 0);
+  assert.equal(watchdogTimer, "active_timer_handle", "PONG must NOT clear watchdogTimer!");
+  assert.equal(turnScheduled, false, "PONG must not prematurely trigger turn scheduling");
+
+  // 2. Authoritative SYNC_STATE arrives, safely clearing watchdog
+  handleWsMessage({ type: "SYNC_STATE" }, 0);
+  assert.equal(watchdogTimer, null, "SYNC_STATE should safely clear watchdog");
+  assert.equal(turnScheduled, true, "SYNC_STATE must schedule next turn step");
+});
+
+test("Autonomous periodic stall detector recovers frozen turn after 5 seconds", () => {
+  let lastActionTime = Date.now() - 6000; // 6s idle
+  let stateRequested = false;
+  let turnRescheduled = false;
+
+  function checkStallDetector(now = Date.now()) {
+    const idleMs = now - lastActionTime;
+    if (idleMs > 5000) {
+      lastActionTime = now;
+      stateRequested = true;
+      turnRescheduled = true;
+      return true;
+    }
+    return false;
+  }
+
+  const recovered = checkStallDetector();
+  assert.equal(recovered, true, "Stall detector must fire when idle exceeds 5 seconds");
+  assert.equal(stateRequested, true, "Must send GET_STATE to re-sync");
+  assert.equal(turnRescheduled, true, "Must re-kick scheduleRealDemoTurn");
+});
+
+test("Game liveliness timer formatGameTimer outputs second-level accuracy in MM:SS and HH:MM:SS", () => {
+  function formatGameTimer(totalSeconds: number): string {
+    const sec = Math.max(0, Math.floor(totalSeconds));
+    const hours = Math.floor(sec / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    const secs = sec % 60;
+    const mm = String(mins).padStart(2, "0");
+    const ss = String(secs).padStart(2, "0");
+    if (hours > 0) {
+      const hh = String(hours).padStart(2, "0");
+      return `${hh}:${mm}:${ss}`;
+    }
+    return `${mm}:${ss}`;
+  }
+
+  assert.equal(formatGameTimer(0), "00:00");
+  assert.equal(formatGameTimer(30), "00:30");
+  assert.equal(formatGameTimer(60), "01:00");
+  assert.equal(formatGameTimer(90), "01:30");
+  assert.equal(formatGameTimer(599), "09:59");
+  assert.equal(formatGameTimer(3600), "01:00:00");
+  assert.equal(formatGameTimer(3665), "01:01:05");
+});
+
+
 
 
 

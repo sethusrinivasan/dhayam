@@ -156,6 +156,29 @@ button:disabled {
   border-radius: 10px;
 }
 
+/* Liveliness Timer Pill: Displays match uptime with second-level granularity, updating every 30s */
+.pill.timer-pill {
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+  user-select: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: clamp(10px, 1.3vh, 12px);
+  padding: clamp(5px, 0.8vh, 8px) clamp(7px, 1vw, 10px);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #ffeedb;
+  border-color: #ffffff30;
+  transition: background 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+}
+
+/* Subtle heartbeat pulse indicating successful 30-second tick liveliness */
+.pill.timer-pill.pulse {
+  background: #f59e0b33;
+  border-color: #f59e0b88;
+  color: #ffe082;
+}
+
 .footer {
   flex: 0 0 auto;
   font-size: clamp(9px, 1.1vh, 10.5px);

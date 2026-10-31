@@ -84,6 +84,7 @@ npm test              # Runs 48 unit, regression, and MCP tests
 
 ## 📚 Documentation & Technical Guides
 
+* 📜 **[Project Milestones, Architecture & RCA Journey](docs/milestones-and-fixes.md)** — Concise one-page provenance summarizing project origin, step-by-step milestones, Turn 22 freeze RCA, and complete resilience overhaul.
 * 🏛️ **[Architecture & Design](docs/architecture.md)** — Modular design, zero runtime dependencies, and Cloudflare Edge Durable Objects.
 * 🔄 **[Dev, Test, Debug & Staging Workflow](docs/development-workflow.md)** — Full development cycle, Flight Recorder black box debugging, automated staging gate, and production promotion.
 * ☁️ **[Hosting & Deployment](docs/cloudflare-deployment.md)** — Zero-cost Cloudflare Free Tier hosting setup.

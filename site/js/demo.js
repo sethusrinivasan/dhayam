@@ -185,10 +185,12 @@
         if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
         if (demoWatchdogTimer) clearTimeout(demoWatchdogTimer);
         if (demoKeepAliveTimer) clearInterval(demoKeepAliveTimer);
+        if (realDemoStallDetector) clearInterval(realDemoStallDetector);
         demoTimer = null;
         demoSpeechTimer = null;
         demoWatchdogTimer = null;
         demoKeepAliveTimer = null;
+        realDemoStallDetector = null;
         demoSpeechId++;
         demoWaitingForSpeech = false;
         if ("speechSynthesis" in window) speechSynthesis.cancel();
@@ -594,11 +596,21 @@
           demoWebSockets = [];
 
           function handleRealDemoWsMessage(data, fromSeat) {
-            if (!demo || demoMode !== "multiplayer-real") return;
-            if (demoWatchdogTimer) {
-              clearTimeout(demoWatchdogTimer);
-              demoWatchdogTimer = null;
+            if (!demo || demoMode !== "multiplayer-real") {
+              return;
             }
+
+            // CRITICAL RCA FIX: Keepalive PONG messages from the Cloudflare Durable Object
+            // must NEVER disarm the turn watchdog or reset timers. In the observed Turn 22 stall,
+            // a 20s PONG arrived shortly after a bonus roll, cleared demoWatchdogTimer,
+            // and left the game permanently frozen waiting for a server event.
+            if (data.type === "PONG") {
+              if (typeof FlightRecorder !== "undefined") {
+                FlightRecorder.record("PONG", { seat: fromSeat });
+              }
+              return;
+            }
+
             if (typeof FlightRecorder !== "undefined") {
               FlightRecorder.record("DEMO_WS_RECV", {
                 seat: fromSeat,
@@ -608,10 +620,30 @@
               });
             }
 
+            // Only clear the action watchdog when receiving authoritative state updates
+            // (INIT, ROOM_STATE, SYNC_STATE) or an ERROR that triggers turn rescheduling.
+            // Never clear watchdog on presentation events (ROLL_START, MOVE_START, EMOTE, PRESENCE).
+            if (
+              data.type === "INIT" ||
+              data.type === "ROOM_STATE" ||
+              data.type === "SYNC_STATE" ||
+              data.type === "ERROR"
+            ) {
+              if (demoWatchdogTimer) {
+                clearTimeout(demoWatchdogTimer);
+                demoWatchdogTimer = null;
+              }
+              lastRealDemoActionTime = Date.now();
+            }
+
             if (data.type === "INIT" || data.type === "ROOM_STATE" || data.type === "SYNC_STATE") {
-              if (data.game) applyRemoteState(data.game, data.audit);
+              if (data.game) {
+                applyRemoteState(data.game, data.audit);
+              }
               multiplayer.status = "connected";
-              if (data.seats) multiplayer.claimedSeats = data.seats;
+              if (data.seats) {
+                multiplayer.claimedSeats = data.seats;
+              }
               updateMultiplayerBadge();
               updateDemoControls();
               scheduleRealDemoTurn();
@@ -641,7 +673,9 @@
                 setTimeout(() => displayFloatingEmote("🏆", data.winner), 500);
               }
             } else if (data.type === "PRESENCE" || data.type === "ROOM_UPDATE") {
-              if (data.seats) multiplayer.claimedSeats = data.seats;
+              if (data.seats) {
+                multiplayer.claimedSeats = data.seats;
+              }
               updateMultiplayerBadge();
             } else if (data.type === "EMOTE") {
               if (typeof displayFloatingEmote === "function") {
@@ -721,6 +755,7 @@
             createAndWireSocket(s);
           }
 
+          // Fan out keepalive PINGs across all active sockets to prevent edge idle timeouts
           if (demoKeepAliveTimer) clearInterval(demoKeepAliveTimer);
           demoKeepAliveTimer = setInterval(() => {
             if (!demo || demoMode !== "multiplayer-real") {
@@ -728,10 +763,42 @@
               demoKeepAliveTimer = null;
               return;
             }
-            if (demoWebSockets[0] && demoWebSockets[0].readyState === WebSocket.OPEN) {
-              demoWebSockets[0].send(JSON.stringify({ type: "PING" }));
-            }
+            demoWebSockets.forEach((ws) => {
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                try {
+                  ws.send(JSON.stringify({ type: "PING" }));
+                } catch (e) {}
+              }
+            });
           }, 20000);
+
+          // Autonomous periodic stall detector (heartbeat guard):
+          // If no turn progression occurs for >5 seconds, query DO for state and re-kick turn
+          if (realDemoStallDetector) clearInterval(realDemoStallDetector);
+          lastRealDemoActionTime = Date.now();
+          realDemoStallDetector = setInterval(() => {
+            if (!demo || demoMode !== "multiplayer-real" || demoPaused || !game || game.phase === "done") {
+              return;
+            }
+            const idleMs = Date.now() - lastRealDemoActionTime;
+            if (idleMs > 5000) {
+              lastRealDemoActionTime = Date.now();
+              if (typeof FlightRecorder !== "undefined") {
+                FlightRecorder.record("DEMO_STALL_RECOVERY", {
+                  idleMs,
+                  turn: game.turn,
+                  phase: game.phase,
+                  current: game.current,
+                });
+              }
+              try {
+                if (demoWebSockets[0] && demoWebSockets[0].readyState === WebSocket.OPEN) {
+                  demoWebSockets[0].send(JSON.stringify({ type: "GET_STATE" }));
+                }
+              } catch (e) {}
+              scheduleRealDemoTurn();
+            }
+          }, 3000);
 
         } catch (err) {
           console.warn("Error starting real online demo:", err);
@@ -745,7 +812,9 @@
       function scheduleRealDemoTurn() {
         if (!demo || demoMode !== "multiplayer-real" || demoPaused || !game || game.phase === "done") return;
         if (demoTimer) clearTimeout(demoTimer);
-        demoTimer = setTimeout(runRealDemoTurnStep, scaledDemoDelay(2200));
+        // Ensure minimum WAN roundtrip pacing floor (160ms) to give Cloudflare DO SQLite storage time to settle
+        const delay = Math.max(160, scaledDemoDelay(2200));
+        demoTimer = setTimeout(runRealDemoTurnStep, delay);
       }
 
       async function runRealDemoTurnStep() {

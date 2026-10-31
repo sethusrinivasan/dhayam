@@ -40,13 +40,21 @@
         computerTimer = null,
         commentaryUntil = 0,
         audit = null,
-        availableVoices = [];
+        availableVoices = [],
+        // Game Liveliness Timer: tracks session/match uptime updated every 30s
+        gameStartTime = Date.now(),
+        gameTimerInterval = null,
+        // Real Demo Liveliness: tracks last progress timestamp and recurring stall detector
+        lastRealDemoActionTime = Date.now(),
+        realDemoStallDetector = null;
       const DEMO_DELAY = 5000,
         MOVE_STEP_DELAY = 650,
         SUPER_DEMO_SPEED = 3,
         QUANTUM_DEMO_SPEED = 32,
         MAX_DEMO_SPEED = 128,
-        MIN_SUPER_MOVE_DELAY = 10;
+        MIN_SUPER_MOVE_DELAY = 10,
+        // Page liveliness heartbeat cadence: updates every 30 seconds
+        GAME_TIMER_INTERVAL_MS = 30000;
 
       function active() {
         return game.players[game.current];

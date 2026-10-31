@@ -200,6 +200,8 @@
       if (ev.msg) parts.push("msg=" + ev.msg);
       if (ev.message && !ev.msg) parts.push("msg=" + ev.message);
       if (ev.status) parts.push("status=" + ev.status);
+      if (ev.formatted) parts.push("uptime=" + ev.formatted);
+      if (ev.idleMs !== undefined) parts.push("idleMs=" + ev.idleMs);
       if (ev.error) parts.push("err=" + ev.error);
       return parts.join(" ");
     });

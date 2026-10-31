@@ -175,6 +175,8 @@ async function runBrowserE2E(targetUrl) {
           hasDieA: !!document.getElementById('dieA'),
           hasDieB: !!document.getElementById('dieB'),
           hasQuantum: !!document.getElementById('demoQuantumSpeed'),
+          hasGameTimer: !!document.getElementById('gameTimer'),
+          gameTimerText: document.getElementById('gameTimer')?.textContent?.trim(),
           speedMax: document.getElementById('demoSpeed')?.getAttribute('max'),
           supports8
         };
@@ -212,7 +214,11 @@ async function runBrowserE2E(targetUrl) {
       console.error("  ✗ Stale deployment detected: 8 players match creation failed in newGame(8, 0)");
       return false;
     }
-    console.log("  ✓ Feature freshness verified (8 players, Quantum 32×, 128× speed slider present)");
+    if (!state.hasGameTimer) {
+      console.error("  ✗ Stale deployment detected: missing game liveliness timer (#gameTimer)");
+      return false;
+    }
+    console.log(`  ✓ Feature freshness verified (8 players, Quantum 32×, 128× speed slider, Game Timer: "${state.gameTimerText}")`);
 
     if (!state.actionBtnVisible || state.actionBtnDisabled) {
       console.error(`  ✗ Action button not ready (visible: ${state.actionBtnVisible}, disabled: ${state.actionBtnDisabled})`);
