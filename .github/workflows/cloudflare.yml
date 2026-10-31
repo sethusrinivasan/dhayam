@@ -1,34 +1,159 @@
-name: Deploy to Cloudflare (Frugal CDN & MCP)
+name: Deploy to Cloudflare (Staging → Production Gate)
+
+# ─── Strategy ──────────────────────────────────────────────────────────────
+#
+#  Every push to `main`:
+#    1. Deploy to STAGING (dhayam-staging.cancun.workers.dev)
+#    2. Run HTTP liveness + headless Chrome E2E against STAGING
+#    3. Only if staging passes → deploy to PRODUCTION (dhayam.cancun.workers.dev)
+#    4. Run final smoke check against PRODUCTION
+#
+#  This prevents any coding-agent quick-fix from silently breaking prod.
+#  Staging URL stays permanently live for manual QA.
+#
+# ───────────────────────────────────────────────────────────────────────────
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      force_production:
+        description: "Force deploy directly to production (skip staging gate)"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  deployments: write
+
+concurrency:
+  group: cloudflare-deploy
+  cancel-in-progress: false  # never cancel an in-flight promotion
 
 jobs:
-  deploy-cloudflare:
-    name: Deploy Cloudflare Worker & Static Assets
+  # ─── Job 1: Deploy to Staging ───────────────────────────────────────────
+  deploy-staging:
+    name: 🚧 Deploy to Staging
     runs-on: ubuntu-latest
+    outputs:
+      has_token: ${{ steps.check_secrets.outputs.has_token }}
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Verify secrets configured
+      - name: Verify Cloudflare secrets
         id: check_secrets
         run: |
           if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
             echo "has_token=true" >> $GITHUB_OUTPUT
           else
             echo "has_token=false" >> $GITHUB_OUTPUT
-            echo "::notice::CLOUDFLARE_API_TOKEN secret not found. Skipping Cloudflare deployment. See docs/cloudflare-deployment.md to configure."
+            echo "::notice::CLOUDFLARE_API_TOKEN not configured — skipping Cloudflare deploy."
           fi
 
-      - name: Deploy with Wrangler
+      - name: 🚧 Deploy to Staging (dhayam-staging)
         if: steps.check_secrets.outputs.has_token == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env staging
+
+  # ─── Job 2: Staging Validation Gate ─────────────────────────────────────
+  validate-staging:
+    name: 🧪 Staging E2E Gate
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit + integrity tests
+        run: npm test
+
+      - name: 🧪 E2E liveness check against STAGING
+        run: node scripts/e2e-live-check.js
+        env:
+          CLOUDFLARE_URL: "https://dhayam-staging.cancun.workers.dev"
+          GITHUB_PAGES_URL: "https://sethusrinivasan.github.io/dhayam/"
+          E2E_SKIP_GITHUB_PAGES: "true"
+
+      - name: ✅ Staging gate passed
+        run: echo "::notice::✅ Staging E2E passed — safe to promote to production."
+
+  # ─── Job 3: Promote to Production ────────────────────────────────────────
+  deploy-production:
+    name: 🚀 Promote to Production
+    needs: [deploy-staging, validate-staging]
+    runs-on: ubuntu-latest
+    # Promote only when staging E2E succeeded, OR on a forced manual dispatch
+    if: |
+      always() && (
+        needs.validate-staging.result == 'success' ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.force_production == 'true')
+      )
+    environment:
+      name: production
+      url: https://dhayam.cancun.workers.dev
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify Cloudflare secrets
+        id: check_secrets
+        run: |
+          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "has_token=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_token=false" >> $GITHUB_OUTPUT
+            echo "::notice::CLOUDFLARE_API_TOKEN not configured — skipping production deploy."
+          fi
+
+      - name: 🚀 Deploy to Production (dhayam)
+        if: steps.check_secrets.outputs.has_token == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+
+  # ─── Job 4: Production Smoke Check ───────────────────────────────────────
+  smoke-production:
+    name: 💨 Production Smoke Check
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    if: needs.deploy-production.result == 'success'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: 💨 Production smoke check
+        run: node scripts/e2e-live-check.js
+        env:
+          CLOUDFLARE_URL: "https://dhayam.cancun.workers.dev"
+          GITHUB_PAGES_URL: "https://sethusrinivasan.github.io/dhayam/"
+
+      - name: ✅ Production healthy
+        run: echo "::notice::✅ Production is healthy at https://dhayam.cancun.workers.dev"

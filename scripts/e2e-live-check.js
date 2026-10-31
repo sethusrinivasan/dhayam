@@ -246,8 +246,13 @@ async function runBrowserE2E(targetUrl) {
 }
 
 async function main() {
+  const skipGhPages = process.env.E2E_SKIP_GITHUB_PAGES === "true";
+  const targetLabel = CLOUDFLARE_URL.includes("staging") ? "STAGING" : "PRODUCTION";
+
   console.log("==================================================================");
-  console.log(" Dhayam Production Liveness & E2E Verification Suite");
+  console.log(` Dhayam ${targetLabel} Liveness & E2E Verification Suite`);
+  console.log(`  Cloudflare URL : ${CLOUDFLARE_URL}`);
+  if (!skipGhPages) console.log(`  GitHub Pages   : ${GITHUB_PAGES_URL}`);
   console.log("==================================================================");
 
   let allPassed = true;
@@ -256,7 +261,13 @@ async function main() {
   const cfRootOk = await checkLiveness(CLOUDFLARE_URL, "Cloudflare Worker Root", (b) => b.includes("<title>Dhayam</title>"));
   const cfHealthOk = await checkLiveness(`${CLOUDFLARE_URL}/health`, "Cloudflare Edge /health", (b) => b.includes("healthy"));
   const cfMcpOk = await checkLiveness(`${CLOUDFLARE_URL}/mcp`, "Cloudflare Edge MCP /mcp Discovery", (b) => b.includes("Dhayam MCP"));
-  const ghPagesOk = await checkLiveness(GITHUB_PAGES_URL, "GitHub Pages Root", (b) => b.includes("<title>Dhayam</title>"));
+
+  let ghPagesOk = true;
+  if (skipGhPages) {
+    console.log("  • GitHub Pages check: SKIPPED (E2E_SKIP_GITHUB_PAGES=true)");
+  } else {
+    ghPagesOk = await checkLiveness(GITHUB_PAGES_URL, "GitHub Pages Root", (b) => b.includes("<title>Dhayam</title>"));
+  }
 
   if (!cfRootOk || !cfHealthOk || !cfMcpOk || !ghPagesOk) {
     allPassed = false;
@@ -270,10 +281,10 @@ async function main() {
 
   console.log("\n==================================================================");
   if (allPassed) {
-    console.log("✓ ALL LIVENESS AND E2E VERIFICATIONS PASSED");
+    console.log(`✓ ALL ${targetLabel} LIVENESS AND E2E VERIFICATIONS PASSED`);
     process.exit(0);
   } else {
-    console.error("✗ ONE OR MORE LIVENESS OR E2E CHECKS FAILED");
+    console.error(`✗ ONE OR MORE ${targetLabel} LIVENESS OR E2E CHECKS FAILED`);
     process.exit(1);
   }
 }

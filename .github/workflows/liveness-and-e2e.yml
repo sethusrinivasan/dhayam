@@ -1,12 +1,13 @@
 name: Production Liveness & E2E Validation
 
 on:
+  # Run after every production deploy (triggered by cloudflare.yml smoke check)
   push:
     branches: [main]
   pull_request:
     branches: [main]
   schedule:
-    # Run every 6 hours to continuously validate live production health
+    # Every 6 hours: verify both staging and production remain healthy
     - cron: '0 */6 * * *'
   workflow_dispatch:
 
@@ -33,7 +34,14 @@ jobs:
       - name: Verify JavaScript syntax & browser integrity
         run: npm test
 
-      - name: Validate GitHub Pages & Cloudflare Liveness and E2E
+      - name: 🧪 Staging health check
+        run: node scripts/e2e-live-check.js
+        env:
+          CLOUDFLARE_URL: "https://dhayam-staging.cancun.workers.dev"
+          GITHUB_PAGES_URL: "https://sethusrinivasan.github.io/dhayam/"
+          E2E_SKIP_GITHUB_PAGES: "true"
+
+      - name: 💨 Production health check
         run: node scripts/e2e-live-check.js
         env:
           CLOUDFLARE_URL: "https://dhayam.cancun.workers.dev"

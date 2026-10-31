@@ -17,3 +17,24 @@ bindings = [
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["DhayamRoom"]
+
+# ─── Staging environment ────────────────────────────────────────────────────
+# Deployed as a separate Cloudflare Worker: dhayam-staging.cancun.workers.dev
+# Changes land here first, pass E2E validation, then get promoted to production.
+[env.staging]
+name = "dhayam-staging"
+
+[env.staging.assets]
+directory = "./site"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "single-page-application"
+
+[env.staging.durable_objects]
+bindings = [
+  { name = "DHAYAM_ROOM", class_name = "DhayamRoom" }
+]
+
+[[env.staging.migrations]]
+tag = "v1"
+new_sqlite_classes = ["DhayamRoom"]
