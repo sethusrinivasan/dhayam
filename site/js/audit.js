@@ -84,7 +84,7 @@
           "Exported: " + new Date().toISOString(),
           "Mode: " + audit.mode,
           "Status: " + game.phase,
-          "Rules: Heritage 7x7 house variant; first-round entry allowances; exact finish; capture required for inner track",
+          "Rules: Dhayam 7x7 house variant; first-round entry allowances; exact finish; capture required for inner track",
           "Players: " +
             game.players
               .map(

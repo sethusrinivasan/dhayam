@@ -1,0 +1,342 @@
+/**
+ * themes.css - Dynamic Board Themes & Halloween Default Aesthetics
+ *
+ * Implements theme color tokens for:
+ * 1. Halloween (Default on launch): Spooky pumpkin night, glowing lanterns & haunted board
+ * 2. Heritage Wood: Traditional warm teak wood, brass inlays & temple gold
+ * 3. Royal Bronze: Ancient stone courtyard, royal ivory & polished copper
+ * 4. Midnight Nebula: Deep cosmic indigo, glowing violet & starlight
+ */
+
+/* ==========================================================================
+   1. Halloween Theme (Default on launch)
+   ========================================================================== */
+body[data-theme="halloween"],
+:root:not([data-theme]) body {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    #3b1842 0%,
+    #1d0d26 50%,
+    #0e0614 100%
+  );
+}
+
+body[data-theme="halloween"] .boardcard,
+:root:not([data-theme]) .boardcard {
+  background: linear-gradient(
+    140deg,
+    #351608 0%,
+    #1a0c20 28%,
+    #250f24 72%,
+    #4a1e0b 100%
+  );
+  border-color: #6a2a0c;
+  box-shadow:
+    0 16px 50px #06020bcc,
+    0 0 25px #ff75182a,
+    inset 0 0 0 2px #ff8c0055;
+}
+
+body[data-theme="halloween"] .boardcard:before,
+body[data-theme="halloween"] .boardcard:after,
+:root:not([data-theme]) .boardcard:before,
+:root:not([data-theme]) .boardcard:after {
+  content: "🎃";
+  font-size: clamp(15px, 2.2vh, 22px);
+  color: #ff8c00;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 6px #ff7518aa);
+}
+
+body[data-theme="halloween"] .cell,
+:root:not([data-theme]) .cell {
+  background: #1e1126cc;
+  border-color: #4a2952;
+  color: #fbd6a5;
+}
+
+body[data-theme="halloween"] .cell:hover,
+:root:not([data-theme]) .cell:hover {
+  background: #2f1b3bcc;
+}
+
+body[data-theme="halloween"] .cell.safe,
+:root:not([data-theme]) .cell.safe {
+  background: #3b1b0fee;
+  border-color: #ff922b;
+  box-shadow: inset 0 0 10px #ff751844;
+}
+
+body[data-theme="halloween"] .cell.safe .motif,
+:root:not([data-theme]) .cell.safe .motif {
+  color: #ffaa33;
+  text-shadow: 0 0 8px #ff7518;
+}
+
+body[data-theme="halloween"] .cell.goal,
+:root:not([data-theme]) .cell.goal {
+  background: radial-gradient(circle, #5c2009 0%, #260f26 100%);
+  border-color: #ff9f1c;
+  box-shadow:
+    inset 0 0 14px #ff751888,
+    0 0 10px #ff751844;
+}
+
+body[data-theme="halloween"] .cell.goal .motif,
+:root:not([data-theme]) .cell.goal .motif {
+  color: #ffc078;
+  text-shadow: 0 0 10px #ff9500;
+}
+
+body[data-theme="halloween"] .cell.legal,
+:root:not([data-theme]) .cell.legal {
+  border-color: #ff922b !important;
+  box-shadow: 0 0 0 2px #ff922b, 0 0 12px #ff751899 !important;
+  animation: halloweenLegalPulse 1.4s infinite ease-in-out;
+}
+
+@keyframes halloweenLegalPulse {
+  0%, 100% { box-shadow: 0 0 0 2px #ff922b, 0 0 8px #ff751866; }
+  50% { box-shadow: 0 0 0 3px #ffa94d, 0 0 16px #ff7518cc; }
+}
+
+body[data-theme="halloween"] .dieface,
+:root:not([data-theme]) .dieface {
+  background: linear-gradient(
+    145deg,
+    #ff922b 0%,
+    #cc5803 52%,
+    #4a1506 100%
+  );
+  border-color: #ffc07888;
+  color: #2b0b03;
+  box-shadow:
+    inset 4px 4px 7px #fff6,
+    inset -5px -5px 8px #2b0b0388;
+}
+
+body[data-theme="halloween"] .logo,
+:root:not([data-theme]) .logo {
+  background: #ff7518;
+  color: #1a0802;
+  box-shadow: 0 0 12px #ff751888;
+}
+
+body[data-theme="halloween"] .panel,
+:root:not([data-theme]) .panel {
+  border-color: #ff75182e;
+  background: #180b2077;
+}
+
+body[data-theme="halloween"] .panel h2,
+:root:not([data-theme]) .panel h2 {
+  color: #ffaa4d;
+}
+
+body[data-theme="halloween"] .btn,
+:root:not([data-theme]) .btn {
+  background: linear-gradient(135deg, #ff7518 0%, #e8590c 100%);
+  color: #ffffff;
+  border-color: #ffa94d;
+  box-shadow: 0 4px 14px #ff751844;
+}
+
+body[data-theme="halloween"] .btn:hover:not(:disabled),
+:root:not([data-theme]) .btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff922b 0%, #f76707 100%);
+  box-shadow: 0 6px 18px #ff751866;
+}
+
+body[data-theme="halloween"] .pathbase,
+:root:not([data-theme]) .pathbase {
+  stroke: #ff7518;
+  opacity: 0.22;
+}
+
+body[data-theme="halloween"] .pathflow,
+:root:not([data-theme]) .pathflow {
+  stroke: #ffa94d;
+}
+
+/* ==========================================================================
+   2. Heritage Wood Theme (Classic Teak & Brass)
+   ========================================================================== */
+body[data-theme="wood"] {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    #57402c 0%,
+    #271c15 55%,
+    #1b1410 100%
+  );
+}
+
+body[data-theme="wood"] .boardcard {
+  background: linear-gradient(
+    140deg,
+    #925b2e,
+    #4b2918 17%,
+    #6b3c22 70%,
+    #9b6536
+  );
+  border-color: #4c2b19;
+  box-shadow:
+    0 16px 50px #08050280,
+    inset 0 0 0 2px #d4a66d80;
+}
+
+body[data-theme="wood"] .boardcard:before,
+body[data-theme="wood"] .boardcard:after {
+  content: "✺";
+  color: #e6b777;
+  opacity: 0.8;
+}
+
+body[data-theme="wood"] .cell {
+  background: #3e2213ee;
+  border-color: #63361e;
+  color: #ffe6ba;
+}
+
+body[data-theme="wood"] .cell.safe {
+  background: #5b311bee;
+  border-color: #d49f64;
+}
+
+body[data-theme="wood"] .cell.safe .motif {
+  color: #ffd899;
+}
+
+body[data-theme="wood"] .cell.goal {
+  background: radial-gradient(circle, #7e4320 0%, #3e2213 100%);
+  border-color: #ffcd82;
+}
+
+body[data-theme="wood"] .dieface {
+  background: linear-gradient(
+    145deg,
+    #ffdaa5 0%,
+    #d88745 52%,
+    #955027 100%
+  );
+  border-color: #ffe6baaa;
+  color: #4c2413;
+}
+
+/* ==========================================================================
+   3. Royal Bronze Theme
+   ========================================================================== */
+body[data-theme="bronze"] {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    #3e352f 0%,
+    #1d1815 55%,
+    #120f0e 100%
+  );
+}
+
+body[data-theme="bronze"] .boardcard {
+  background: linear-gradient(
+    140deg,
+    #70543f,
+    #3b2c22 25%,
+    #533e31 70%,
+    #7c624d
+  );
+  border-color: #8c6a51;
+  box-shadow:
+    0 16px 50px #050403aa,
+    inset 0 0 0 2px #c9a68688;
+}
+
+body[data-theme="bronze"] .boardcard:before,
+body[data-theme="bronze"] .boardcard:after {
+  content: "✦";
+  color: #d5b596;
+}
+
+body[data-theme="bronze"] .cell {
+  background: #2a221cee;
+  border-color: #554437;
+  color: #eddcd0;
+}
+
+body[data-theme="bronze"] .cell.safe {
+  background: #48392eee;
+  border-color: #c9a686;
+}
+
+body[data-theme="bronze"] .dieface {
+  background: linear-gradient(
+    145deg,
+    #d5b596 0%,
+    #987556 52%,
+    #583e29 100%
+  );
+  border-color: #eddcd0aa;
+  color: #2b1c11;
+}
+
+/* ==========================================================================
+   4. Midnight Nebula Theme
+   ========================================================================== */
+body[data-theme="nebula"] {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    #1e1b4b 0%,
+    #0f172a 55%,
+    #030712 100%
+  );
+}
+
+body[data-theme="nebula"] .boardcard {
+  background: linear-gradient(
+    140deg,
+    #312e81 0%,
+    #111827 25%,
+    #1e1b4b 70%,
+    #3730a3 100%
+  );
+  border-color: #4f46e5;
+  box-shadow:
+    0 16px 50px #020617cc,
+    0 0 25px #6366f133,
+    inset 0 0 0 2px #818cf855;
+}
+
+body[data-theme="nebula"] .boardcard:before,
+body[data-theme="nebula"] .boardcard:after {
+  content: "✦";
+  color: #a5b4fc;
+  filter: drop-shadow(0 0 6px #818cf8);
+}
+
+body[data-theme="nebula"] .cell {
+  background: #111827ee;
+  border-color: #374151;
+  color: #e0e7ff;
+}
+
+body[data-theme="nebula"] .cell.safe {
+  background: #1e1b4bee;
+  border-color: #818cf8;
+}
+
+body[data-theme="nebula"] .cell.safe .motif {
+  color: #c7d2fe;
+}
+
+body[data-theme="nebula"] .cell.goal {
+  background: radial-gradient(circle, #3730a3 0%, #111827 100%);
+  border-color: #a5b4fc;
+}
+
+body[data-theme="nebula"] .dieface {
+  background: linear-gradient(
+    145deg,
+    #a5b4fc 0%,
+    #6366f1 52%,
+    #312e81 100%
+  );
+  border-color: #c7d2fe88;
+  color: #0f172a;
+}

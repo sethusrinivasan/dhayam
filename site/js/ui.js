@@ -47,11 +47,19 @@
                 (occupied.length ? ", " + occupied.length + " pieces" : "") +
                 (canEntry ? ", enter piece here" : ""),
             );
+            const goalMotif =
+              (typeof THEME_DEFINITIONS !== "undefined" &&
+                THEME_DEFINITIONS[currentTheme]?.goalMotif) ||
+              "✺";
+            const safeMotif =
+              (typeof THEME_DEFINITIONS !== "undefined" &&
+                THEME_DEFINITIONS[currentTheme]?.safeMotif) ||
+              "✿";
             el.innerHTML =
               sq === "D4"
-                ? '<span class="motif">✺</span>'
+                ? '<span class="motif">' + goalMotif + "</span>"
                 : SAFE.has(sq)
-                  ? '<span class="motif">✿</span>'
+                  ? '<span class="motif">' + safeMotif + "</span>"
                   : "";
             if (occupied.length) {
               // Group a player's stacked pieces under one large avatar. The
@@ -102,16 +110,24 @@
                   const onPieceTouch = (e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    const moveOpt = pieces.map((piece) => legal.get(piece.id)).find(Boolean);
+                    let moveOpt = pieces.map((piece) => legal.get(piece.id)).find(Boolean);
+                    if (!moveOpt) {
+                      const anyOpt = opts.find((o) => pieces.some((p) => p.id === o.piece.id));
+                      if (anyOpt) {
+                        selectedRoll = anyOpt.indices.length === 1 ? anyOpt.indices[0] : -1;
+                        selectedPieceId = anyOpt.piece.id;
+                        moveOpt = anyOpt;
+                      }
+                    }
                     if (moveOpt) {
                       selectedPieceId = moveOpt.piece.id;
+                      if (typeof FlightRecorder !== "undefined") {
+                        FlightRecorder.record("PIECE_CLICKED", { pieceId: moveOpt.piece.id, source: "token" });
+                      }
                       apply(moveOpt, "token-touch");
                     }
                   };
                   t.onclick = onPieceTouch;
-                  t.addEventListener("pointerdown", (e) => {
-                    if (e.pointerType === "touch") e.stopPropagation();
-                  });
                   t.addEventListener("keydown", (e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       onPieceTouch(e);
@@ -125,10 +141,25 @@
             }
             if (can && !demo && !active().computer && !moving)
               el.onclick = () => {
-                const o = occupied
+                let o = occupied
                   .map((x) => legal.get(x.piece.id))
                   .find(Boolean) || (canEntry ? entry : null);
-                if (o) apply(o, canEntry ? "start-entry" : "board");
+                if (!o) {
+                  const anyOccupiedOpt = opts.find((opt) =>
+                    occupied.some((x) => x.piece.id === opt.piece.id)
+                  );
+                  if (anyOccupiedOpt) {
+                    selectedRoll = anyOccupiedOpt.indices.length === 1 ? anyOccupiedOpt.indices[0] : -1;
+                    selectedPieceId = anyOccupiedOpt.piece.id;
+                    o = anyOccupiedOpt;
+                  }
+                }
+                if (o) {
+                  if (typeof FlightRecorder !== "undefined") {
+                    FlightRecorder.record("BOARD_CELL_CLICKED", { sq, pieceId: o.piece.id });
+                  }
+                  apply(o, canEntry ? "start-entry" : "board");
+                }
               };
             el.addEventListener("keydown", (e) => {
               if ((e.key === "Enter" || e.key === " ") && can) {
@@ -153,11 +184,18 @@
                 (piece) => piece.progress >= 0 && piece.progress < 43,
               ),
               home = numbersFor((piece) => piece.progress === 43);
+            const isCurrentActive = active() === p && game.phase !== "done";
+            const canCardEnter = Boolean(isCurrentActive && entry && !demo && !p.computer && !moving);
             return (
               '<div class="player ' +
-              (active() === p && game.phase !== "done" ? "active" : "") +
+              (isCurrentActive ? "active" : "") +
+              (canCardEnter ? " can-enter" : "") +
               (capturedPlayerIds.includes(p.id) ? " captureloss" : "") +
-              '"><div class="avatar" aria-hidden="true" style="background:' +
+              '"' +
+              (canCardEnter
+                ? ' data-can-enter="true" role="button" tabindex="0" title="Click to enter piece from reserve onto the board"'
+                : "") +
+              '><div class="avatar" aria-hidden="true" style="background:' +
               p.color +
               '">' +
               p.avatar +
@@ -182,6 +220,23 @@
             );
           })
           .join("");
+        const enterCards = $("players").querySelectorAll(".player[data-can-enter='true']");
+        enterCards.forEach((card) => {
+          card.onclick = () => {
+            if (entry && !moving) {
+              if (typeof FlightRecorder !== "undefined") {
+                FlightRecorder.record("PLAYER_CARD_ENTER_CLICKED", { playerId: active().id });
+              }
+              apply(entry, "family-table-entry");
+            }
+          };
+          card.onkeydown = (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              card.click();
+            }
+          };
+        });
         $("playerLegend").innerHTML =
           '<span class="legendplayers" aria-label="Player color and avatar legend">' +
           game.players
@@ -319,24 +374,34 @@
                 " brought all six pieces to the center. The game is complete.";
         $("actionBtn").textContent =
           game.phase === "roll"
-            ? "🎲 Roll Dayakattai"
+            ? "🎲 Roll Dice"
             : game.phase === "move"
-              ? openingEntryRequired
-                ? "Choose opening entry"
-                : "Pass remaining rolls"
+              ? openingEntryRequired && entry
+                ? "Enter Piece onto Board"
+                : canUseMoveButton && (legal.get(selectedPieceId) || moveChoices[0])
+                  ? "Move selected piece"
+                  : "Pass remaining rolls"
               : "New match";
-        $("actionBtn").onclick = () =>
-          game.phase === "roll"
-            ? roll()
-            : game.phase === "move"
-              ? passRemainingRolls()
-              : newGame(game.players.length);
+        $("actionBtn").onclick = () => {
+          if (game.phase === "roll") {
+            roll();
+          } else if (game.phase === "move") {
+            if (openingEntryRequired && entry) {
+              apply(entry, "action-btn-entry");
+            } else if (canUseMoveButton && (legal.get(selectedPieceId) || moveChoices[0])) {
+              apply(legal.get(selectedPieceId) || moveChoices[0], "action-btn-move");
+            } else {
+              passRemainingRolls();
+            }
+          } else {
+            newGame(game.players.length);
+          }
+        };
         $("actionBtn").disabled =
           demo ||
           rolling ||
           moving ||
-          p.computer ||
-          (game.phase === "move" && openingEntryRequired);
+          p.computer;
         if (game.phase === "done") $("actionBtn").textContent = "Game complete";
         else if (demo) $("actionBtn").textContent = "Demo playing…";
         else if (rolling) $("actionBtn").textContent = "Rolling…";
@@ -357,9 +422,9 @@
         const diceEl = document.querySelector(".dice");
         if (diceEl) {
           diceEl.classList.toggle("rollable", canRollDice);
-          diceEl.setAttribute("aria-label", canRollDice ? "Dayakattai dice — Click to roll" : "Dayakattai dice");
+          diceEl.setAttribute("aria-label", canRollDice ? "Dice — Click to roll" : "Dice");
           if (canRollDice) {
-            diceEl.title = "Click to roll Dayakattai";
+            diceEl.title = "Click to roll dice";
             diceEl.setAttribute("tabindex", "0");
           } else {
             diceEl.removeAttribute("title");

@@ -42,10 +42,10 @@
 }
 
 .die {
-  --die-size: clamp(50px, 6.8vh, 70px);
-  --cube-size: clamp(42px, 5.7vh, 58px);
-  --cube-depth: clamp(21px, 2.85vh, 29px);
-  --cube-inset: 4px;
+  --die-size: clamp(66px, 9.4vh, 88px);
+  --cube-size: clamp(54px, 7.6vh, 72px);
+  --cube-depth: clamp(27px, 3.8vh, 36px);
+  --cube-inset: 5px;
   position: relative;
   width: var(--die-size);
   height: var(--die-size);
@@ -94,7 +94,7 @@
     inset 4px 4px 7px #fff7,
     inset -5px -5px 8px #6d321f77;
   color: #4c2413;
-  font-size: clamp(22px, 3.2vh, 30px);
+  font-size: clamp(26px, 3.8vh, 36px);
   font-weight: 950;
   line-height: 1;
   backface-visibility: hidden;

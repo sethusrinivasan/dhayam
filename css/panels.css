@@ -29,10 +29,10 @@
   color: #f7e0bc;
 }
 
-/* Family Table takes available vertical flex space */
+/* Family Table takes balanced vertical space on desktop */
 .side .panel:first-child {
-  flex: 1 1 0%;
-  min-height: 0;
+  flex: 0 0 auto;
+  max-height: clamp(230px, 34vh, 300px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -139,7 +139,17 @@
   color: #c5b097;
 }
 
-/* Dayakattai Dice Panel */
+/* Dayakattai Dice Panel expands to fill available side height */
 .side .panel:last-child {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.side .panel:last-child h2 {
+  text-align: center;
+  margin-bottom: clamp(6px, 1vh, 12px);
 }

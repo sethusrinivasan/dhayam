@@ -16,6 +16,17 @@
         game.last = { ...d, ...bonusResult };
         if (!bonus) game.phase = "move";
         const legalMoveCount = game.phase === "move" ? options().length : null;
+        if (typeof FlightRecorder !== "undefined") {
+          FlightRecorder.record("ROLL_FINISHED", {
+            value: d.value,
+            faces: [d.a, d.b],
+            bonus,
+            specialRoll,
+            pool: [...game.pool],
+            phase: game.phase,
+            legalMoveCount,
+          });
+        }
         recordAudit("ROLL", {
           firstFace: d.a,
           secondFace: d.b,
@@ -64,6 +75,13 @@
       }
       function roll() {
         if (!game || game.phase !== "roll" || rolling || demo) return;
+        if (typeof FlightRecorder !== "undefined") {
+          FlightRecorder.record("ROLL_INITIATED", {
+            player: active().name,
+            current: game.current,
+            pool: [...game.pool],
+          });
+        }
         if (multiplayer.active && !multiplayer.isHost) {
           if (game.current === multiplayer.mySeat) {
             sendPlayerAction({ type: "ROLL" });
@@ -159,6 +177,14 @@
       }
       async function apply(opt, inputSource = "board") {
         if (!opt || game.phase !== "move" || moving) return;
+        if (typeof FlightRecorder !== "undefined") {
+          FlightRecorder.record("MOVE_APPLIED", {
+            pieceId: opt.piece.id,
+            targetProgress: opt.test.progress,
+            inputSource,
+            values: opt.values,
+          });
+        }
         if (multiplayer.active && !multiplayer.isHost) {
           if (game.current === multiplayer.mySeat) {
             sendPlayerAction({ type: "MOVE", pieceId: opt.piece.id, targetProgress: opt.test.progress });

@@ -7,7 +7,7 @@
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
     <meta name="theme-color" content="#251a14" />
-    <title>Dhayam · Heritage Edition</title>
+    <title>Dhayam</title>
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/board.css" />
     <link rel="stylesheet" href="css/dice.css" />
@@ -15,16 +15,17 @@
     <link rel="stylesheet" href="css/panels.css" />
     <link rel="stylesheet" href="css/modals.css" />
     <link rel="stylesheet" href="css/multiplayer.css" />
+    <link rel="stylesheet" href="css/themes.css" />
     <link rel="stylesheet" href="css/responsive.css" />
   </head>
-  <body>
+  <body data-theme="halloween">
     <main class="shell">
       <header class="top">
         <div class="brand">
           <div class="logo" aria-hidden="true">✺</div>
           <div>
             <h1>Dhayam</h1>
-            <div class="sub">Heritage Edition · Play · Connect · Celebrate</div>
+            <div class="sub">Play · Connect · Celebrate</div>
           </div>
         </div>
         <nav class="topnav">
@@ -32,6 +33,7 @@
           <button class="pill" id="newBtn">＋ New game</button>
           <button class="pill" id="guideBtn">? How to play</button>
           <button class="pill" id="demoBtn">✦ Guided demo</button>
+          <button class="pill icon-pill" id="flightRecorderTopBtn" aria-label="Copy Flight Recorder diagnostic data" title="Copy Flight Recorder data">🛫</button>
           <button class="pill icon-pill" id="audioToggle" aria-label="Toggle voice commentary" title="Toggle voice commentary">🔇</button>
           <button class="pill icon-pill" id="settingsBtn" aria-label="Game settings" title="Open game settings">⚙️</button>
         </nav>
@@ -122,7 +124,7 @@
               <button class="btn" id="moveBtn" type="button" hidden>
                 Move selected piece
               </button>
-              <button class="btn" id="actionBtn">Roll Dayakattai</button>
+              <button class="btn" id="actionBtn">Roll Dice</button>
             </div>
           </div>
           <div class="demobar" id="demoBar" hidden>
@@ -218,7 +220,7 @@
         </aside>
       </div>
       <footer class="footer" role="contentinfo">
-        <span>Dhayam Heritage Edition · <a href="https://github.com/sethusrinivasan/dhayam" target="_blank" rel="noopener">⭐ View Project & Rules on GitHub</a></span>
+        <span>Dhayam · <a href="https://github.com/sethusrinivasan/dhayam" target="_blank" rel="noopener">⭐ View Project & Rules on GitHub</a></span>
       </footer>
     </main>
     <div class="modalback" id="modalback" role="presentation">
@@ -237,8 +239,10 @@
       </div>
     </div>
     <!-- Modular Dhayam Architecture: Separation of Concerns -->
+    <script src="js/recorder.js"></script>
     <script src="js/config.js"></script>
     <script src="js/state.js"></script>
+    <script src="js/themes.js"></script>
     <script src="js/audio.js"></script>
     <script src="js/dice.js"></script>
     <script src="js/audit.js"></script>

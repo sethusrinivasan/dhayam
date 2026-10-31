@@ -61,8 +61,15 @@
         recordAudit("GAME_START", {
           playerCount: count,
           computerCount,
-          rules: "Heritage 7x7 house variant; first-round entry allowances",
+          rules: "Dhayam 7x7 house variant; first-round entry allowances",
         });
+        if (typeof FlightRecorder !== "undefined") {
+          FlightRecorder.record("GAME_START", {
+            playerCount: count,
+            computerCount,
+            mode: computerCount ? "solo" : "local",
+          });
+        }
         selectedRoll = 0;
         selectedPieceId = null;
         render();
@@ -79,6 +86,32 @@
         $("modalback").classList.remove("open");
       }
       function openSettingsModal() {
+        const themeOptions = [
+          { id: "halloween", name: "🎃 Halloween (Default)", desc: "Spooky pumpkin night & haunted board" },
+          { id: "wood", name: "🪵 Heritage Wood", desc: "Warm teak wood & temple gold" },
+          { id: "bronze", name: "🏛️ Royal Bronze", desc: "Ancient stone courtyard & polished copper" },
+          { id: "nebula", name: "🌌 Midnight Nebula", desc: "Deep cosmic indigo & starlight" },
+        ];
+
+        const themeButtons = themeOptions
+          .map(
+            (t) =>
+              '<button type="button" class="btn secondary theme-choice-btn" data-theme-id="' +
+              t.id +
+              '" style="width:100%;text-align:left;margin-bottom:6px;padding:8px 12px;' +
+              (currentTheme === t.id ? "border-color:#f59e0b;background:#f59e0b2a;box-shadow:0 0 8px #f59e0b44;" : "") +
+              '">' +
+              '<div style="font-weight:700;font-size:0.88rem;color:#fff1db;">' +
+              t.name +
+              (currentTheme === t.id ? " ✓ Active" : "") +
+              "</div>" +
+              '<div style="font-size:0.75rem;color:#cdbda8;">' +
+              t.desc +
+              "</div>" +
+              "</button>",
+          )
+          .join("");
+
         const fields = game.players
           .map(
             (player, index) =>
@@ -108,6 +141,10 @@
 
         const content =
           '<div class="settings-modal-content">' +
+          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">🎨 Board Theme</h3>' +
+          '<p style="font-size:0.8rem;color:#cdbda8;margin:0 0 8px 0;">Switch visual aesthetic. Halloween is the default theme.</p>' +
+          themeButtons +
+          '<div class="divider" style="margin:12px 0;"></div>' +
           '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">👥 Player Names</h3>' +
           '<p style="font-size:0.8rem;color:#cdbda8;margin:0 0 8px 0;">Names appear in the match, spoken turns, and the game audit transcript.</p>' +
           fields +
@@ -122,6 +159,13 @@
           (audioEnabled ? "🔊 Enabled" : "🔇 Muted") +
           '</button>' +
           '</div>' +
+          '<div class="divider" style="margin:12px 0;"></div>' +
+          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">🛫 Flight Recorder & Debug Log</h3>' +
+          '<p style="font-size:0.78rem;color:#cdbda8;margin:0 0 8px 0;">Captures chronological user clicks, state transitions, touch inputs, timing, and errors. One-click copy for diagnostics.</p>' +
+          '<button type="button" class="btn secondary full" id="settingsFlightRecorderBtn" style="width:100%;border-color:#f59e0b88;color:#fcd34d;">🛫 Copy Flight Recorder Data (' +
+          (typeof FlightRecorder !== "undefined" ? FlightRecorder.getEventCount() : 0) +
+          ' events)</button>' +
+          '<p id="settingsFlightFeedback" style="margin:4px 0 0;font-size:0.82rem;color:#a3e635;min-height:1.2em;"></p>' +
           '<div class="divider" style="margin:12px 0;"></div>' +
           '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">📋 Match Audit & Export</h3>' +
           '<p style="font-size:0.78rem;color:#cdbda8;margin:0 0 8px 0;">Copy the full timestamped JSON audit recording every roll, capture, and state.</p>' +
@@ -149,6 +193,24 @@
         });
 
         setTimeout(() => {
+          const themeBtns = document.querySelectorAll(".theme-choice-btn");
+          themeBtns.forEach((btn) => {
+            btn.onclick = () => {
+              const tid = btn.getAttribute("data-theme-id");
+              if (tid && typeof applyTheme === "function") {
+                applyTheme(tid);
+                closeModal();
+                openSettingsModal();
+              }
+            };
+          });
+          const flightBtn = $("settingsFlightRecorderBtn");
+          const flightFeedback = $("settingsFlightFeedback");
+          if (flightBtn && typeof FlightRecorder !== "undefined") {
+            flightBtn.onclick = () => {
+              FlightRecorder.copy(flightFeedback);
+            };
+          }
           const audioBtn = $("settingsAudioBtn");
           if (audioBtn) {
             audioBtn.onclick = () => {
@@ -191,6 +253,9 @@
       };
       if ($("demoAudioToggle")) $("demoAudioToggle").onclick = toggleAudio;
       if ($("audioToggle")) $("audioToggle").onclick = toggleAudio;
+      if ($("flightRecorderTopBtn") && typeof FlightRecorder !== "undefined") {
+        $("flightRecorderTopBtn").onclick = () => FlightRecorder.copy();
+      }
       if ($("settingsBtn")) $("settingsBtn").onclick = openSettingsModal;
       if ($("copyAuditBtn")) $("copyAuditBtn").onclick = copyGameAudit;
       if ($("editPlayersBtn")) $("editPlayersBtn").onclick = openSettingsModal;
