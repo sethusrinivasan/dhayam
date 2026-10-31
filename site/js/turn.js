@@ -242,19 +242,34 @@
             pieceId: hit.q.id,
             pieceNumber: hit.other.pieces.indexOf(hit.q) + 1,
           }));
+        const avName =
+          typeof getPlayerAvatarSpeechName === "function"
+            ? getPlayerAvatarSpeechName(player)
+            : "piece";
         let commentary =
           player.name +
           (wasReserve
             ? opt.test.openingEntry
-              ? " uses the opening entry allowance to enter a piece and"
-              : " enters a piece and"
-            : " moves a piece") +
+              ? " uses the opening entry allowance to enter a " + avName + " and"
+              : " enters a " + avName + " and"
+            : " moves a " + avName) +
           " uses " +
           opt.values.join(" plus ") +
           ".";
-        if (captureCount)
-          commentary += " An opponent is captured and returns to reserve.";
-        if (willFinish) commentary += " The piece reaches the center.";
+        if (captureCount) {
+          const victimDesc = capturedPieces
+            .map((cp) => {
+              const victimPlayer = game.players.find((p) => p.id === cp.playerId);
+              const victimAv =
+                typeof getPlayerAvatarSpeechName === "function"
+                  ? getPlayerAvatarSpeechName(victimPlayer)
+                  : "piece";
+              return cp.playerName + "’s " + victimAv;
+            })
+            .join(" and ");
+          commentary += " " + victimDesc + " is captured and returns to reserve!";
+        }
+        if (willFinish) commentary += " The " + avName + " reaches the center!";
         moving = true;
         movingPieceId = piece.id;
         speakGame(commentary);
@@ -452,19 +467,40 @@
         moving = true;
         movingPieceId = piece.id;
 
+        const avName =
+          typeof getPlayerAvatarSpeechName === "function"
+            ? getPlayerAvatarSpeechName(player)
+            : "piece";
         const wasReserve = piece.progress < 0;
         let commentary =
           data.commentary ||
           player.name +
-            (wasReserve ? " enters a piece and " : " moves a piece ") +
+            (wasReserve ? " enters a " + avName + " and " : " moves a " + avName + " ") +
             "to " +
             (data.destination || "the next square") +
             ".";
         if (data.captures && data.captures.length) {
-          commentary += " An opponent is captured and returns to reserve!";
+          const victimDesc = data.captures
+            .map((c) => {
+              const victimPlayer = game.players.find(
+                (p) => p.id === (c.playerId || c.other?.id),
+              );
+              const victimAv =
+                typeof getPlayerAvatarSpeechName === "function"
+                  ? getPlayerAvatarSpeechName(victimPlayer)
+                  : "piece";
+              return (
+                (victimPlayer ? victimPlayer.name : "An opponent") +
+                "’s " +
+                victimAv
+              );
+            })
+            .join(" and ");
+          commentary += " " + victimDesc + " is captured and returns to reserve!";
         }
         if (data.winner) {
-          commentary += " " + player.name + " finishes all six pieces and wins the game!";
+          commentary +=
+            " " + player.name + " finishes all six pieces and wins the game!";
         }
         speakGame(commentary);
 

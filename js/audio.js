@@ -6,6 +6,58 @@
  */
 "use strict";
 
+      const AVATAR_SPEECH_NAMES = {
+        // Halloween theme
+        "🎃": "pumpkin",
+        "👻": "ghost",
+        "🧙": "witch",
+        "🧛": "vampire",
+        // Heritage Wood theme
+        "🌿": "leaf",
+        "🌊": "wave",
+        "☀️": "sun",
+        "🌾": "wheat",
+        // Royal Bronze theme
+        "🦅": "eagle",
+        "🛡️": "shield",
+        "👑": "crown",
+        "⚔️": "swords",
+        // Midnight Nebula theme
+        "⚡": "lightning",
+        "💫": "star",
+        "✨": "sparkle",
+        "☄️": "comet",
+        // Classic animals
+        "🐘": "elephant",
+        "🐯": "tiger",
+        "🦚": "peacock",
+        "🦁": "lion",
+        "🦊": "fox",
+        "🦉": "owl",
+        // Colored tokens
+        "🔴": "red piece",
+        "🟢": "green piece",
+        "🟡": "yellow piece",
+        "🔵": "blue piece",
+        "🟣": "purple piece",
+        "🟠": "orange piece",
+        // Other fun emojis
+        "🌸": "lotus",
+        "🐲": "dragon",
+        "🦄": "unicorn",
+        "🐱": "cat",
+        "🐶": "dog",
+      };
+
+      function getPlayerAvatarSpeechName(player) {
+        if (!player) return "piece";
+        if (player.avatar && AVATAR_SPEECH_NAMES[player.avatar]) {
+          return AVATAR_SPEECH_NAMES[player.avatar];
+        }
+        return "piece";
+      }
+      window.getPlayerAvatarSpeechName = getPlayerAvatarSpeechName;
+
       const FEMININE_VOICE_HINTS = [
           "samantha",
           "victoria",

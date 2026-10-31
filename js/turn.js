@@ -82,11 +82,18 @@
             pool: [...game.pool],
           });
         }
-        if (multiplayer.active && !multiplayer.isHost) {
-          if (game.current === multiplayer.mySeat) {
-            sendPlayerAction({ type: "ROLL" });
+        if (multiplayer.active) {
+          if (!isMyTurn()) return;
+          if (multiplayer.transport === "cf_ws") {
+            if (typeof sendWsMessage === "function") {
+              sendWsMessage({ type: "ROLL" });
+            }
+            return;
           }
-          return;
+          if (!multiplayer.isHost) {
+            sendPlayerAction({ type: "ROLL" });
+            return;
+          }
         }
         const d = pacingAssistRoll() || rollDice();
         rolling = true;
@@ -95,6 +102,19 @@
         $("actionBtn").textContent = "Rolling…";
         $("actionBtn").disabled = true;
         triggerDiceAnimation();
+        if (multiplayer.active && multiplayer.isHost && multiplayer.transport !== "cf_ws") {
+          multiplayer.connections.forEach((conn) => {
+            if (conn.open) {
+              conn.send({
+                type: "ROLL_START",
+                seat: game.current,
+                dice: { a: d.a, b: d.b },
+                value: d.val,
+                bonus: BONUS_VALUES.has(d.val)
+              });
+            }
+          });
+        }
         rollTimer = setTimeout(() => {
           rollTimer = null;
           finishRoll(d);
@@ -185,11 +205,28 @@
             values: opt.values,
           });
         }
-        if (multiplayer.active && !multiplayer.isHost) {
-          if (game.current === multiplayer.mySeat) {
-            sendPlayerAction({ type: "MOVE", pieceId: opt.piece.id, targetProgress: opt.test.progress });
+        if (multiplayer.active) {
+          if (!isMyTurn()) return;
+          if (multiplayer.transport === "cf_ws") {
+            if (typeof sendWsMessage === "function") {
+              sendWsMessage({
+                type: "MOVE",
+                pieceId: opt.piece.id,
+                diceValues: opt.values,
+                targetProgress: opt.test.progress
+              });
+            }
+            return;
           }
-          return;
+          if (!multiplayer.isHost) {
+            sendPlayerAction({
+              type: "MOVE",
+              pieceId: opt.piece.id,
+              values: opt.values,
+              targetProgress: opt.test.progress
+            });
+            return;
+          }
         }
         const player = active(),
           piece = opt.piece,
@@ -205,22 +242,56 @@
             pieceId: hit.q.id,
             pieceNumber: hit.other.pieces.indexOf(hit.q) + 1,
           }));
+        const avName =
+          typeof getPlayerAvatarSpeechName === "function"
+            ? getPlayerAvatarSpeechName(player)
+            : "piece";
         let commentary =
           player.name +
           (wasReserve
             ? opt.test.openingEntry
-              ? " uses the opening entry allowance to enter a piece and"
-              : " enters a piece and"
-            : " moves a piece") +
+              ? " uses the opening entry allowance to enter a " + avName + " and"
+              : " enters a " + avName + " and"
+            : " moves a " + avName) +
           " uses " +
           opt.values.join(" plus ") +
           ".";
-        if (captureCount)
-          commentary += " An opponent is captured and returns to reserve.";
-        if (willFinish) commentary += " The piece reaches the center.";
+        if (captureCount) {
+          const victimDesc = capturedPieces
+            .map((cp) => {
+              const victimPlayer = game.players.find((p) => p.id === cp.playerId);
+              const victimAv =
+                typeof getPlayerAvatarSpeechName === "function"
+                  ? getPlayerAvatarSpeechName(victimPlayer)
+                  : "piece";
+              return cp.playerName + "’s " + victimAv;
+            })
+            .join(" and ");
+          commentary += " " + victimDesc + " is captured and returns to reserve!";
+        }
+        if (willFinish) commentary += " The " + avName + " reaches the center!";
         moving = true;
         movingPieceId = piece.id;
         speakGame(commentary);
+
+        if (multiplayer.active && multiplayer.isHost && multiplayer.transport !== "cf_ws") {
+          multiplayer.connections.forEach((conn) => {
+            if (conn.open) {
+              conn.send({
+                type: "MOVE_START",
+                seat: game.current,
+                pieceId: piece.id,
+                fromProgress: piece.progress,
+                targetProgress: opt.test.progress,
+                destination: opt.test.destination || node(player, piece),
+                captures: capturedPieces,
+                commentary,
+                winner: willFinish && player.pieces.filter((q) => q.id !== piece.id).every((q) => q.progress === 43) ? player.name : null
+              });
+            }
+          });
+        }
+
         await animatePiece(player, piece, opt.test.progress);
         if (
           wasReserve &&
@@ -338,11 +409,18 @@
             "The opening entry allowance must be used so the game can begin.";
           return;
         }
-        if (multiplayer.active && !multiplayer.isHost) {
-          if (game.current === multiplayer.mySeat) {
-            sendPlayerAction({ type: "PASS" });
+        if (multiplayer.active) {
+          if (!isMyTurn()) return;
+          if (multiplayer.transport === "cf_ws") {
+            if (typeof sendWsMessage === "function") {
+              sendWsMessage({ type: "PASS" });
+            }
+            return;
           }
-          return;
+          if (!multiplayer.isHost) {
+            sendPlayerAction({ type: "PASS" });
+            return;
+          }
         }
         recordAudit("PASS", {
           reason: "PLAYER_CHOICE",
@@ -351,3 +429,96 @@
         });
         nextTurn("Unused rolls passed.");
       }
+
+      function handleSynchronizedRollStart(data) {
+        if (!game || rolling) return;
+        rolling = true;
+        setDieFace("dieA", data.dice.a, "First die rolling");
+        setDieFace("dieB", data.dice.b, "Second die rolling");
+        const activeP = game.players[data.seat];
+        if ($("actionBtn")) {
+          $("actionBtn").textContent =
+            data.seat === multiplayer.mySeat
+              ? "Rolling…"
+              : activeP
+                ? activeP.name + " rolling…"
+                : "Rolling…";
+          $("actionBtn").disabled = true;
+        }
+        triggerDiceAnimation();
+        rollTimer = setTimeout(() => {
+          rollTimer = null;
+          finishRoll({
+            a: data.dice.a,
+            b: data.dice.b,
+            val: data.value,
+            bonus: data.bonus,
+          });
+        }, 1220);
+      }
+
+      async function handleSynchronizedMoveStart(data) {
+        if (!game) return;
+        const player = game.players[data.seat];
+        if (!player) return;
+        const piece = player.pieces.find((q) => q.id === data.pieceId);
+        if (!piece) return;
+
+        moving = true;
+        movingPieceId = piece.id;
+
+        const avName =
+          typeof getPlayerAvatarSpeechName === "function"
+            ? getPlayerAvatarSpeechName(player)
+            : "piece";
+        const wasReserve = piece.progress < 0;
+        let commentary =
+          data.commentary ||
+          player.name +
+            (wasReserve ? " enters a " + avName + " and " : " moves a " + avName + " ") +
+            "to " +
+            (data.destination || "the next square") +
+            ".";
+        if (data.captures && data.captures.length) {
+          const victimDesc = data.captures
+            .map((c) => {
+              const victimPlayer = game.players.find(
+                (p) => p.id === (c.playerId || c.other?.id),
+              );
+              const victimAv =
+                typeof getPlayerAvatarSpeechName === "function"
+                  ? getPlayerAvatarSpeechName(victimPlayer)
+                  : "piece";
+              return (
+                (victimPlayer ? victimPlayer.name : "An opponent") +
+                "’s " +
+                victimAv
+              );
+            })
+            .join(" and ");
+          commentary += " " + victimDesc + " is captured and returns to reserve!";
+        }
+        if (data.winner) {
+          commentary +=
+            " " + player.name + " finishes all six pieces and wins the game!";
+        }
+        speakGame(commentary);
+
+        await animatePiece(player, piece, data.targetProgress);
+
+        moving = false;
+        movingPieceId = null;
+
+        if (data.captures && data.captures.length) {
+          capturedPieceIds = data.captures.map((c) => c.pieceId || c.q?.id || c);
+          capturedPlayerIds = data.captures.map((c) => c.playerId || c.other?.id || c);
+          render();
+          await waitForCaptureAnimation();
+          capturedPieceIds = [];
+          capturedPlayerIds = [];
+          render();
+        }
+      }
+
+      window.handleSynchronizedRollStart = handleSynchronizedRollStart;
+      window.handleSynchronizedMoveStart = handleSynchronizedMoveStart;

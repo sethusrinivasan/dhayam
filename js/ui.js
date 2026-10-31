@@ -604,9 +604,10 @@
         }
       }
       const DEMO_STEPS = [
-        () =>
-          demoScene(
-            "Maya starts. Each player has six pieces waiting off the board.",
+        () => {
+          const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
+          return demoScene(
+            p1.name + " starts. Each player has six pieces waiting off the board.",
             () => {
               game.current = 0;
               game.turn = 1;
@@ -615,10 +616,12 @@
               game.history = [];
               game.last = null;
             },
-          ),
-        () =>
-          demoScene(
-            "Maya rolls a 1. A roll of 1 can bring a piece onto the starting square and also earns a bonus roll.",
+          );
+        },
+        () => {
+          const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
+          return demoScene(
+            p1.name + " rolls a 1. A roll of 1 can bring a piece onto the starting square and also earns a bonus roll.",
             () => {
               game.last = {
                 a: 0,
@@ -631,10 +634,15 @@
               game.history = [1];
               game.phase = "move";
             },
-          ),
-        () =>
-          demoScene(
-            "The elephant enters on its colored starting square.",
+          );
+        },
+        () => {
+          const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
+          const avName1 = (typeof getPlayerAvatarSpeechName === "function")
+            ? getPlayerAvatarSpeechName(p1)
+            : "piece";
+          return demoScene(
+            "The " + avName1 + " enters on its colored starting square.",
             async () => {
               await animateScriptedPiece(
                 game.players[0],
@@ -644,7 +652,8 @@
               game.pool = [];
               game.phase = "roll";
             },
-          ),
+          );
+        },
         () =>
           demoScene(
             "The bonus roll is 2. The gold outline shows which piece can move.",
@@ -661,9 +670,13 @@
               game.phase = "move";
             },
           ),
-        () =>
-          demoScene(
-            "The elephant moves two spaces along the glowing route. Maya’s turn is over.",
+        () => {
+          const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
+          const avName1 = (typeof getPlayerAvatarSpeechName === "function")
+            ? getPlayerAvatarSpeechName(p1)
+            : "piece";
+          return demoScene(
+            "The " + avName1 + " moves two spaces along the glowing route. " + p1.name + "’s turn is over.",
             async () => {
               await animateScriptedPiece(
                 game.players[0],
@@ -676,28 +689,43 @@
               game.turn = 2;
               game.phase = "roll";
             },
-          ),
-        () =>
-          demoScene(
-            "Now it is Leo’s turn. The highlighted player card always shows whose turn it is.",
+          );
+        },
+        () => {
+          const p2 = (game && game.players && game.players[1]) || { name: "Player 2", avatar: "👻" };
+          return demoScene(
+            "Now it is " + p2.name + "’s turn. The highlighted player card always shows whose turn it is.",
             () => {},
-          ),
-        () =>
-          demoScene("Leo rolls a 1, so the tiger can enter the board.", () => {
-            game.last = {
-              a: 0,
-              b: 1,
-              value: 1,
-              bonus: true,
-              specialRoll: true,
-            };
-            game.pool = [1];
-            game.history = [1];
-            game.phase = "move";
-          }),
-        () =>
-          demoScene(
-            "The tiger enters on Leo’s colored starting square.",
+          );
+        },
+        () => {
+          const p2 = (game && game.players && game.players[1]) || { name: "Player 2", avatar: "👻" };
+          const avName2 = (typeof getPlayerAvatarSpeechName === "function")
+            ? getPlayerAvatarSpeechName(p2)
+            : "piece";
+          return demoScene(
+            p2.name + " rolls a 1, so the " + avName2 + " can enter the board.",
+            () => {
+              game.last = {
+                a: 0,
+                b: 1,
+                value: 1,
+                bonus: true,
+                specialRoll: true,
+              };
+              game.pool = [1];
+              game.history = [1];
+              game.phase = "move";
+            },
+          );
+        },
+        () => {
+          const p2 = (game && game.players && game.players[1]) || { name: "Player 2", avatar: "👻" };
+          const avName2 = (typeof getPlayerAvatarSpeechName === "function")
+            ? getPlayerAvatarSpeechName(p2)
+            : "piece";
+          return demoScene(
+            "The " + avName2 + " enters on " + p2.name + "’s colored starting square.",
             async () => {
               await animateScriptedPiece(
                 game.players[1],
@@ -708,10 +736,16 @@
               game.history = [];
               game.phase = "roll";
             },
-          ),
-        () =>
-          demoScene(
-            "Capture example: Maya rolls 1 while Leo’s tiger is one space ahead on an unprotected square.",
+          );
+        },
+        () => {
+          const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
+          const p2 = (game && game.players && game.players[1]) || { name: "Player 2", avatar: "👻" };
+          const avName2 = (typeof getPlayerAvatarSpeechName === "function")
+            ? getPlayerAvatarSpeechName(p2)
+            : "piece";
+          return demoScene(
+            "Capture example: " + p1.name + " rolls 1 while " + p2.name + "’s " + avName2 + " is one space ahead on an unprotected square.",
             () => {
               game.current = 0;
               game.turn = 3;
@@ -728,10 +762,19 @@
               game.history = [1];
               game.phase = "move";
             },
-          ),
-        () =>
-          demoScene(
-            "The elephant lands on the tiger. Leo’s piece returns to reserve, and Maya earns the capture needed to enter the inner track.",
+          );
+        },
+        () => {
+          const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
+          const p2 = (game && game.players && game.players[1]) || { name: "Player 2", avatar: "👻" };
+          const avName1 = (typeof getPlayerAvatarSpeechName === "function")
+            ? getPlayerAvatarSpeechName(p1)
+            : "piece";
+          const avName2 = (typeof getPlayerAvatarSpeechName === "function")
+            ? getPlayerAvatarSpeechName(p2)
+            : "piece";
+          return demoScene(
+            "The " + avName1 + " lands on the " + avName2 + "! " + p2.name + "’s piece returns to reserve, and " + p1.name + " earns the capture needed to enter the inner track.",
             async () => {
               await animateScriptedPiece(
                 game.players[0],
@@ -744,10 +787,12 @@
               game.history = [];
               game.phase = "roll";
             },
-          ),
-        () =>
-          demoScene(
-            "Leo also completes a capture. Both players can now follow the inner route, so the automatic match will continue until one player finishes all six pieces and wins, or you interrupt it.",
+          );
+        },
+        () => {
+          const p2 = (game && game.players && game.players[1]) || { name: "Player 2", avatar: "👻" };
+          return demoScene(
+            p2.name + " also completes a capture. Both players can now follow the inner route, so the automatic match will continue until one player finishes all six pieces and wins, or you interrupt it.",
             () => {
               game.players[1].captured = true;
               game.current = 0;
@@ -755,7 +800,8 @@
               game.history = [];
               game.phase = "roll";
             },
-          ),
+          );
+        },
       ];
       const DEMO_FACES = {
         1: [0, 1],

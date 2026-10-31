@@ -103,16 +103,31 @@
           willFinish = move.test.progress === 43;
         await apply(move, "guided-demo");
         demoRollQueue = [];
+        const avName =
+          typeof getPlayerAvatarSpeechName === "function"
+            ? getPlayerAvatarSpeechName(player)
+            : "piece";
         let message =
           player.name +
-          (from < 0 ? " enters a piece and " : " moves a piece ") +
+          (from < 0
+            ? " enters a " + avName + " and "
+            : " moves a " + avName + " ") +
           "using " +
           move.values.join(" + ") +
           ".";
-        if (captures)
-          message += " An opponent is captured and returns to reserve.";
+        if (captures) {
+          const victim = move.test.targets[0]?.other;
+          const victimAv =
+            typeof getPlayerAvatarSpeechName === "function"
+              ? getPlayerAvatarSpeechName(victim)
+              : "piece";
+          const victimDesc = victim
+            ? victim.name + "’s " + victimAv
+            : "An opponent";
+          message += " " + victimDesc + " is captured and returns to reserve.";
+        }
         if (willFinish)
-          message += " That piece reaches the center and finishes.";
+          message += " That " + avName + " reaches the center and finishes.";
         if (game.phase === "done")
           message =
             player.name +

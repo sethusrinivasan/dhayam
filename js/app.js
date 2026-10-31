@@ -445,12 +445,21 @@
           startGuidedDemo,
         );
       function showQrModal() {
-        const url = "https://sethusrinivasan.github.io/dhayam/";
+        const url = (typeof multiplayer !== "undefined" && multiplayer.active && multiplayer.roomCode)
+          ? getRoomInviteUrl(multiplayer.roomCode)
+          : (window.location.origin && window.location.origin !== "null"
+              ? window.location.origin + window.location.pathname
+              : "https://sethusrinivasan.github.io/dhayam/");
+
+        const qrHtml = typeof generateQrSvg === "function"
+          ? generateQrSvg(url, 4, 4)
+          : '<img src="assets/qr-dhayam.svg" alt="Dhayam Game QR Code" style="width:180px;height:180px;display:block;" />';
+
         const content =
           '<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;padding:6px 0;">' +
           '<p style="margin:0;font-size:0.95rem;color:#f2dec5;">Scan this QR code with your phone or tablet camera to open and play Dhayam instantly.</p>' +
           '<div style="background:#fff;padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.5);display:inline-block;">' +
-          '<img src="assets/qr-dhayam.svg" alt="Dhayam Game QR Code" style="width:180px;height:180px;display:block;" />' +
+          qrHtml +
           '</div>' +
           '<div style="display:flex;gap:8px;align-items:center;justify-content:center;width:100%;max-width:380px;">' +
           '<input type="text" readonly value="' +
