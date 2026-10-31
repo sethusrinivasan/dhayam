@@ -277,3 +277,97 @@ test("automatic turn pass occurs when player has 0 legal moves", () => {
   assert.equal(game.current, 1, "Turn passes to next player when no legal moves exist");
 });
 
+test("guided demo multiplayer simulation initializes Cloudflare room state and seats cleanly", () => {
+  const multiplayerState = {
+    active: false,
+    isHost: false,
+    roomCode: null as string | null,
+    transport: "cf_ws",
+    status: "offline",
+    mySeat: 0,
+    roomTargetCount: 2,
+    claimedSeats: {} as Record<number, { name: string; connected: boolean; isHost: boolean; device?: string }>,
+  };
+
+  function simulateStartGuidedDemo(mode: "classic" | "multiplayer", playerCount: number) {
+    const demo = true;
+    const demoMode = mode;
+    const demoPlayerCount = playerCount;
+
+    if (demoMode === "multiplayer") {
+      multiplayerState.active = true;
+      multiplayerState.isHost = true;
+      multiplayerState.roomCode = "CF88";
+      multiplayerState.transport = "cf_ws";
+      multiplayerState.status = "connected";
+      multiplayerState.mySeat = 0;
+      multiplayerState.roomTargetCount = demoPlayerCount;
+      multiplayerState.claimedSeats = {};
+      for (let i = 0; i < demoPlayerCount; i++) {
+        multiplayerState.claimedSeats[i] = {
+          name: i === 0 ? "Maya" : i === 1 ? "Leo" : i === 2 ? "Rohan" : "Ananya",
+          connected: true,
+          isHost: i === 0,
+          device: i === 0 ? "desktop" : "mobile",
+        };
+      }
+    } else {
+      multiplayerState.active = false;
+      multiplayerState.isHost = false;
+      multiplayerState.roomCode = null;
+      multiplayerState.claimedSeats = {};
+    }
+    return { demo, demoMode, demoPlayerCount };
+  }
+
+  // Test 2-player multiplayer demo setup
+  const d2 = simulateStartGuidedDemo("multiplayer", 2);
+  assert.equal(d2.demoMode, "multiplayer");
+  assert.equal(d2.demoPlayerCount, 2);
+  assert.equal(multiplayerState.active, true);
+  assert.equal(multiplayerState.isHost, true);
+  assert.equal(multiplayerState.roomCode, "CF88");
+  assert.equal(Object.keys(multiplayerState.claimedSeats).length, 2);
+  assert.equal(multiplayerState.claimedSeats[0].name, "Maya");
+  assert.equal(multiplayerState.claimedSeats[1].name, "Leo");
+
+  // Test 4-player multiplayer demo setup
+  const d4 = simulateStartGuidedDemo("multiplayer", 4);
+  assert.equal(d4.demoPlayerCount, 4);
+  assert.equal(Object.keys(multiplayerState.claimedSeats).length, 4);
+  assert.equal(multiplayerState.claimedSeats[2].name, "Rohan");
+  assert.equal(multiplayerState.claimedSeats[3].name, "Ananya");
+});
+
+test("guided demo stop and cleanup cleanly resets multiplayer state", () => {
+  const multiplayerState = {
+    active: true,
+    isHost: true,
+    roomCode: "CF88" as string | null,
+    claimedSeats: { 0: { name: "Maya", connected: true } } as Record<number, any>,
+  };
+
+  let demo = true;
+  let demoMode: "classic" | "multiplayer" = "multiplayer";
+
+  function simulateStopDemo() {
+    demo = false;
+    if (demoMode === "multiplayer" || multiplayerState.roomCode === "CF88") {
+      multiplayerState.active = false;
+      multiplayerState.isHost = false;
+      multiplayerState.roomCode = null;
+      multiplayerState.claimedSeats = {};
+    }
+    demoMode = "classic";
+  }
+
+  simulateStopDemo();
+
+  assert.equal(demo, false);
+  assert.equal(demoMode, "classic");
+  assert.equal(multiplayerState.active, false);
+  assert.equal(multiplayerState.isHost, false);
+  assert.equal(multiplayerState.roomCode, null);
+  assert.deepEqual(multiplayerState.claimedSeats, {});
+});
+

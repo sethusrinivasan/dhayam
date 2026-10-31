@@ -93,7 +93,7 @@
             pool: [...game.pool],
           });
         }
-        if (multiplayer.active) {
+        if (multiplayer.active && !demo) {
           if (!isMyTurn()) return;
           if (multiplayer.transport === "cf_ws") {
             if (typeof sendWsMessage === "function") {
@@ -220,7 +220,7 @@
             values: opt.values,
           });
         }
-        if (multiplayer.active) {
+        if (multiplayer.active && !demo) {
           if (!isMyTurn()) return;
           if (multiplayer.transport === "cf_ws") {
             if (typeof sendWsMessage === "function") {
@@ -424,7 +424,7 @@
             "The opening entry allowance must be used so the game can begin.";
           return;
         }
-        if (multiplayer.active) {
+        if (multiplayer.active && !demo) {
           if (!isMyTurn()) return;
           if (multiplayer.transport === "cf_ws") {
             if (typeof sendWsMessage === "function") {

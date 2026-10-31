@@ -19,6 +19,8 @@
         demoNextDelay = 5000,
         demoPaused = false,
         demoStep = 0,
+        demoMode = "classic",
+        demoPlayerCount = 2,
         demoSpeed = 1,
         superSpeed = false,
         savedDemoSpeed = 1,

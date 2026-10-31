@@ -1,10 +1,184 @@
 /**
  * demo.js - Interactive Guided Demo & Auto-Play Controller
  *
- * Orchestrates a step-by-step tutorial introducing piece entry, movement, and commentary,
- * supporting pause/resume, variable speed (0.5x - 2x), and silent super-speed.
+ * Orchestrates step-by-step tutorials introducing piece entry, movement, and commentary,
+ * supporting classic tabletop rules walkthrough and online multiplayer simulation with
+ * Cloudflare Edge Durable Objects, QR code mobile joins, and live floating emoji banter.
  */
 "use strict";
+
+      const DEMO_STEPS_MULTIPLAYER = [
+        () => {
+          const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
+          if (typeof displayFloatingEmote === "function") displayFloatingEmote("👋", p1.name);
+          return demoScene(
+            "Cloudflare Edge Room CF88 created. WebSocket hibernation active with host " + p1.name + " in Seat 1.",
+            () => {
+              game.current = 0;
+              game.turn = 1;
+              game.phase = "roll";
+              game.pool = [];
+              game.history = [];
+              game.last = null;
+              if (typeof updateMultiplayerBadge === "function") updateMultiplayerBadge();
+            },
+          );
+        },
+        () => {
+          const p2 = (game && game.players && game.players[1]) || { name: "Leo", avatar: "👻" };
+          if (typeof displayFloatingEmote === "function") {
+            displayFloatingEmote("📱", p2.name);
+            if (game.players.length > 2) {
+              setTimeout(() => displayFloatingEmote("🎮", game.players[2].name), 400);
+            }
+            if (game.players.length > 3) {
+              setTimeout(() => displayFloatingEmote("✨", game.players[3].name), 800);
+            }
+          }
+          const otherNames = game.players.slice(1).map((p) => p.name).join(" and ");
+          return demoScene(
+            otherNames + " scanned the QR code on mobile and joined Room CF88! Seats are synchronized across all devices.",
+            () => {
+              game.current = 0;
+              game.turn = 1;
+              game.phase = "roll";
+            },
+          );
+        },
+        () => {
+          const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
+          if (typeof displayFloatingEmote === "function") displayFloatingEmote("🎲", p1.name);
+          return demoScene(
+            p1.name + " rolls a 1 (Dhayam) on desktop. 3D dice physics and result are broadcast via WebSockets to all players.",
+            () => {
+              game.last = {
+                a: 0,
+                b: 1,
+                value: 1,
+                val: 1,
+                bonus: true,
+                specialRoll: true,
+              };
+              game.pool = [1];
+              game.history = [1];
+              game.phase = "move";
+            },
+          );
+        },
+        () => {
+          const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
+          const p2 = (game && game.players && game.players[1]) || { name: "Leo", avatar: "👻" };
+          const avName1 = typeof getPlayerAvatarSpeechName === "function" ? getPlayerAvatarSpeechName(p1) : "piece";
+          if (typeof displayFloatingEmote === "function") {
+            setTimeout(() => displayFloatingEmote("👏", p2.name), 450);
+          }
+          return demoScene(
+            "A roll of 1 allows " + p1.name + " to enter a " + avName1 + " on the board. Movement streams to every device.",
+            async () => {
+              await animateScriptedPiece(
+                game.players[0],
+                game.players[0].pieces[0],
+                0,
+              );
+              game.pool = [];
+              game.phase = "roll";
+            },
+          );
+        },
+        () => {
+          const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
+          const avName1 = typeof getPlayerAvatarSpeechName === "function" ? getPlayerAvatarSpeechName(p1) : "piece";
+          if (typeof displayFloatingEmote === "function") displayFloatingEmote("🔥", p1.name);
+          return demoScene(
+            "Rolling 1 grants a bonus roll! " + p1.name + " rolls 3 and advances three spaces along the circuit.",
+            async () => {
+              game.last = {
+                a: 0,
+                b: 3,
+                value: 3,
+                val: 3,
+                bonus: false,
+                specialRoll: false,
+              };
+              game.pool = [3];
+              game.history = [1, 3];
+              game.phase = "move";
+              await animateScriptedPiece(
+                game.players[0],
+                game.players[0].pieces[0],
+                3,
+              );
+              game.pool = [];
+              game.history = [];
+              game.current = 1;
+              game.turn = 2;
+              game.phase = "roll";
+            },
+          );
+        },
+        () => {
+          const p2 = (game && game.players && game.players[1]) || { name: "Leo", avatar: "👻" };
+          if (typeof displayFloatingEmote === "function") displayFloatingEmote("📱", p2.name);
+          return demoScene(
+            "Turn handed over Cloudflare Edge to " + p2.name + " on mobile. Interactive controls illuminate on Leo's phone.",
+            () => {
+              game.current = 1;
+              game.turn = 2;
+              game.phase = "roll";
+              game.pool = [];
+              game.history = [];
+            },
+          );
+        },
+        () => {
+          const p2 = (game && game.players && game.players[1]) || { name: "Leo", avatar: "👻" };
+          const avName2 = typeof getPlayerAvatarSpeechName === "function" ? getPlayerAvatarSpeechName(p2) : "piece";
+          if (typeof displayFloatingEmote === "function") displayFloatingEmote("🎉", p2.name);
+          return demoScene(
+            p2.name + " rolls a 1 on mobile and enters their " + avName2 + "! Turn state remains fully synchronized.",
+            async () => {
+              game.last = {
+                a: 0,
+                b: 1,
+                value: 1,
+                val: 1,
+                bonus: true,
+                specialRoll: true,
+              };
+              game.pool = [1];
+              game.history = [1];
+              game.phase = "move";
+              await animateScriptedPiece(
+                game.players[1],
+                game.players[1].pieces[0],
+                0,
+              );
+              game.pool = [];
+              game.history = [];
+              game.phase = "roll";
+            },
+          );
+        },
+        () => {
+          if (typeof displayFloatingEmote === "function") {
+            displayFloatingEmote("⚡", game.players[0].name);
+            setTimeout(() => displayFloatingEmote("😎", game.players[1].name), 500);
+          }
+          return demoScene(
+            "Session tokens protect against disconnects. The online match will now auto-play with live floating reactions!",
+            () => {
+              game.players.forEach((p) => {
+                p.captured = true;
+              });
+              game.current = 0;
+              game.turn = 3;
+              game.pool = [];
+              game.history = [];
+              game.phase = "roll";
+            },
+          );
+        },
+      ];
 
       function stopDemo() {
         if (demoTimer) clearTimeout(demoTimer);
@@ -24,6 +198,16 @@
         superSpeed = false;
         demoSpeed = 1;
         demoRollQueue = [];
+        if (demoMode === "multiplayer" || (typeof multiplayer !== "undefined" && multiplayer.roomCode === "CF88")) {
+          if (typeof multiplayer !== "undefined") {
+            multiplayer.active = false;
+            multiplayer.isHost = false;
+            multiplayer.roomCode = null;
+            multiplayer.claimedSeats = {};
+            if (typeof updateMultiplayerBadge === "function") updateMultiplayerBadge();
+          }
+        }
+        demoMode = "classic";
         if ($("demoBar")) $("demoBar").hidden = true;
       }
 
@@ -57,7 +241,7 @@
         game.history.push(value);
         const bonusResult = bonusDecision(value),
           { specialRoll, bonus } = bonusResult;
-        game.last = { a: faces[0], b: faces[1], value, ...bonusResult };
+        game.last = { a: faces[0], b: faces[1], value, val: value, ...bonusResult };
         if (!bonus) game.phase = "move";
         recordAudit("ROLL", {
           firstFace: faces[0],
@@ -79,10 +263,19 @@
             ? " Its reduced bonus chance ends the chain, so it is time to move."
             : "";
         const message = player.name + " rolls " + value + "." + bonusMessage;
-        $("statusTitle").textContent = "Full guided game · Turn " + game.turn;
+        const statusPrefix =
+          demoMode === "multiplayer" ? "🌐 Room CF88 · " : "Full guided game · ";
+        $("statusTitle").textContent = statusPrefix + "Turn " + game.turn;
         $("statusText").textContent = message;
         speakDemo(message);
         triggerDiceAnimation();
+        if (demoMode === "multiplayer" && typeof displayFloatingEmote === "function") {
+          if (value === 1 || value === 5 || value === 6 || value === 12) {
+            const rollEmotes = ["🔥", "⚡", "🎲", "🎉", "✨"];
+            const emote = rollEmotes[Math.floor(Math.random() * rollEmotes.length)];
+            displayFloatingEmote(emote, player.name);
+          }
+        }
       }
       async function demoMoveAction() {
         const player = active(),
@@ -93,7 +286,9 @@
           demoRollQueue = [];
           const message =
             player.name + " has no legal move, so the turn passes.";
-          $("statusTitle").textContent = "Full guided game · Turn " + game.turn;
+          const statusPrefix =
+            demoMode === "multiplayer" ? "🌐 Room CF88 · " : "Full guided game · ";
+          $("statusTitle").textContent = statusPrefix + "Turn " + game.turn;
           $("statusText").textContent = message;
           speakDemo(message);
           return;
@@ -134,10 +329,25 @@
             " finishes all six pieces, wins the game, and play stops.";
         $("statusTitle").textContent =
           game.phase === "done"
-            ? "Full guided game complete"
-            : "Full guided game · Turn " + game.turn;
+            ? (demoMode === "multiplayer" ? "🌐 Room CF88 complete" : "Full guided game complete")
+            : (demoMode === "multiplayer" ? "🌐 Room CF88 · Turn " + game.turn : "Full guided game · Turn " + game.turn);
         $("statusText").textContent = message;
         speakDemo(message);
+        if (demoMode === "multiplayer" && typeof displayFloatingEmote === "function") {
+          if (captures) {
+            displayFloatingEmote("😎", player.name);
+            const victim = move.test.targets[0]?.other;
+            if (victim) {
+              setTimeout(() => displayFloatingEmote("😱", victim.name), 450);
+            }
+          } else if (willFinish) {
+            displayFloatingEmote("🏆", player.name);
+          } else if (Math.random() < 0.25) {
+            const banter = ["👏", "✨", "🎯", "⚡", "👍"];
+            const emote = banter[Math.floor(Math.random() * banter.length)];
+            displayFloatingEmote(emote, player.name);
+          }
+        }
       }
       async function runDemoGameStep() {
         if (game.phase === "done") return;
@@ -147,17 +357,19 @@
       function updateDemoControls() {
         const complete = game && game.phase === "done",
           available = "speechSynthesis" in window,
-          opening = demoStep < DEMO_STEPS.length;
+          currentSteps =
+            demoMode === "multiplayer" ? DEMO_STEPS_MULTIPLAYER : DEMO_STEPS,
+          opening = demoStep < currentSteps.length;
         $("demoBar").hidden = !demo;
         $("demoProgress").textContent = complete
-          ? "Full match complete"
+          ? (demoMode === "multiplayer" ? "🌐 Room CF88 complete" : "Full match complete")
           : (demoPaused ? "Paused · " : "") +
             (opening
-              ? "Opening lesson " +
+              ? (demoMode === "multiplayer" ? "Multiplayer demo " : "Opening lesson ") +
                 Math.max(1, demoStep) +
                 " of " +
-                DEMO_STEPS.length
-              : "Full game · Turn " + game.turn) +
+                currentSteps.length
+              : (demoMode === "multiplayer" ? "🌐 Room CF88 · Turn " + game.turn : "Full game · Turn " + game.turn)) +
             (superSpeed ? " · Super 3× · Audio off" : "");
         $("demoPause").textContent = demoPaused ? "Resume" : "Pause";
         $("demoPause").disabled = complete;
@@ -185,27 +397,64 @@
       async function runDemoStep() {
         demoTimer = null;
         if (!demo || demoPaused) return;
-        if (demoStep < DEMO_STEPS.length) {
-          await DEMO_STEPS[demoStep]();
+        const currentSteps =
+          demoMode === "multiplayer" ? DEMO_STEPS_MULTIPLAYER : DEMO_STEPS;
+        if (demoStep < currentSteps.length) {
+          await currentSteps[demoStep]();
           demoStep++;
         } else await runDemoGameStep();
         updateDemoControls();
         if (game.phase !== "done" && !demoWaitingForSpeech)
           scheduleDemo(demoNextDelay);
       }
-      function startGuidedDemo() {
-        newGame(2);
+      function startGuidedDemo(mode = "classic", playerCount = 2) {
+        demoMode = mode || "classic";
+        demoPlayerCount = Number(playerCount) || 2;
+        newGame(demoMode === "multiplayer" ? demoPlayerCount : 2, 0);
         demo = true;
-        audit.mode = "guided-demo";
-        recordAudit("MODE_CHANGE", { mode: audit.mode });
+        audit.mode =
+          demoMode === "multiplayer" ? "guided-demo-multiplayer" : "guided-demo";
+        recordAudit("MODE_CHANGE", {
+          mode: audit.mode,
+          playerCount: demoPlayerCount,
+        });
         demoPaused = false;
         demoStep = 0;
         demoRollQueue = [];
+
+        if (demoMode === "multiplayer") {
+          multiplayer.active = true;
+          multiplayer.isHost = true;
+          multiplayer.roomCode = "CF88";
+          multiplayer.transport = "cf_ws";
+          multiplayer.status = "connected";
+          multiplayer.mySeat = 0;
+          multiplayer.roomTargetCount = demoPlayerCount;
+          multiplayer.claimedSeats = {};
+          if (game && game.players) {
+            game.players.forEach((p, idx) => {
+              multiplayer.claimedSeats[idx] = {
+                name: p.name,
+                connected: true,
+                isHost: idx === 0,
+                device: idx === 0 ? "desktop" : "mobile",
+              };
+            });
+          }
+          if (typeof updateMultiplayerBadge === "function") updateMultiplayerBadge();
+        } else {
+          multiplayer.active = false;
+          multiplayer.isHost = false;
+          multiplayer.roomCode = null;
+          multiplayer.claimedSeats = {};
+          if (typeof updateMultiplayerBadge === "function") updateMultiplayerBadge();
+        }
+
         $("demoBar").hidden = false;
         runDemoStep();
       }
       function restartGuidedDemo() {
-        startGuidedDemo();
+        startGuidedDemo(demoMode, demoPlayerCount);
       }
       function toggleDemoPause() {
         if (!demo) return;

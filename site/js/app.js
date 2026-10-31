@@ -437,13 +437,112 @@
           "Got it",
           () => {},
         );
-      $("demoBtn").onclick = () =>
+      $("demoBtn").onclick = () => {
+        let selectedMode = "multiplayer";
+        let selectedCount = 2;
+
+        const content =
+          '<div style="display:flex;flex-direction:column;gap:12px;text-align:left;">' +
+            '<p style="margin:0 0 4px;font-size:0.88rem;color:#f2dec5;">Choose an interactive guided experience:</p>' +
+            '<div class="demo-card selected" id="cardDemoMp" role="button" tabindex="0" style="cursor:pointer;padding:12px 14px;border-radius:10px;border:2px solid #f59e0b;background:#f59e0b1a;transition:all 0.2s ease;">' +
+              '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+                '<div style="display:flex;align-items:center;gap:8px;">' +
+                  '<span style="font-size:1.3rem;">🌐</span>' +
+                  '<strong style="font-size:0.95rem;color:#fcd34d;">Online Multiplayer Simulation</strong>' +
+                '</div>' +
+                '<span style="background:#f59e0b;color:#180b05;font-weight:700;font-size:0.68rem;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:0.5px;">Recommended</span>' +
+              '</div>' +
+              '<p style="margin:0 0 10px;font-size:0.82rem;color:#f2dec5;line-height:1.4;">' +
+                'Simulate a live online match powered by Cloudflare Durable Objects + WebSockets. Watch simulated players join via mobile QR code, synchronize 3D dice rolls across devices, and send live floating emoji banter.' +
+              '</p>' +
+              '<div style="display:flex;align-items:center;gap:10px;font-size:0.82rem;color:#e2cbb2;" id="demoPcountRow">' +
+                '<span>Simulate:</span>' +
+                '<div style="display:flex;gap:6px;" id="demoPlayerCountGroup">' +
+                  '<button type="button" class="pill demo-pcount-btn" data-count="2" style="padding:3px 10px;font-size:0.8rem;font-weight:700;border-color:#f59e0b;background:#f59e0b44;color:#fff;">2 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn" data-count="3" style="padding:3px 10px;font-size:0.8rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">3 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn" data-count="4" style="padding:3px 10px;font-size:0.8rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">4 Players</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="demo-card" id="cardDemoClassic" role="button" tabindex="0" style="cursor:pointer;padding:12px 14px;border-radius:10px;border:1px solid #7a4623;background:#27140b66;transition:all 0.2s ease;">' +
+              '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+                '<div style="display:flex;align-items:center;gap:8px;">' +
+                  '<span style="font-size:1.3rem;">📖</span>' +
+                  '<strong style="font-size:0.95rem;color:#fff1db;">Classic Rules Tutorial</strong>' +
+                '</div>' +
+                '<span style="border:1px solid #a87d4d;color:#cdbda8;font-size:0.68rem;padding:2px 6px;border-radius:10px;">Tabletop</span>' +
+              '</div>' +
+              '<p style="margin:0;font-size:0.82rem;color:#cdbda8;line-height:1.4;">' +
+                'Traditional 2-player walkthrough explaining piece entry on roll of 1, bonus rolls, board progression, and safe floral squares before auto-playing to victory.' +
+              '</p>' +
+            '</div>' +
+          '</div>';
+
         showModal(
-          "Automatic guided demo",
-          "<p>Watch a complete two-player match play automatically. The opening explains entry and capture, then the game keeps rolling and moving until one player finishes all six pieces and wins.</p><p>The match stops as soon as the winner is declared. You can pause, resume, or restart at any time.</p>",
+          "✦ Select Guided Demo",
+          content,
           "Start demo",
-          startGuidedDemo,
+          () => startGuidedDemo(selectedMode, selectedCount),
         );
+
+        setTimeout(() => {
+          const cardMp = $("cardDemoMp");
+          const cardClassic = $("cardDemoClassic");
+          const countBtns = document.querySelectorAll(".demo-pcount-btn");
+
+          function updateCardSelection() {
+            if (selectedMode === "multiplayer") {
+              if (cardMp) {
+                cardMp.style.borderColor = "#f59e0b";
+                cardMp.style.background = "#f59e0b1a";
+              }
+              if (cardClassic) {
+                cardClassic.style.borderColor = "#7a4623";
+                cardClassic.style.background = "#27140b66";
+              }
+            } else {
+              if (cardClassic) {
+                cardClassic.style.borderColor = "#f59e0b";
+                cardClassic.style.background = "#f59e0b1a";
+              }
+              if (cardMp) {
+                cardMp.style.borderColor = "#7a4623";
+                cardMp.style.background = "#27140b66";
+              }
+            }
+          }
+
+          if (cardMp) {
+            cardMp.onclick = (e) => {
+              if (e.target.closest(".demo-pcount-btn")) return;
+              selectedMode = "multiplayer";
+              updateCardSelection();
+            };
+          }
+
+          if (cardClassic) {
+            cardClassic.onclick = () => {
+              selectedMode = "classic";
+              updateCardSelection();
+            };
+          }
+
+          countBtns.forEach((btn) => {
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              selectedMode = "multiplayer";
+              selectedCount = parseInt(btn.dataset.count, 10) || 2;
+              updateCardSelection();
+              countBtns.forEach((b) => {
+                const isCur = b === btn;
+                b.style.borderColor = isCur ? "#f59e0b" : "#7a4623";
+                b.style.background = isCur ? "#f59e0b44" : "transparent";
+                b.style.color = isCur ? "#fff" : "#f2dec5";
+              });
+            };
+          });
+        }, 40);
+      };
       function showQrModal() {
         const url = (typeof multiplayer !== "undefined" && multiplayer.active && multiplayer.roomCode)
           ? getRoomInviteUrl(multiplayer.roomCode)
