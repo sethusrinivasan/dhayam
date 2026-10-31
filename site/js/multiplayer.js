@@ -267,8 +267,23 @@ function sendPlayerAction(action) {
  */
 function sendWsMessage(payload) {
   if (multiplayer.ws && multiplayer.ws.readyState === WebSocket.OPEN) {
-    multiplayer.ws.send(JSON.stringify(payload));
-    return true;
+    try {
+      multiplayer.ws.send(JSON.stringify(payload));
+      if (typeof FlightRecorder !== "undefined") {
+        FlightRecorder.record("MP_WS_SEND", {
+          type: payload.type,
+          roomCode: multiplayer.roomCode,
+          seat: multiplayer.mySeat,
+        });
+      }
+      return true;
+    } catch (e) {
+      console.warn("Failed to send WebSocket message:", e);
+      if (typeof FlightRecorder !== "undefined") {
+        FlightRecorder.record("MP_WS_SEND_ERROR", { error: String(e && e.message ? e.message : e) });
+      }
+      return false;
+    }
   }
   return false;
 }
@@ -486,6 +501,14 @@ function connectCloudflareRoom(roomCode, isHost, playerCount = 2, customName = n
  */
 function handleWsMessage(msg) {
   if (!msg || typeof msg !== "object") return;
+  if (typeof FlightRecorder !== "undefined") {
+    FlightRecorder.record("MP_WS_RECV", {
+      type: msg.type,
+      roomCode: multiplayer.roomCode,
+      seat: multiplayer.mySeat,
+      message: msg.message || undefined,
+    });
+  }
 
   switch (msg.type) {
     case "ROOM_STATE": {
@@ -545,6 +568,20 @@ function handleWsMessage(msg) {
 
       newGame(msg.totalPlayers || multiplayer.roomTargetCount || 2, 0);
       applyRemoteState(msg.game, msg.audit);
+
+      if (typeof FlightRecorder !== "undefined" && typeof FlightRecorder.recordGameStart === "function") {
+        FlightRecorder.recordGameStart({
+          mode: multiplayer.isHost ? "multiplayer-cf-host" : "multiplayer-cf-guest",
+          playerCount: msg.totalPlayers || multiplayer.roomTargetCount || 2,
+          computerCount: 0,
+          roomCode: multiplayer.roomCode,
+          cfHost: window.location.host,
+          transport: "cf_ws",
+          seat: msg.seat,
+          players: game && game.players ? game.players.map((p) => ({ id: p.id, name: p.name, seat: p.seat })) : null,
+          rulesVariant: "Dhayam 7x7 online multiplayer",
+        });
+      }
 
       closeModal();
       updateMultiplayerBadge();

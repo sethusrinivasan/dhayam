@@ -97,7 +97,16 @@ const INNER = [
   "B5",
 ];
 const APPROACH: Record<Seat, string> = { N: "C4", E: "D5", S: "E4", W: "D3" };
-const NAMES = ["Maya", "Leo", "Amina", "Kai", "Sofia", "Noah"];
+const NAMES = [
+  "Maya",
+  "Leo",
+  "Amina",
+  "Kai",
+  "Sofia",
+  "Noah",
+  "Zara",
+  "Arun",
+];
 
 // The board stores one north-facing route. Rotating it gives every seat the
 // same movement length and rules without duplicating four coordinate lists.
@@ -122,8 +131,8 @@ export const ROUTES: Record<Seat, string[]> = Object.fromEntries(
 ) as Record<Seat, string[]>;
 
 export function createGame(playerCount = 4): Game {
-  if (!Number.isInteger(playerCount) || playerCount < 2 || playerCount > 6) {
-    throw new RangeError("Dhayam requires 2 to 6 players");
+  if (!Number.isInteger(playerCount) || playerCount < 2 || playerCount > 8) {
+    throw new RangeError("Dhayam requires 2 to 8 players");
   }
   const seats: Seat[] =
     playerCount === 2

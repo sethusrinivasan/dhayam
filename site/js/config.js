@@ -63,6 +63,8 @@
         { name: "Kai", avatar: "🦁", color: "#2e9d57" },
         { name: "Sofia", avatar: "🦊", color: "#8e5bd9" },
         { name: "Noah", avatar: "🦉", color: "#00a6a6" },
+        { name: "Zara", avatar: "🦄", color: "#ec4899" },
+        { name: "Arun", avatar: "🦅", color: "#f97316" },
       ];
       // Every seat follows the same 44-position route. Rotating the north route
       // keeps movement rules consistent while giving each player a unique start.

@@ -29,7 +29,12 @@ test("creates the supported seating arrangements", () => {
     createGame(6).players.map((player) => player.seat),
     ["N", "E", "S", "W", "N", "E"],
   );
+  assert.deepEqual(
+    createGame(8).players.map((player) => player.seat),
+    ["N", "E", "S", "W", "N", "E", "S", "W"],
+  );
   assert.throws(() => createGame(1), RangeError);
+  assert.throws(() => createGame(9), RangeError);
 });
 
 test("builds a 44-position rotationally symmetric route for each seat", () => {

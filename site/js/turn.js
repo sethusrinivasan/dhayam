@@ -166,18 +166,20 @@
         render();
       }
       function waitForMoveStep() {
+        const isFast = Boolean(superSpeed || (typeof quantumMode !== "undefined" && quantumMode) || demoSpeed >= 32);
+        const minDelay = isFast ? (demoSpeed >= 32 ? 4 : MIN_SUPER_MOVE_DELAY) : 40;
         return new Promise((resolve) =>
           setTimeout(
             resolve,
-            superSpeed
-              ? Math.max(MIN_SUPER_MOVE_DELAY, scaledDemoDelay(MOVE_STEP_DELAY))
-              : scaledDemoDelay(MOVE_STEP_DELAY),
+            Math.max(minDelay, scaledDemoDelay(MOVE_STEP_DELAY)),
           ),
         );
       }
       function waitForCaptureAnimation() {
+        const isFast = Boolean(superSpeed || (typeof quantumMode !== "undefined" && quantumMode) || demoSpeed >= 32);
+        const minDelay = isFast ? 10 : 80;
         return new Promise((resolve) =>
-          setTimeout(resolve, scaledDemoDelay(1250)),
+          setTimeout(resolve, Math.max(minDelay, scaledDemoDelay(1250))),
         );
       }
       async function animatePiece(player, piece, targetProgress) {

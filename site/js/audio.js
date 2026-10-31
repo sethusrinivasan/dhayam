@@ -305,10 +305,11 @@
             : "Voice commentary: MUTED (Click to unmute)"
           : "Commentary unavailable";
         $("audioToggle").setAttribute("aria-pressed", String(audioEnabled));
-        $("audioToggle").disabled = !available || (demo && superSpeed);
+        const isSpeedMuted = Boolean(demo && (superSpeed || quantumMode || demoSpeed >= 32));
+        $("audioToggle").disabled = !available || isSpeedMuted;
       }
       function toggleAudio() {
-        if (demo && superSpeed) return;
+        if (demo && (superSpeed || quantumMode || demoSpeed >= 32)) return;
         audioEnabled = !audioEnabled;
         commentaryUntil = 0;
         if (demoSpeechTimer) clearTimeout(demoSpeechTimer);

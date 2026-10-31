@@ -11,12 +11,47 @@
   const MAX_EVENTS = 400;
   const startTime = Date.now();
   const eventBuffer = [];
+  let gameInitConfig = null;
 
   function formatRelative(ms) {
     const totalSec = ms / 1000;
     const mins = Math.floor(totalSec / 60);
     const secs = (totalSec % 60).toFixed(3);
     return "+" + String(mins).padStart(2, "0") + ":" + (secs < 10 ? "0" : "") + secs;
+  }
+
+  function setGameInitConfig(config = {}) {
+    gameInitConfig = {
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+      mode: config.mode || "unknown",
+      playerCount: config.playerCount ?? null,
+      computerCount: config.computerCount ?? null,
+      roomCode: config.roomCode ?? null,
+      cfHost: config.cfHost ?? (window.location.host || null),
+      transport: config.transport || "local",
+      seat: config.seat ?? 0,
+      players: Array.isArray(config.players) ? config.players : null,
+      theme: config.theme || (document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween"),
+      rulesVariant: config.rulesVariant || "Dhayam 7x7 house variant",
+      ...config,
+    };
+    return gameInitConfig;
+  }
+
+  function recordGameStart(config = {}) {
+    const saved = setGameInitConfig(config);
+    return record("GAME_INIT", {
+      mode: saved.mode,
+      playerCount: saved.playerCount,
+      computerCount: saved.computerCount,
+      roomCode: saved.roomCode,
+      cfHost: saved.cfHost,
+      transport: saved.transport,
+      seat: saved.seat,
+      players: saved.players,
+      rules: saved.rulesVariant,
+    });
   }
 
   function getSystemDiagnostics() {
@@ -39,6 +74,8 @@
       },
       theme: document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween",
       audio: typeof audioEnabled !== "undefined" ? audioEnabled : null,
+      gameInitConfig: gameInitConfig,
+      initialParameters: gameInitConfig,
       gameState: typeof game !== "undefined" && game ? {
         phase: game.phase,
         turn: game.turn,
@@ -54,6 +91,9 @@
           active: Boolean(multiplayer.active),
           isHost: Boolean(multiplayer.isHost),
           roomCode: multiplayer.roomCode || null,
+          transport: multiplayer.transport || null,
+          status: multiplayer.status || null,
+          mySeat: multiplayer.mySeat ?? null,
         } : null,
       } : null,
     };
@@ -62,6 +102,9 @@
   function record(type, details = {}) {
     const now = Date.now();
     const relMs = now - startTime;
+    if (type === "GAME_INIT" || type === "GAME_START") {
+      setGameInitConfig(details);
+    }
     const entry = {
       i: eventBuffer.length + 1,
       rel: formatRelative(relMs),
@@ -139,18 +182,31 @@
     const diag = getSystemDiagnostics();
     const timeline = eventBuffer.map((ev) => {
       const parts = [ev.rel, ev.type];
+      if (ev.mode) parts.push("mode=" + ev.mode);
+      if (ev.playerCount) parts.push("players=" + ev.playerCount);
+      if (ev.roomCode) parts.push("room=" + ev.roomCode);
+      if (ev.host) parts.push("host=" + ev.host);
+      if (ev.cfHost) parts.push("cfHost=" + ev.cfHost);
       if (ev.target) parts.push(ev.target);
       if (ev.text) parts.push('"' + ev.text + '"');
-      if (ev.value !== undefined) parts.push("val=" + ev.value);
+      if (ev.player) parts.push("player=" + ev.player);
+      if (ev.seat !== undefined && ev.seat !== null) parts.push("seat=" + ev.seat);
+      if (ev.turn !== undefined) parts.push("turn=" + ev.turn);
+      if (ev.val !== undefined) parts.push("val=" + ev.val);
+      if (ev.value !== undefined && ev.val === undefined) parts.push("val=" + ev.value);
       if (ev.pieceId) parts.push("piece=" + ev.pieceId);
+      if (ev.dice) parts.push("dice=" + (typeof ev.dice === "object" ? JSON.stringify(ev.dice) : ev.dice));
       if (ev.phase) parts.push("[" + ev.phase + "]");
-      if (ev.message) parts.push("msg=" + ev.message);
+      if (ev.msg) parts.push("msg=" + ev.msg);
+      if (ev.message && !ev.msg) parts.push("msg=" + ev.message);
+      if (ev.status) parts.push("status=" + ev.status);
+      if (ev.error) parts.push("err=" + ev.error);
       return parts.join(" ");
     });
 
     return {
       dhayamFlightRecorder: {
-        version: "1.0",
+        version: "1.1",
         recordedAt: diag.timestamp,
         sessionUptimeMs: Date.now() - startTime,
         eventCount: eventBuffer.length,
@@ -221,6 +277,9 @@
   // Public API
   window.FlightRecorder = {
     record,
+    recordGameStart,
+    setGameInitConfig,
+    getGameInitConfig: () => (gameInitConfig ? { ...gameInitConfig } : null),
     getLog: getDiagnosticExport,
     copy: copyToClipboard,
     getEventCount: () => eventBuffer.length,

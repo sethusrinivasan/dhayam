@@ -2,7 +2,7 @@
 
 [![Play Dhayam](https://img.shields.io/badge/Play%20Live-Cloudflare%20Edge-f38020?logo=cloudflare&logoColor=white)](https://dhayam.cancun.workers.dev)
 [![GitHub Pages Mirror](https://img.shields.io/badge/GitHub%20Pages-Live%20Mirror-d88a3e?logo=githubpages&logoColor=white)](https://sethusrinivasan.github.io/dhayam/)
-[![Tests Passing](https://img.shields.io/badge/tests-48%20passing-brightgreen.svg)](https://github.com/sethusrinivasan/dhayam/actions)
+[![Tests Passing](https://img.shields.io/badge/tests-59%20passing-brightgreen.svg)](https://github.com/sethusrinivasan/dhayam/actions)
 [![Built with Codex](https://img.shields.io/badge/Built%20with-Codex-000000?logo=openai&logoColor=white)](#)
 [![Enhanced with Gemini](https://img.shields.io/badge/Enhanced%20with-Google%20Gemini-4285F4?logo=google&logoColor=white)](#)
 [![Reasoned with Claude](https://img.shields.io/badge/Reasoned%20with-Claude%20Sonnet%204.6%20Thinking-D97706?logo=anthropic&logoColor=white)](#)
@@ -85,6 +85,7 @@ npm test              # Runs 48 unit, regression, and MCP tests
 ## 📚 Documentation & Technical Guides
 
 * 🏛️ **[Architecture & Design](docs/architecture.md)** — Modular design, zero runtime dependencies, and Cloudflare Edge Durable Objects.
+* 🔄 **[Dev, Test, Debug & Staging Workflow](docs/development-workflow.md)** — Full development cycle, Flight Recorder black box debugging, automated staging gate, and production promotion.
 * ☁️ **[Hosting & Deployment](docs/cloudflare-deployment.md)** — Zero-cost Cloudflare Free Tier hosting setup.
 * 🛡️ **[OWASP Top 20 Security Evaluation](docs/owasp-top-20-security-evaluation.md)** — Comprehensive 2026 security audit, XSS defense, rate limiting, and threat model.
 * 🤖 **[MCP Integration Guide](docs/mcp-evaluation.md)** — Model Context Protocol endpoints for autonomous AI matches.

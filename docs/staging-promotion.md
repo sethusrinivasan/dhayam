@@ -86,6 +86,8 @@ In rare cases (e.g., staging URL temporarily down but production is known good) 
 
 ## Local Development
 
+For comprehensive details on local setup, tests, and debugging with Flight Recorder, see the [Development, Test, Debug, Staging & Deployment Workflow](development-workflow.md).
+
 To deploy only to staging from your local machine:
 
 ```bash

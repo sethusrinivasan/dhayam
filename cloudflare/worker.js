@@ -100,16 +100,16 @@ class DhayamEngine {
   }
 
   initNewMatch(names = ["Player 1", "Player 2"]) {
-    const count = Math.min(Math.max(names.length, 2), 4);
-    const avatars = ["🔴", "🟢", "🟡", "🔵"];
-    const colors = ["#ff7518", "#2dd4bf", "#f59e0b", "#6366f1"];
+    const count = Math.min(Math.max(names.length, 2), 8);
+    const avatars = ["🎃", "👻", "🧙", "🦇", "🐺", "🕷️", "💀", "🌙"];
+    const colors = ["#ff7518", "#2dd4bf", "#f59e0b", "#6366f1", "#ec4899", "#8b5cf6", "#10b981", "#06b6d4"];
 
     this.players = names.slice(0, count).map((name, i) => ({
       id: "P" + i,
       name,
-      avatar: avatars[i],
-      color: colors[i],
-      seat: SEATS[i],
+      avatar: avatars[i % avatars.length],
+      color: colors[i % colors.length],
+      seat: count === 2 ? (i === 0 ? "N" : "S") : count === 3 ? (i === 0 ? "N" : i === 1 ? "E" : "S") : SEATS[i % SEATS.length],
       captured: false,
       rank: null,
       pieces: Array.from({ length: 6 }, (_, q) => ({ id: "P" + i + "-" + q, progress: -1 }))
@@ -1006,7 +1006,7 @@ export class DhayamRoom extends DurableObject {
   ensureInitialized(targetCount = 2, code = "") {
     if (!this.engine) {
       this.roomCode = code;
-      this.targetPlayers = Math.min(Math.max(targetCount, 2), 4);
+      this.targetPlayers = Math.min(Math.max(targetCount, 2), 8);
       const names = Array.from({ length: this.targetPlayers }, (_, i) => "Player " + (i + 1));
       this.engine = new DhayamEngine();
       this.engine.initNewMatch(names);
@@ -1260,24 +1260,24 @@ export class DhayamRoom extends DurableObject {
             type: "ERROR",
             message: this.engine.current !== seat ? "Not your turn to roll." : "Cannot roll during " + this.engine.phase + " phase."
           }));
-          ws.send(JSON.stringify({
+          this.broadcast({
             type: "SYNC_STATE",
             game: this.engine.serialize(),
             audit: this.engine.audit,
             seats: this.getSeatsInfo()
-          }));
+          });
           return;
         }
 
         const res = this.engine.rollDice();
         if (res.error) {
           ws.send(JSON.stringify({ type: "ERROR", message: res.error }));
-          ws.send(JSON.stringify({
+          this.broadcast({
             type: "SYNC_STATE",
             game: this.engine.serialize(),
             audit: this.engine.audit,
             seats: this.getSeatsInfo()
-          }));
+          });
           return;
         }
 
@@ -1316,12 +1316,12 @@ export class DhayamRoom extends DurableObject {
             type: "ERROR",
             message: this.engine.current !== seat ? "Not your turn to move." : "Game is in " + this.engine.phase + " phase."
           }));
-          ws.send(JSON.stringify({
+          this.broadcast({
             type: "SYNC_STATE",
             game: this.engine.serialize(),
             audit: this.engine.audit,
             seats: this.getSeatsInfo()
-          }));
+          });
           return;
         }
 
@@ -1329,12 +1329,12 @@ export class DhayamRoom extends DurableObject {
         const res = this.engine.applyMove(pieceId, diceValues);
         if (res.error) {
           ws.send(JSON.stringify({ type: "ERROR", message: res.error }));
-          ws.send(JSON.stringify({
+          this.broadcast({
             type: "SYNC_STATE",
             game: this.engine.serialize(),
             audit: this.engine.audit,
             seats: this.getSeatsInfo()
-          }));
+          });
           return;
         }
 
@@ -1371,12 +1371,12 @@ export class DhayamRoom extends DurableObject {
             type: "ERROR",
             message: "Not your turn."
           }));
-          ws.send(JSON.stringify({
+          this.broadcast({
             type: "SYNC_STATE",
             game: this.engine.serialize(),
             audit: this.engine.audit,
             seats: this.getSeatsInfo()
-          }));
+          });
           return;
         }
 
@@ -1389,6 +1389,10 @@ export class DhayamRoom extends DurableObject {
           audit: this.engine.audit,
           seats: this.getSeatsInfo()
         });
+      }
+
+      else if (data.type === "PING") {
+        ws.send(JSON.stringify({ type: "PONG", timestamp: Date.now() }));
       }
 
       else if (data.type === "GET_STATE" || data.type === "SYNC") {

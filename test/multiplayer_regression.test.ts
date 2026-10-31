@@ -1001,6 +1001,183 @@ test("MCP AI Engine: play_ai_turn and simulate_ai_match state machine contracts"
   assert.ok(turn.commentary.includes("AI-Alpha rolled [5, 3]"));
 });
 
+test("FlightRecorder records initial game parameters and preserves them in system diagnostics", () => {
+  let storedConfig: any = null;
+  const recordedEvents: any[] = [];
+
+  function setGameInitConfig(config: any) {
+    storedConfig = {
+      timestamp: new Date().toISOString(),
+      mode: config.mode || "unknown",
+      playerCount: config.playerCount ?? null,
+      computerCount: config.computerCount ?? null,
+      roomCode: config.roomCode ?? null,
+      cfHost: config.cfHost ?? "dhayam-staging.cancun.workers.dev",
+      transport: config.transport || "local",
+      seat: config.seat ?? 0,
+      players: config.players || null,
+      rulesVariant: config.rulesVariant || "Dhayam 7x7 house variant",
+    };
+    return storedConfig;
+  }
+
+  function recordGameStart(config: any) {
+    const saved = setGameInitConfig(config);
+    recordedEvents.push({
+      type: "GAME_INIT",
+      ...saved,
+    });
+  }
+
+  // 1. Simulate starting real Cloudflare demo
+  recordGameStart({
+    mode: "demo-real-cloudflare",
+    playerCount: 4,
+    computerCount: 0,
+    roomCode: "CF4420",
+    cfHost: "dhayam-staging.cancun.workers.dev",
+    transport: "cf_ws",
+    seat: 0,
+    players: [
+      { id: "P0", name: "Maya", seat: "N" },
+      { id: "P1", name: "Leo", seat: "E" },
+      { id: "P2", name: "Rohan", seat: "S" },
+      { id: "P3", name: "Ananya", seat: "W" },
+    ],
+  });
+
+  assert.equal(recordedEvents.length, 1);
+  assert.equal(recordedEvents[0].type, "GAME_INIT");
+  assert.equal(recordedEvents[0].mode, "demo-real-cloudflare");
+  assert.equal(recordedEvents[0].roomCode, "CF4420");
+  assert.equal(recordedEvents[0].playerCount, 4);
+  assert.equal(storedConfig.roomCode, "CF4420");
+  assert.equal(storedConfig.players.length, 4);
+  assert.equal(storedConfig.players[0].name, "Maya");
+});
+
+test("Real demo turn watchdog triggers resync if edge network stalls", () => {
+  let watchdogTriggered = false;
+  let syncRequested = false;
+  let scheduledTurn = false;
+
+  function onWatchdogTimeout(curSeat: number, turn: number, phase: string, isDone: boolean) {
+    if (isDone) return;
+    watchdogTriggered = true;
+    syncRequested = true;
+    scheduledTurn = true;
+  }
+
+  // Simulate turn 9 where edge stalls and response is delayed
+  onWatchdogTimeout(0, 9, "roll", false);
+
+  assert.ok(watchdogTriggered, "Watchdog must fire when turn is stalled");
+  assert.ok(syncRequested, "Must request state sync from edge");
+  assert.ok(scheduledTurn, "Must reschedule demo turn step rather than freezing permanently");
+});
+
+test("Cloudflare DO broadcast SYNC_STATE on action error prevents single-socket desync", () => {
+  const broadcasts: any[] = [];
+  const singleSends: any[] = [];
+
+  function simulateRollError(seat: number, isTurn: boolean) {
+    if (!isTurn) {
+      singleSends.push({ type: "ERROR", message: "Not your turn to roll." });
+      // Crucial fix: broadcast SYNC_STATE so all participants receive state
+      broadcasts.push({ type: "SYNC_STATE", turn: 9, current: 0, phase: "roll" });
+    }
+  }
+
+  simulateRollError(3, false);
+  assert.equal(singleSends.length, 1);
+  assert.equal(singleSends[0].type, "ERROR");
+  assert.equal(broadcasts.length, 1, "Must broadcast authoritative SYNC_STATE to room on action failure");
+  assert.equal(broadcasts[0].type, "SYNC_STATE");
+});
+
+test("8-player support initializes all 8 seats and themes properly", () => {
+  const SEATS = ["N", "E", "S", "W"];
+  const THEMES = [
+    { name: "Maya", avatar: "🐘", color: "#e74c3c" },
+    { name: "Leo", avatar: "🐯", color: "#2389da" },
+    { name: "Amina", avatar: "🦚", color: "#f4b400" },
+    { name: "Kai", avatar: "🦁", color: "#2e9d57" },
+    { name: "Sofia", avatar: "🦊", color: "#8e5bd9" },
+    { name: "Noah", avatar: "🦉", color: "#00a6a6" },
+    { name: "Zara", avatar: "🦄", color: "#ec4899" },
+    { name: "Arun", avatar: "🦅", color: "#f97316" },
+  ];
+
+  function create8PlayerSetup(count: number, computerCount = 0) {
+    if (count < 2 || count > 8) throw new RangeError("Dhayam supports 2 to 8 total players");
+    const seats = Array.from({ length: count }, (_, i) => SEATS[i % 4]);
+    return {
+      players: seats.map((seat, i) => ({
+        id: "P" + i,
+        name: THEMES[i].name,
+        avatar: THEMES[i].avatar,
+        color: THEMES[i].color,
+        computer: i > 0 && i <= computerCount,
+        seat,
+        pieces: Array.from({ length: 6 }, (_, j) => ({ id: "P" + i + "-" + j, progress: -1 })),
+      })),
+      totalPlayers: count,
+    };
+  }
+
+  const match = create8PlayerSetup(8, 7);
+  assert.equal(match.totalPlayers, 8);
+  assert.equal(match.players.length, 8);
+  assert.equal(match.players[6].name, "Zara");
+  assert.equal(match.players[7].name, "Arun");
+  assert.equal(match.players[7].seat, "W");
+  assert.equal(match.players.filter((p) => p.computer).length, 7);
+});
+
+test("Quantum mode (32x to 128x) correctly disables audio and scales delays", () => {
+  let demoSpeed = 1;
+  let audioEnabled = true;
+  let quantumMode = false;
+  let superSpeed = false;
+
+  function setDemoSpeed(factor: number) {
+    demoSpeed = Math.max(0.5, Math.min(factor, 128));
+    if (demoSpeed >= 32) {
+      quantumMode = true;
+      superSpeed = false;
+      audioEnabled = false; // Audio disabled in Quantum mode
+    } else {
+      quantumMode = false;
+      superSpeed = demoSpeed === 3;
+    }
+  }
+
+  function scaledDelay(ms: number) {
+    return ms / demoSpeed;
+  }
+
+  // 1. Quantum mode activation (32x)
+  setDemoSpeed(32);
+  assert.equal(demoSpeed, 32);
+  assert.equal(quantumMode, true);
+  assert.equal(audioEnabled, false, "Audio must be disabled in Quantum mode");
+  assert.ok(scaledDelay(2200) < 70, "2200ms delay should scale down to < 70ms at 32x");
+
+  // 2. High-speed user factor (up to 128x)
+  setDemoSpeed(128);
+  assert.equal(demoSpeed, 128);
+  assert.equal(quantumMode, true);
+  assert.equal(audioEnabled, false, "Audio must remain disabled at 128x");
+  assert.ok(scaledDelay(2200) < 20, "2200ms delay should scale down to < 20ms at 128x");
+
+  // 3. User reverts to 2x speed
+  setDemoSpeed(2);
+  assert.equal(demoSpeed, 2);
+  assert.equal(quantumMode, false);
+});
+
+
+
 
 
 

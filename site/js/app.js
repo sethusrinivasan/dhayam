@@ -17,8 +17,8 @@
         movingPieceId = null;
         capturedPieceIds = [];
         capturedPlayerIds = [];
-        if (count < 2 || count > 6)
-          throw new RangeError("Dhayam supports 2 to 6 total players");
+        if (count < 2 || count > 8)
+          throw new RangeError("Dhayam supports 2 to 8 total players");
         const seats =
           count === 2
             ? ["N", "S"]
@@ -64,11 +64,32 @@
           rules: "Dhayam 7x7 house variant; first-round entry allowances",
         });
         if (typeof FlightRecorder !== "undefined") {
-          FlightRecorder.record("GAME_START", {
-            playerCount: count,
-            computerCount,
-            mode: computerCount ? "solo" : "local",
-          });
+          if (typeof FlightRecorder.recordGameStart === "function") {
+            FlightRecorder.recordGameStart({
+              mode: computerCount ? "solo" : "local",
+              playerCount: count,
+              computerCount,
+              roomCode: null,
+              transport: "local",
+              seat: 0,
+              players: game.players.map((p) => ({
+                id: p.id,
+                name: p.name,
+                avatar: p.avatar,
+                color: p.color,
+                computer: p.computer,
+                seat: p.seat,
+              })),
+              theme: document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween",
+              rulesVariant: "Dhayam 7x7 house variant; first-round entry allowances",
+            });
+          } else {
+            FlightRecorder.record("GAME_START", {
+              playerCount: count,
+              computerCount,
+              mode: computerCount ? "solo" : "local",
+            });
+          }
         }
         selectedRoll = 0;
         selectedPieceId = null;
@@ -252,16 +273,39 @@
         }, 40);
       }
       $("demoPause").onclick = toggleDemoPause;
-      $("demoSuperSpeed").onclick = toggleSuperSpeed;
+      if ($("demoQuantumSpeed")) $("demoQuantumSpeed").onclick = toggleQuantumSpeed;
+      if ($("demoSuperSpeed")) $("demoSuperSpeed").onclick = toggleSuperSpeed;
       $("demoSpeed").oninput = (event) => {
-        demoSpeed = Number(event.target.value);
+        const val = Number(event.target.value);
+        demoSpeed = Math.max(0.5, Math.min(val, typeof MAX_DEMO_SPEED !== "undefined" ? MAX_DEMO_SPEED : 128));
+        if (demoSpeed >= 32) {
+          quantumMode = true;
+          superSpeed = false;
+          if (audioEnabled) {
+            savedAudioEnabled = audioEnabled;
+            audioEnabled = false;
+          }
+          if ("speechSynthesis" in window) speechSynthesis.cancel();
+          if (demoSpeechTimer) {
+            clearTimeout(demoSpeechTimer);
+            demoSpeechTimer = null;
+          }
+          demoWaitingForSpeech = false;
+        } else {
+          quantumMode = false;
+          superSpeed = demoSpeed === SUPER_DEMO_SPEED;
+        }
         updateDemoControls();
+        updateAudioToggle();
         if (demoTimer && !demoPaused) {
           clearTimeout(demoTimer);
           demoTimer = null;
-          scheduleDemo(demoNextDelay);
+          if (typeof demoMode !== "undefined" && demoMode === "multiplayer-real") {
+            scheduleRealDemoTurn();
+          } else {
+            scheduleDemo(demoNextDelay);
+          }
         }
-
       };
       if ($("demoAudioToggle")) $("demoAudioToggle").onclick = toggleAudio;
       if ($("audioToggle")) $("audioToggle").onclick = toggleAudio;
@@ -312,6 +356,10 @@
                 '<option value="2" selected>2 Players</option>' +
                 '<option value="3">3 Players</option>' +
                 '<option value="4">4 Players</option>' +
+                '<option value="5">5 Players</option>' +
+                '<option value="6">6 Players</option>' +
+                '<option value="7">7 Players</option>' +
+                '<option value="8">8 Players</option>' +
               '</select>' +
 
               '<div id="ngSoloOpts" style="display:block;">' +
@@ -320,6 +368,10 @@
                   '<option value="1" selected>1 Computer</option>' +
                   '<option value="2">2 Computers</option>' +
                   '<option value="3">3 Computers</option>' +
+                  '<option value="4">4 Computers</option>' +
+                  '<option value="5">5 Computers</option>' +
+                  '<option value="6">6 Computers</option>' +
+                  '<option value="7">7 Computers</option>' +
                 '</select>' +
               '</div>' +
 
@@ -474,10 +526,12 @@
               '</p>' +
               '<div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#e2cbb2;" id="demoRealPcountRow">' +
                 '<span>Simulate:</span>' +
-                '<div style="display:flex;gap:5px;">' +
+                '<div style="display:flex;gap:5px;flex-wrap:wrap;">' +
                   '<button type="button" class="pill demo-pcount-btn real-pcount selected" data-count="2" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#f59e0b;background:#f59e0b44;color:#fff;">2 Players</button>' +
                   '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="3" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">3 Players</button>' +
                   '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="4" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">4 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="6" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">6 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="8" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">8 Players</button>' +
                 '</div>' +
               '</div>' +
             '</div>' +
@@ -494,10 +548,12 @@
               '</p>' +
               '<div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#e2cbb2;" id="demoSimPcountRow">' +
                 '<span>Simulate:</span>' +
-                '<div style="display:flex;gap:5px;">' +
+                '<div style="display:flex;gap:5px;flex-wrap:wrap;">' +
                   '<button type="button" class="pill demo-pcount-btn sim-pcount selected" data-count="2" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#f59e0b;background:#f59e0b44;color:#fff;">2 Players</button>' +
                   '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="3" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">3 Players</button>' +
                   '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="4" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">4 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="6" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">6 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="8" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">8 Players</button>' +
                 '</div>' +
               '</div>' +
             '</div>' +

@@ -22,8 +22,11 @@
         demoMode = "classic",
         demoPlayerCount = 2,
         demoWebSockets = [],
+        demoWatchdogTimer = null,
+        demoKeepAliveTimer = null,
         demoSpeed = 1,
         superSpeed = false,
+        quantumMode = false,
         savedDemoSpeed = 1,
         savedAudioEnabled = false,
         audioEnabled = false,
@@ -41,7 +44,9 @@
       const DEMO_DELAY = 5000,
         MOVE_STEP_DELAY = 650,
         SUPER_DEMO_SPEED = 3,
-        MIN_SUPER_MOVE_DELAY = 220;
+        QUANTUM_DEMO_SPEED = 32,
+        MAX_DEMO_SPEED = 128,
+        MIN_SUPER_MOVE_DELAY = 10;
 
       function active() {
         return game.players[game.current];

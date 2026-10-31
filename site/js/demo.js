@@ -183,12 +183,16 @@
       function stopDemo() {
         if (demoTimer) clearTimeout(demoTimer);
         if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
+        if (demoWatchdogTimer) clearTimeout(demoWatchdogTimer);
+        if (demoKeepAliveTimer) clearInterval(demoKeepAliveTimer);
         demoTimer = null;
         demoSpeechTimer = null;
+        demoWatchdogTimer = null;
+        demoKeepAliveTimer = null;
         demoSpeechId++;
         demoWaitingForSpeech = false;
         if ("speechSynthesis" in window) speechSynthesis.cancel();
-        if (superSpeed) {
+        if (superSpeed || (typeof quantumMode !== "undefined" && quantumMode)) {
           demoSpeed = savedDemoSpeed;
           audioEnabled = savedAudioEnabled;
         }
@@ -196,6 +200,7 @@
         demoPaused = false;
         demoStep = 0;
         superSpeed = false;
+        quantumMode = false;
         demoSpeed = 1;
         demoRollQueue = [];
         if (Array.isArray(demoWebSockets) && demoWebSockets.length) {
@@ -377,7 +382,10 @@
           isReal = demoMode === "multiplayer-real",
           currentSteps =
             demoMode === "multiplayer" ? DEMO_STEPS_MULTIPLAYER : DEMO_STEPS,
-          opening = !isReal && demoStep < currentSteps.length;
+          opening = !isReal && demoStep < currentSteps.length,
+          isQuantum = (typeof quantumMode !== "undefined" && quantumMode) || demoSpeed >= 32,
+          isSuper = superSpeed && !isQuantum,
+          isFastMuted = isQuantum || isSuper;
         $("demoBar").hidden = !demo;
         $("demoProgress").textContent = complete
           ? (demoMode.startsWith("multiplayer") ? "🌐 Room match complete" : "Full match complete")
@@ -390,24 +398,43 @@
                   " of " +
                   currentSteps.length
                 : (demoMode === "multiplayer" ? "🌐 Room CF88 · Turn " + game.turn : "Full game · Turn " + game.turn)) +
-            (superSpeed ? " · Super 3× · Audio off" : "");
+            (isQuantum
+              ? " · ⚛️ Quantum " + demoSpeed + "× · Audio off"
+              : isSuper
+                ? " · Super 3× · Audio off"
+                : demoSpeed > 1
+                  ? " · " + demoSpeed + "×"
+                  : "");
         $("demoPause").textContent = demoPaused ? "Resume" : "Pause";
         $("demoPause").disabled = complete;
-        $("demoSpeed").value = String(Math.min(demoSpeed, 2));
-        $("demoSpeed").disabled = superSpeed;
-        $("demoSpeedValue").value = superSpeed ? "Super 3×" : demoSpeed + "×";
-        $("demoSuperSpeed").textContent = superSpeed
-          ? "⚡ Super speed on"
-          : "⚡ Super speed";
-        $("demoSuperSpeed").setAttribute("aria-pressed", String(superSpeed));
-        $("demoSuperSpeed").disabled = complete;
+        $("demoSpeed").value = String(demoSpeed);
+        $("demoSpeed").disabled = complete;
+        $("demoSpeedValue").value = isQuantum
+          ? `⚛️ Quantum ${demoSpeed}×`
+          : isSuper
+            ? "Super 3×"
+            : demoSpeed + "×";
+        if ($("demoQuantumSpeed")) {
+          $("demoQuantumSpeed").textContent = isQuantum
+            ? `⚛️ Quantum ${demoSpeed}× (On)`
+            : "⚛️ Quantum 32×";
+          $("demoQuantumSpeed").setAttribute("aria-pressed", String(isQuantum));
+          $("demoQuantumSpeed").disabled = complete;
+        }
+        if ($("demoSuperSpeed")) {
+          $("demoSuperSpeed").textContent = isSuper
+            ? "⚡ Super 3× on"
+            : "⚡ Super 3×";
+          $("demoSuperSpeed").setAttribute("aria-pressed", String(isSuper));
+          $("demoSuperSpeed").disabled = complete || isQuantum;
+        }
         $("demoAudioToggle").textContent = available
-          ? audioEnabled
+          ? audioEnabled && !isFastMuted
             ? "🔊 Audio on"
             : "🔇 Audio off"
           : "Audio unavailable";
-        $("demoAudioToggle").setAttribute("aria-pressed", String(audioEnabled));
-        $("demoAudioToggle").disabled = !available || superSpeed;
+        $("demoAudioToggle").setAttribute("aria-pressed", String(audioEnabled && !isFastMuted));
+        $("demoAudioToggle").disabled = !available || isFastMuted;
       }
       function scheduleDemo(delay = DEMO_DELAY) {
         if (!demo || demoPaused || game.phase === "done") return;
@@ -474,6 +501,27 @@
           if (typeof updateMultiplayerBadge === "function") updateMultiplayerBadge();
         }
 
+        if (typeof FlightRecorder !== "undefined") {
+          if (typeof FlightRecorder.recordGameStart === "function") {
+            FlightRecorder.recordGameStart({
+              mode: demoMode === "multiplayer" ? "demo-multiplayer-sim" : "demo-classic",
+              playerCount: demoPlayerCount,
+              computerCount: 0,
+              roomCode: demoMode === "multiplayer" ? "CF88" : null,
+              transport: demoMode === "multiplayer" ? "simulated_cf_ws" : "local",
+              seat: 0,
+              players: (game && game.players ? game.players : []).map((p) => ({
+                id: p.id,
+                name: p.name,
+                seat: p.seat,
+                computer: false,
+              })),
+              theme: document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween",
+              rulesVariant: "Dhayam 7x7 scripted demo",
+            });
+          }
+        }
+
         $("demoBar").hidden = false;
         runDemoStep();
       }
@@ -506,89 +554,187 @@
         multiplayer.claimedSeats = {};
         if (typeof updateMultiplayerBadge === "function") updateMultiplayerBadge();
 
-        const pNames = ["Maya", "Leo", "Rohan", "Ananya"];
+        const pNames = ["Maya", "Leo", "Rohan", "Ananya", "Amina", "Kai", "Sofia", "Noah"];
         $("statusTitle").textContent = "Connecting to Cloudflare Edge";
         $("statusText").textContent =
           "Establishing live WebSocket room " + roomCode + " on Cloudflare Durable Objects…";
         speakDemo("Connecting to live Cloudflare Edge room " + roomCode);
 
+        if (typeof FlightRecorder !== "undefined") {
+          if (typeof FlightRecorder.recordGameStart === "function") {
+            FlightRecorder.recordGameStart({
+              mode: "demo-real-cloudflare",
+              playerCount: demoPlayerCount,
+              computerCount: 0,
+              roomCode,
+              cfHost,
+              transport: "cf_ws",
+              seat: 0,
+              players: pNames.slice(0, demoPlayerCount).map((name, i) => ({
+                id: "P" + i,
+                name,
+                seat: SEATS[i % 4],
+                computer: false,
+              })),
+              theme: document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween",
+              rulesVariant: "Dhayam 7x7 live Cloudflare Durable Objects multiplayer demo",
+            });
+          }
+        }
+
         try {
           const wsUrlBase = `${wsProtocol}//${cfHost}/api/room/${roomCode}/ws?code=${roomCode}&players=${demoPlayerCount}`;
-          const hostToken = "demo-host-" + Math.random().toString(36).slice(2, 8);
-          const hostWs = new WebSocket(`${wsUrlBase}&token=${hostToken}&seat=0`);
-          demoWebSockets = [hostWs];
+          const tokens = [
+            "demo-host-" + Math.random().toString(36).slice(2, 8),
+            ...Array.from({ length: demoPlayerCount - 1 }, (_, s) => "demo-g-" + (s + 1) + "-" + Math.random().toString(36).slice(2, 8)),
+          ];
+          demoWebSockets = [];
 
-          const guestTokens = [];
-          for (let s = 1; s < demoPlayerCount; s++) {
-            const gToken = "demo-g-" + s + "-" + Math.random().toString(36).slice(2, 8);
-            guestTokens.push(gToken);
-            const gWs = new WebSocket(`${wsUrlBase}&token=${gToken}&seat=${s}`);
-            demoWebSockets.push(gWs);
-          }
-
-          multiplayer.ws = hostWs;
-
-          hostWs.onmessage = async (event) => {
+          function handleRealDemoWsMessage(data, fromSeat) {
             if (!demo || demoMode !== "multiplayer-real") return;
-            try {
-              const data = JSON.parse(event.data);
-              if (data.type === "INIT" || data.type === "ROOM_STATE" || data.type === "SYNC_STATE") {
-                if (data.game) applyRemoteState(data.game, data.audit);
-                multiplayer.status = "connected";
-                if (data.seats) multiplayer.claimedSeats = data.seats;
-                updateMultiplayerBadge();
-                updateDemoControls();
+            if (demoWatchdogTimer) {
+              clearTimeout(demoWatchdogTimer);
+              demoWatchdogTimer = null;
+            }
+            if (typeof FlightRecorder !== "undefined") {
+              FlightRecorder.record("DEMO_WS_RECV", {
+                seat: fromSeat,
+                type: data.type,
+                turn: data.game ? data.game.turn : (game ? game.turn : undefined),
+                phase: data.game ? data.game.phase : (game ? game.phase : undefined),
+              });
+            }
+
+            if (data.type === "INIT" || data.type === "ROOM_STATE" || data.type === "SYNC_STATE") {
+              if (data.game) applyRemoteState(data.game, data.audit);
+              multiplayer.status = "connected";
+              if (data.seats) multiplayer.claimedSeats = data.seats;
+              updateMultiplayerBadge();
+              updateDemoControls();
+              scheduleRealDemoTurn();
+            } else if (data.type === "ERROR") {
+              console.warn("Real demo WS error on seat", fromSeat, ":", data.message);
+              if (typeof FlightRecorder !== "undefined") {
+                FlightRecorder.record("DEMO_WS_ERROR", { seat: fromSeat, message: data.message });
+              }
+              if (game && game.phase !== "done") {
                 scheduleRealDemoTurn();
-              } else if (data.type === "ROLL_START") {
-                setDieFace("dieA", data.dice.a, "First die: " + data.dice.a);
-                setDieFace("dieB", data.dice.b, "Second die: " + data.dice.b);
-                triggerDiceAnimation();
-                if (typeof displayFloatingEmote === "function") {
-                  const val = data.value || data.val;
-                  if (val === 1 || val === 5 || val === 6 || val === 12) {
-                    displayFloatingEmote("⚡", data.player || "Player");
-                  }
-                }
-              } else if (data.type === "EMOTE") {
-                if (typeof displayFloatingEmote === "function") {
-                  displayFloatingEmote(data.emote, data.name || "Opponent");
+              }
+            } else if (data.type === "ROLL_START") {
+              setDieFace("dieA", data.dice.a, "First die: " + data.dice.a);
+              setDieFace("dieB", data.dice.b, "Second die: " + data.dice.b);
+              triggerDiceAnimation();
+              if (typeof displayFloatingEmote === "function") {
+                const val = data.value || data.val;
+                if (val === 1 || val === 5 || val === 6 || val === 12) {
+                  displayFloatingEmote("⚡", data.player || "Player");
                 }
               }
-            } catch (err) {
-              console.warn("Real demo WS parse error:", err);
+            } else if (data.type === "MOVE_START") {
+              if (data.captures && data.captures.length && typeof displayFloatingEmote === "function") {
+                setTimeout(() => displayFloatingEmote("😎", data.player || "Player"), 300);
+              }
+              if (data.winner && typeof displayFloatingEmote === "function") {
+                setTimeout(() => displayFloatingEmote("🏆", data.winner), 500);
+              }
+            } else if (data.type === "PRESENCE" || data.type === "ROOM_UPDATE") {
+              if (data.seats) multiplayer.claimedSeats = data.seats;
+              updateMultiplayerBadge();
+            } else if (data.type === "EMOTE") {
+              if (typeof displayFloatingEmote === "function") {
+                displayFloatingEmote(data.emote, data.name || "Opponent");
+              }
             }
-          };
-
-          for (let s = 1; s < demoPlayerCount; s++) {
-            const gWs = demoWebSockets[s];
-            const gName = pNames[s];
-            const gToken = guestTokens[s - 1];
-            gWs.onopen = () => {
-              gWs.send(JSON.stringify({ type: "CLAIM_SEAT", seat: s, name: gName, token: gToken }));
-            };
           }
 
-          hostWs.onopen = () => {
-            hostWs.send(JSON.stringify({ type: "CLAIM_SEAT", seat: 0, name: pNames[0], token: hostToken }));
-            multiplayer.status = "connected";
-            updateMultiplayerBadge();
-            const startMsg = "Live Cloudflare room " + roomCode + " established with " + demoPlayerCount + " players!";
-            $("statusTitle").textContent = "🌐 Live Room " + roomCode;
-            $("statusText").textContent = startMsg;
-            speakDemo(startMsg);
-            if (typeof displayFloatingEmote === "function") {
-              setTimeout(() => displayFloatingEmote("🚀", pNames[0]), 500);
-              setTimeout(() => displayFloatingEmote("📱", pNames[1]), 1000);
-            }
-            scheduleRealDemoTurn();
-          };
+          function createAndWireSocket(seatIndex) {
+            const token = tokens[seatIndex];
+            const name = pNames[seatIndex];
+            const ws = new WebSocket(`${wsUrlBase}&token=${token}&seat=${seatIndex}`);
+            demoWebSockets[seatIndex] = ws;
+            if (seatIndex === 0) multiplayer.ws = ws;
 
-          hostWs.onerror = (e) => {
-            console.warn("Live Cloudflare WebSocket failed, falling back to simulated demo:", e);
-            startGuidedDemo("multiplayer", demoPlayerCount);
-          };
+            ws.onopen = () => {
+              if (typeof FlightRecorder !== "undefined") {
+                FlightRecorder.record("DEMO_WS_OPEN", { seat: seatIndex, name, roomCode });
+              }
+              ws.send(JSON.stringify({ type: "CLAIM_SEAT", seat: seatIndex, name, token }));
+              if (seatIndex === 0) {
+                multiplayer.status = "connected";
+                updateMultiplayerBadge();
+                const startMsg = "Live Cloudflare room " + roomCode + " established with " + demoPlayerCount + " players!";
+                $("statusTitle").textContent = "🌐 Live Room " + roomCode;
+                $("statusText").textContent = startMsg;
+                speakDemo(startMsg);
+                if (typeof displayFloatingEmote === "function") {
+                  setTimeout(() => displayFloatingEmote("🚀", pNames[0]), 500);
+                  if (demoPlayerCount > 1) {
+                    setTimeout(() => displayFloatingEmote("📱", pNames[1]), 1000);
+                  }
+                }
+                scheduleRealDemoTurn();
+              }
+            };
+
+            ws.onmessage = async (event) => {
+              if (!demo || demoMode !== "multiplayer-real") return;
+              try {
+                const data = JSON.parse(event.data);
+                handleRealDemoWsMessage(data, seatIndex);
+              } catch (err) {
+                console.warn("Real demo WS parse error:", err);
+              }
+            };
+
+            ws.onerror = (e) => {
+              const errMsg = e && e.message ? e.message : "WebSocket connection error";
+              console.warn(`WebSocket error on seat ${seatIndex}:`, errMsg);
+              if (typeof FlightRecorder !== "undefined") {
+                FlightRecorder.record("DEMO_WS_ERROR", { seat: seatIndex, error: errMsg });
+              }
+              if (seatIndex === 0 && multiplayer.status === "connecting") {
+                console.warn("Live Cloudflare WebSocket failed to connect, falling back to simulated demo");
+                startGuidedDemo("multiplayer", demoPlayerCount);
+              }
+            };
+
+            ws.onclose = (ev) => {
+              if (typeof FlightRecorder !== "undefined") {
+                FlightRecorder.record("DEMO_WS_CLOSE", { seat: seatIndex, code: ev.code, reason: ev.reason });
+              }
+              if (demo && demoMode === "multiplayer-real" && game && game.phase !== "done") {
+                setTimeout(() => {
+                  if (demo && demoMode === "multiplayer-real" && (!demoWebSockets[seatIndex] || demoWebSockets[seatIndex].readyState > 1)) {
+                    createAndWireSocket(seatIndex);
+                  }
+                }, 1500);
+              }
+            };
+
+            return ws;
+          }
+
+          for (let s = 0; s < demoPlayerCount; s++) {
+            createAndWireSocket(s);
+          }
+
+          if (demoKeepAliveTimer) clearInterval(demoKeepAliveTimer);
+          demoKeepAliveTimer = setInterval(() => {
+            if (!demo || demoMode !== "multiplayer-real") {
+              clearInterval(demoKeepAliveTimer);
+              demoKeepAliveTimer = null;
+              return;
+            }
+            if (demoWebSockets[0] && demoWebSockets[0].readyState === WebSocket.OPEN) {
+              demoWebSockets[0].send(JSON.stringify({ type: "PING" }));
+            }
+          }, 20000);
+
         } catch (err) {
           console.warn("Error starting real online demo:", err);
+          if (typeof FlightRecorder !== "undefined") {
+            FlightRecorder.record("DEMO_START_ERROR", { error: String(err && err.message ? err.message : err) });
+          }
           startGuidedDemo("multiplayer", demoPlayerCount);
         }
       }
@@ -609,30 +755,103 @@
           return;
         }
 
+        const p = game.players[curSeat] || { name: "Player " + (curSeat + 1) };
+        let actionSent = false;
+
         if (game.phase === "roll") {
-          activeSocket.send(JSON.stringify({ type: "ROLL" }));
-          const p = game.players[curSeat] || { name: "Player " + (curSeat + 1) };
-          $("statusTitle").textContent = "🌐 Room " + (multiplayer.roomCode || "") + " · Turn " + game.turn;
-          $("statusText").textContent = p.name + " is rolling via Cloudflare Durable Object…";
+          try {
+            activeSocket.send(JSON.stringify({ type: "ROLL" }));
+            actionSent = true;
+            $("statusTitle").textContent = "🌐 Room " + (multiplayer.roomCode || "") + " · Turn " + game.turn;
+            $("statusText").textContent = p.name + " is rolling via Cloudflare Durable Object…";
+            if (typeof FlightRecorder !== "undefined") {
+              FlightRecorder.record("DEMO_ACTION_SENT", {
+                type: "ROLL",
+                seat: curSeat,
+                player: p.name,
+                turn: game.turn,
+                phase: "roll",
+              });
+            }
+          } catch (err) {
+            console.warn("Error sending ROLL:", err);
+            scheduleRealDemoTurn();
+            return;
+          }
         } else if (game.phase === "move") {
           const move = bestAutomaticMove();
           if (move) {
-            activeSocket.send(JSON.stringify({
-              type: "MOVE",
-              pieceId: move.piece.id,
-              targetProgress: move.test.progress,
-              diceValues: move.values,
-            }));
-            const p = game.players[curSeat] || { name: "Player " + (curSeat + 1) };
-            $("statusTitle").textContent = "🌐 Room " + (multiplayer.roomCode || "") + " · Turn " + game.turn;
-            $("statusText").textContent = p.name + " moves a piece using " + move.values.join(" + ") + "…";
-            if (move.test.targets.length && typeof displayFloatingEmote === "function") {
-              setTimeout(() => displayFloatingEmote("😎", p.name), 400);
+            try {
+              activeSocket.send(JSON.stringify({
+                type: "MOVE",
+                pieceId: move.piece.id,
+                targetProgress: move.test.progress,
+                diceValues: move.values,
+              }));
+              actionSent = true;
+              $("statusTitle").textContent = "🌐 Room " + (multiplayer.roomCode || "") + " · Turn " + game.turn;
+              $("statusText").textContent = p.name + " moves a piece using " + move.values.join(" + ") + "…";
+              if (typeof FlightRecorder !== "undefined") {
+                FlightRecorder.record("DEMO_ACTION_SENT", {
+                  type: "MOVE",
+                  seat: curSeat,
+                  player: p.name,
+                  turn: game.turn,
+                  pieceId: move.piece.id,
+                  targetProgress: move.test.progress,
+                  values: move.values,
+                });
+              }
+              if (move.test.targets.length && typeof displayFloatingEmote === "function") {
+                setTimeout(() => displayFloatingEmote("😎", p.name), 400);
+              }
+            } catch (err) {
+              console.warn("Error sending MOVE:", err);
+              scheduleRealDemoTurn();
+              return;
             }
           } else {
-            activeSocket.send(JSON.stringify({ type: "PASS" }));
+            try {
+              activeSocket.send(JSON.stringify({ type: "PASS" }));
+              actionSent = true;
+              if (typeof FlightRecorder !== "undefined") {
+                FlightRecorder.record("DEMO_ACTION_SENT", {
+                  type: "PASS",
+                  seat: curSeat,
+                  player: p.name,
+                  turn: game.turn,
+                });
+              }
+            } catch (err) {
+              console.warn("Error sending PASS:", err);
+              scheduleRealDemoTurn();
+              return;
+            }
           }
         }
+
+        if (actionSent) {
+          if (demoWatchdogTimer) clearTimeout(demoWatchdogTimer);
+          demoWatchdogTimer = setTimeout(() => {
+            demoWatchdogTimer = null;
+            if (!demo || demoMode !== "multiplayer-real" || demoPaused || !game || game.phase === "done") return;
+            if (typeof FlightRecorder !== "undefined") {
+              FlightRecorder.record("DEMO_WATCHDOG_TRIGGER", {
+                curSeat,
+                turn: game.turn,
+                phase: game.phase,
+                readyState: activeSocket ? activeSocket.readyState : null,
+              });
+            }
+            try {
+              if (demoWebSockets[0] && demoWebSockets[0].readyState === WebSocket.OPEN) {
+                demoWebSockets[0].send(JSON.stringify({ type: "GET_STATE" }));
+              }
+            } catch (e) {}
+            scheduleRealDemoTurn();
+          }, 6000);
+        }
+
         updateDemoControls();
       }
 
@@ -664,12 +883,44 @@
         }
         updateDemoControls();
       }
+      function toggleQuantumSpeed() {
+        if (!demo || game.phase === "done") return;
+        if (!quantumMode && demoSpeed < 32) {
+          savedDemoSpeed = demoSpeed;
+          savedAudioEnabled = audioEnabled;
+          quantumMode = true;
+          superSpeed = false;
+          demoSpeed = typeof QUANTUM_DEMO_SPEED !== "undefined" ? QUANTUM_DEMO_SPEED : 32;
+          audioEnabled = false;
+          if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
+          demoSpeechTimer = null;
+          demoSpeechId++;
+          demoWaitingForSpeech = false;
+          if ("speechSynthesis" in window) speechSynthesis.cancel();
+        } else {
+          quantumMode = false;
+          demoSpeed = savedDemoSpeed >= 32 ? 1 : savedDemoSpeed;
+          audioEnabled = savedAudioEnabled;
+          if (audioEnabled) speakDemo($("statusText").textContent);
+        }
+        if (demoTimer) clearTimeout(demoTimer);
+        demoTimer = null;
+        if (!demoPaused) {
+          if (demoMode === "multiplayer-real") scheduleRealDemoTurn();
+          else scheduleDemo(100);
+        }
+        updateAudioToggle();
+        updateDemoControls();
+      }
+      window.toggleQuantumSpeed = toggleQuantumSpeed;
+
       function toggleSuperSpeed() {
         if (!demo || game.phase === "done") return;
         if (!superSpeed) {
           savedDemoSpeed = demoSpeed;
           savedAudioEnabled = audioEnabled;
           superSpeed = true;
+          quantumMode = false;
           demoSpeed = SUPER_DEMO_SPEED;
           audioEnabled = false;
           if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
@@ -685,7 +936,10 @@
         }
         if (demoTimer) clearTimeout(demoTimer);
         demoTimer = null;
-        if (!demoPaused) scheduleDemo(450);
+        if (!demoPaused) {
+          if (demoMode === "multiplayer-real") scheduleRealDemoTurn();
+          else scheduleDemo(450);
+        }
         updateAudioToggle();
         updateDemoControls();
       }
