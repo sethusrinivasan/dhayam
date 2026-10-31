@@ -18,9 +18,10 @@ This guide describes how to deploy Dhayam to **Cloudflare** with frugal resource
                               ▼
 ┌────────────────────────────────────────────────────────────┐
 │        2. Cloudflare Global Edge (Frugal Dual Host)        │
-│   https://dhayam.workers.dev (or custom domain)            │
+│   https://dhayam.cancun.workers.dev                        │
 │   - Global CDN static asset delivery (`[assets]` binding)   │
 │   - Remote Streamable HTTP MCP Endpoint at `/mcp`          │
+│   - Real-time Durable Objects with WebSocket Hibernation   │
 │   - Health monitor at `/health`                            │
 │   - 100% Free Tier (100,000 requests/day, 0ms cold start)  │
 └────────────────────────────────────────────────────────────┘
@@ -99,14 +100,16 @@ Any remote AI assistant (Antigravity, Claude Desktop, Cursor) can now connect to
 {
   "mcpServers": {
     "dhayam-remote": {
-      "url": "https://dhayam.workers.dev/mcp"
+      "url": "https://dhayam.cancun.workers.dev/mcp"
     }
   }
 }
 ```
 
 ### Endpoints:
-- `GET /`: Serves the interactive game (or redirects to GitHub Pages).
-- `GET /health`: Uptime status (`{"status":"healthy","service":"dhayam-mcp"}`).
+- `GET /`: Serves the interactive game via Cloudflare Edge CDN (`https://dhayam.cancun.workers.dev`).
+- `GET /health`: Uptime status (`{"status":"healthy","service":"dhayam-mcp","version":"1.0.0"}`).
 - `GET /mcp`: Human-readable protocol and tool discovery info.
 - `POST /mcp`: JSON-RPC 2.0 Streamable HTTP endpoint for AI tool execution.
+- `GET /api/room/:code/info`: Real-time room status, phase, and player occupancy.
+- `GET /api/room/:code/ws`: WebSocket endpoint for low-latency multiplayer with hibernation.

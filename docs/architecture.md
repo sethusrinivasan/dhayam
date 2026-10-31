@@ -1,27 +1,48 @@
 # Architecture
 
 ```mermaid
-flowchart LR
-  Input[Player input / guided demo / CPU] --> UI[Static browser UI\nsite/index.html]
-  UI --> State[In-memory game state]
-  State --> Rules[Move evaluation\nroutes, entry, capture, finish]
-  Rules --> Visuals[Board, piece, and capture animations]
-  Rules --> Audit[Plaintext game audit]
-  Audit --> Clipboard[User-initiated clipboard export]
-  State --> Speech[Optional browser speech]
-  Dice[crypto.getRandomValues] --> UI
+flowchart TD
+  subgraph Client["Client (Browser / Mobile / TV)"]
+    UI["Vanilla Web UI (site/index.html)"]
+    State["In-Memory Game State"]
+    Rules["Rules Engine (site/js/engine.js)"]
+    Visuals["3D Dice Tumbling & 7x7 Circuit Animations"]
+    Audio["Avatar Speech Synthesis & Effects"]
+    MultiplayerClient["Multiplayer Client (site/js/multiplayer.js)"]
+  end
 
-  Engine[src/game.ts\nimmutable rules engine] --> UnitTests[test/game.test.ts]
-  Site[site/] --> Pages[GitHub Pages workflow]
+  subgraph CloudflareEdge["Cloudflare Global Edge CDN"]
+    EdgeWorker["Cloudflare Worker (cloudflare/worker.js)"]
+    DO["DhayamRoom Durable Object (SQLite + WebSocket Hibernation)"]
+    MCP["Streamable HTTP MCP Endpoint (/mcp)"]
+    Assets["Edge Static Assets CDN ([assets])"]
+  end
+
+  subgraph AI["AI Coding Agents & External Tools"]
+    Agents["Antigravity / Claude / Cursor via JSON-RPC 2.0"]
+  end
+
+  UI --> State
+  State --> Rules
+  Rules --> Visuals
+  State --> Audio
+  MultiplayerClient <-->|WebSocket| DO
+  EdgeWorker --> DO
+  Assets --> UI
+  Agents <-->|Streamable HTTP POST| MCP
+  MCP --> EdgeWorker
 ```
 
-The browser UI is intentionally self-contained, so the game can run from static hosting without a backend. It currently contains UI-oriented rule handling. `src/game.ts` contains the dependency-free, immutable TypeScript rule engine used by the Node tests.
+The application uses a zero-dependency, dual-surface architecture:
+1. **Frontend App:** Pure vanilla HTML5, modular CSS3 (3D cuboidal dice physics), and ES Modules. Delivered globally via Cloudflare Edge Static Assets and mirrored on GitHub Pages.
+2. **Multiplayer Backend:** Cloudflare Durable Objects with WebSocket Hibernation and SQLite persistence for state synchronization, room codes, and QR code joining at $0 cost on Cloudflare Free Tier.
+3. **MCP Endpoint:** Exposed at `/mcp` for Model Context Protocol JSON-RPC tool calls, allowing AI agents to inspect board states, roll dice, and play moves.
+4. **Verification & Invariant Engine:** `src/game.ts` contains an immutable TypeScript rules engine used by unit and regression test suites.
 
-The migration direction is for the browser UI to consume `src/game.ts` directly. Until that is complete, rule changes must update both implementations and keep their behavior aligned.
+## Runtime Boundaries
 
-## Runtime boundaries
-
-- Game state exists only in the current browser tab.
-- Browser APIs provide dice entropy, optional speech, and user-initiated clipboard export.
-- The audit is plaintext and local until a player chooses to copy it.
-- GitHub Pages serves the static `site/` directory; it is not a game server.
+- **Single Player / Local Pass-and-Play:** Self-contained in the browser tab with zero network traffic.
+- **Online Multiplayer:** Orchestrated authoritatively by Cloudflare Durable Objects (`DhayamRoom`) with instant reconnects via session storage tokens.
+- **MCP Server:** Streamable HTTP JSON-RPC endpoint on Cloudflare Edge at `https://dhayam.cancun.workers.dev/mcp`.
+- **Primary Live URL:** `https://dhayam.cancun.workers.dev`
+- **GitHub Pages Mirror:** `https://sethusrinivasan.github.io/dhayam/`

@@ -1,6 +1,7 @@
 # ✺ Dhayam (தாயக்கட்டை)
 
-[![Cloudflare Edge](https://img.shields.io/badge/Cloudflare-Live%20Edge%20App-f38020?logo=cloudflare&logoColor=white)](https://dhayam.cancun.workers.dev)
+[![Cloudflare Live](https://img.shields.io/badge/Cloudflare%20Edge-Live%20Multiplayer%20App-f38020?logo=cloudflare&logoColor=white)](https://dhayam.cancun.workers.dev)
+[![Cloudflare MCP](https://img.shields.io/badge/Cloudflare%20MCP-Live%20Streamable%20HTTP-4f46e5?logo=cloudflare&logoColor=white)](https://dhayam.cancun.workers.dev/mcp)
 [![Play Dhayam](https://img.shields.io/badge/GitHub%20Pages-Live%20Mirror-d88a3e?logo=githubpages&logoColor=white)](https://sethusrinivasan.github.io/dhayam/)
 [![Tests](https://github.com/sethusrinivasan/dhayam/actions/workflows/test.yml/badge.svg)](https://github.com/sethusrinivasan/dhayam/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-8a2be2)](LICENSE)
@@ -11,7 +12,7 @@ Experience 3D Dayakattai cuboidal brass dice physics, synchronized real-time mul
 
 🎮 **Play Live on Cloudflare Edge:** [https://dhayam.cancun.workers.dev](https://dhayam.cancun.workers.dev)  
 🌐 **GitHub Pages Mirror:** [https://sethusrinivasan.github.io/dhayam/](https://sethusrinivasan.github.io/dhayam/)  
-🤖 **MCP Streamable HTTP Endpoint:** `https://dhayam.cancun.workers.dev/mcp`
+🤖 **MCP Streamable HTTP Endpoint:** [https://dhayam.cancun.workers.dev/mcp](https://dhayam.cancun.workers.dev/mcp)
 
 ---
 
@@ -93,7 +94,9 @@ dhayam/
 ├── src/
 │   └── game.ts                    # Immutable TypeScript rules engine (for headless verification)
 ├── test/
-│   └── game.test.ts               # Unit test suite for game rules and invariants
+│   ├── game.test.ts               # Unit test suite for game rules and invariants
+│   ├── multiplayer_regression.test.ts # Regression tests for ID normalization, dice validation, buffering
+│   └── mcp_server.test.ts         # Live Cloudflare-hosted MCP server JSON-RPC test suite
 └── wrangler.toml                  # Cloudflare Workers + Static Assets + Durable Objects configuration
 ```
 
@@ -137,8 +140,8 @@ Open `http://localhost:8787/` to test Cloudflare Durable Objects and WebSockets 
 
 ### 3. Run Automated Tests
 ```sh
-npm test              # Runs 13 rules-engine unit tests (via tsx)
-./test.sh             # Full suite: DOM checks, headless Chrome rendering, CSS/JS integrity
+npm test              # Runs 31 unit, multiplayer regression, and MCP tests (via tsx)
+./test.sh             # Full 12-point suite: DOM, headless Chrome, edge health, and MCP discovery
 ```
 
 ### 4. Debug in VS Code
