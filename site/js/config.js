@@ -107,7 +107,7 @@
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
         version: "0.2.1",
-        build: 44,
+        build: 45,
         timestamp: "2026-10-31 18:05 UTC",
         releaseName: "Leaderboard Auto-Sorting, Leader Star & Social Sharing",
       };
