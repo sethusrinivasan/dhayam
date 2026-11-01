@@ -106,10 +106,10 @@
 
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
-        version: "0.2.0",
-        build: 43,
-        timestamp: "2026-10-31 14:35 UTC",
-        releaseName: "Quantum Resilience & Bonus Scoring",
+        version: "0.2.1",
+        build: 44,
+        timestamp: "2026-10-31 18:05 UTC",
+        releaseName: "Leaderboard Auto-Sorting, Leader Star & Social Sharing",
       };
       if (typeof window !== "undefined") {
         window.BUILD_INFO = BUILD_INFO;

@@ -238,8 +238,33 @@
             });
             $("board").appendChild(el);
           }
-        $("players").innerHTML = game.players
-          .map((p) => {
+        // Dynamic Leaderboard Sorting: High score users move up to the top of the table
+        const sortedPlayers = [...game.players]
+          .map((p, idx) => ({
+            player: p,
+            score: calculatePlayerScore(p),
+            finishedCount: p.pieces.filter((q) => q.progress === 43).length,
+            originalIndex: idx,
+          }))
+          .sort((a, b) => {
+            // 1. Finished/winner rank first
+            if (a.player.rank && b.player.rank) return a.player.rank - b.player.rank;
+            if (a.player.rank) return -1;
+            if (b.player.rank) return 1;
+            // 2. Higher score descending
+            if (b.score !== a.score) return b.score - a.score;
+            // 3. Finished pieces count descending
+            if (b.finishedCount !== a.finishedCount) return b.finishedCount - a.finishedCount;
+            // 4. Stable tiebreaker: original seat order
+            return a.originalIndex - b.originalIndex;
+          });
+
+        // The top 1st user on the leaderboard gets the yellow star
+        const topLeaderId = sortedPlayers.length > 0 ? sortedPlayers[0].player.id : null;
+
+        $("players").innerHTML = sortedPlayers
+          .map(({ player: p, score, finishedCount }) => {
+            const isLeader = p.id === topLeaderId;
             const numbersFor = (test) => {
                 const numbers = p.pieces
                   .map((piece, index) => (test(piece) ? index + 1 : null))
@@ -252,9 +277,7 @@
               onBoard = numbersFor(
                 (piece) => piece.progress >= 0 && piece.progress < 43,
               ),
-              home = numbersFor((piece) => piece.progress === 43),
-              finishedCount = p.pieces.filter((q) => q.progress === 43).length,
-              score = calculatePlayerScore(p);
+              home = numbersFor((piece) => piece.progress === 43);
 
             const boardProgressTotal = p.pieces.reduce(
               (sum, q) => sum + (q.progress === 43 ? 43 : q.progress >= 0 ? q.progress + 1 : 0),
@@ -266,6 +289,7 @@
             return (
               '<div class="player ' +
               (isCurrentActive ? "active" : "") +
+              (isLeader ? " is-leader" : "") +
               (canCardEnter ? " can-enter" : "") +
               (capturedPlayerIds.includes(p.id) ? " captureloss" : "") +
               '" data-player-id="' +
@@ -281,13 +305,14 @@
               '</div><div style="flex:1;min-width:0;"><div class="pname-row"><span class="pname">' +
               escapeHtml(p.name) +
               (p.rank ? " · #" + p.rank : "") +
+              (isLeader ? ' <span class="leader-star" role="img" aria-label="1st place match leader" title="⭐ Match Leader (1st Place)">⭐</span>' : "") +
               '</span><span class="pscore-badge" title="Player score: ' +
               score +
               ' points based on board advancement, captures (+50), home finishes (+100)' +
               (p.bonusPoints ? ', and ' + p.bonusPoints + ' bonus points' : '') +
-              '">⭐ ' +
+              '"><span class="pscore-val">' +
               score +
-              ' pts</span></div><div class="pscore-track" title="' +
+              '</span> <span class="pscore-unit">pts</span></span></div><div class="pscore-track" title="' +
               progressPct +
               '% board completion"><div class="pscore-fill" style="width:' +
               progressPct +

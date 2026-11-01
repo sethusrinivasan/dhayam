@@ -316,11 +316,26 @@ export function applyMove(game: Game, move: Move): Game {
   const willFinish = legal.progress === FINISH_PROGRESS;
   piece.progress = legal.progress;
   activePlayer.captured = legal.captured;
+  // Bonus‑point handling & telemetry
   if (wasReserve) {
     activePlayer.bonusPoints = (activePlayer.bonusPoints ?? 0) + 1;
+    // Record telemetry when a piece enters the board from reserve
+    if (typeof FlightRecorder !== "undefined") {
+      FlightRecorder.record("BONUS_ENTRY", {
+        playerId: activePlayer.id,
+        pieceId: piece.id,
+      });
+    }
   }
   if (willFinish) {
     activePlayer.bonusPoints = (activePlayer.bonusPoints ?? 0) + 1;
+    // Record telemetry when a piece reaches the centre (goal)
+    if (typeof FlightRecorder !== "undefined") {
+      FlightRecorder.record("BONUS_CENTER", {
+        playerId: activePlayer.id,
+        pieceId: piece.id,
+      });
+    }
   }
   for (const capture of legal.captures) {
     const target = findPiece(next, capture.pieceId);

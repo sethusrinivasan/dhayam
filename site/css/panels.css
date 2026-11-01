@@ -108,7 +108,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .pname {
@@ -118,22 +119,75 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
+/* Anti-Wobble Right-Aligned Score Badge */
 .pscore-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 2px;
   background: #ffb70322;
   color: #ffda79;
   border: 1px solid #ffb7034d;
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 999px;
   font-size: clamp(8.5px, 1.1vh, 10px);
   font-weight: 750;
   letter-spacing: 0.02em;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-width: clamp(52px, 6vw, 64px);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+}
+
+.pscore-val {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  display: inline-block;
+}
+
+.pscore-unit {
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+
+/* Yellow Star for top 1st leading player */
+.leader-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(11px, 1.4vh, 13px);
+  line-height: 1;
+  filter: drop-shadow(0 0 3px #f59e0b) drop-shadow(0 0 7px rgba(245, 158, 11, 0.7));
+  margin-left: 2px;
+  vertical-align: middle;
+  cursor: default;
+  animation: leaderStarPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes leaderStarPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 3px #f59e0b);
+  }
+  50% {
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 6px #fbbf24) drop-shadow(0 0 10px rgba(251, 191, 36, 0.8));
+  }
+}
+
+.player.is-leader {
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
 }
 
 .pscore-track {
