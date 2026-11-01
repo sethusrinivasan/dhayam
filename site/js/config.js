@@ -111,6 +111,10 @@
         timestamp: "2026-10-31 21:22 UTC",
         releaseName: "Leaderboard Auto-Sorting, Leader Star & Social Sharing",
       };
+       // Global player-count limits — update here, never hardcode elsewhere
+       const MIN_PLAYERS = 2;
+       const MAX_PLAYERS = 32;
+
       if (typeof window !== "undefined") {
         window.BUILD_INFO = BUILD_INFO;
       }

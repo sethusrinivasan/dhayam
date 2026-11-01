@@ -88,14 +88,17 @@
         movingPieceId = null;
         capturedPieceIds = [];
         capturedPlayerIds = [];
-        if (count < 2 || count > 8)
-          throw new RangeError("Dhayam supports 2 to 8 total players");
+        const _maxP = typeof MAX_PLAYERS !== "undefined" ? MAX_PLAYERS : 32;
+        const _minP = typeof MIN_PLAYERS !== "undefined" ? MIN_PLAYERS : 2;
+        if (count < _minP || count > _maxP)
+          throw new RangeError("Dhayam supports " + _minP + " to " + _maxP + " total players");
+        const BASE_SEATS = ["N", "E", "S", "W"];
         const seats =
           count === 2
             ? ["N", "S"]
             : count === 3
               ? ["N", "E", "S"]
-              : Array.from({ length: count }, (_, i) => SEATS[i % 4]);
+              : Array.from({ length: count }, (_, i) => BASE_SEATS[i % BASE_SEATS.length]);
         game = {
           players: seats.map((seat, i) => {
             const theme = THEMES[i];
@@ -605,6 +608,8 @@
                   '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="4" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">4 Players</button>' +
                   '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="6" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">6 Players</button>' +
                   '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="8" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">8 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="16" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">16 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn real-pcount" data-count="32" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">32 Players</button>' +
                 '</div>' +
               '</div>' +
             '</div>' +
@@ -627,6 +632,8 @@
                   '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="4" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">4 Players</button>' +
                   '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="6" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">6 Players</button>' +
                   '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="8" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">8 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="16" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">16 Players</button>' +
+                  '<button type="button" class="pill demo-pcount-btn sim-pcount" data-count="32" style="padding:2px 9px;font-size:0.78rem;font-weight:700;border-color:#7a4623;background:transparent;color:#f2dec5;">32 Players</button>' +
                 '</div>' +
               '</div>' +
             '</div>' +
