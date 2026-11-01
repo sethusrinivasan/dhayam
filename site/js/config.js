@@ -106,9 +106,9 @@
 
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
-        version: "0.2.2",
-        build: 49,
-        timestamp: "2026-10-31 21:22 UTC",
+        version: "0.3.0",
+        build: 50,
+        timestamp: "2026-10-31 21:32 UTC",
         releaseName: "Leaderboard Auto-Sorting, Leader Star & Social Sharing",
       };
        // Global player-count limits — update here, never hardcode elsewhere
