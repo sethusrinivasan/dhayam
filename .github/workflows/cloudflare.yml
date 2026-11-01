@@ -139,31 +139,25 @@ jobs:
     name: "⏸ [3/5] Manual Approval — Test Staging Before Promoting"
     needs: validate-staging
     runs-on: ubuntu-latest
-    # This job targets the `production` environment which has required_reviewers set.
-    # GitHub will PAUSE here and send a notification asking the reviewer to approve.
-    # The reviewer can open the staging URL, manually test, and then click Approve.
-    environment:
-      name: production
-      url: https://dhayam-staging.cancun.workers.dev   # reviewer sees this as "test here first"
+    # No environment here — staging is already live and accessible without any gate.
+    # The production environment gate is applied in Job 4 (deploy-production) only.
 
     steps:
-      - name: "🧑‍💻 Confirm staging tested manually"
+      - name: "🧑‍💻 Await manual approval before production"
         run: |
-          echo "✅ Manual approval received."
-          echo "Reviewer confirmed staging is healthy at https://dhayam-staging.cancun.workers.dev"
-          echo "Proceeding to deploy to production..."
+          echo "✅ Staging verified. Awaiting manual approval for production promotion."
+          echo "Staging: https://dhayam-staging.cancun.workers.dev"
 
-      - name: "📋 Record approval in job summary"
+      - name: "📋 Record approval gate in job summary"
         run: |
           cat >> $GITHUB_STEP_SUMMARY << EOF
-          ## ✅ Manual Approval Granted
+          ## ⏸ Awaiting Manual Approval for Production
 
           | Item | Value |
           |------|-------|
-          | **Approved by** | ${{ github.actor }} |
-          | **Commit** | \`${{ github.sha }}\` |
           | **Staging URL** | [dhayam-staging.cancun.workers.dev](https://dhayam-staging.cancun.workers.dev) |
-          | **Production target** | [dhayam.cancun.workers.dev](https://dhayam.cancun.workers.dev) |
+          | **Commit** | \`${{ github.sha }}\` |
+          | **Next step** | Approve in the Environments tab to promote to production |
           EOF
 
   # ─── Job 4: Deploy to Production ───────────────────────────────────────
@@ -171,6 +165,10 @@ jobs:
     name: "🚀 [4/5] Deploy to Production"
     needs: [deploy-staging, await-approval]
     runs-on: ubuntu-latest
+    # The production environment gate (required reviewers) lives here — only production is gated.
+    environment:
+      name: production
+      url: https://dhayam.cancun.workers.dev
     if: |
       always() && (
         needs.await-approval.result == 'success' ||
