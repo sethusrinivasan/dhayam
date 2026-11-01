@@ -452,3 +452,128 @@ body[data-theme="nebula"] .dieface {
   border-color: #c7d2fe88;
   color: #0f172a;
 }
+/* ==========================================================================
+   5. Thanksgiving Theme
+   ========================================================================== */
+body[data-theme="thanksgiving"] {
+  background: radial-gradient(ellipse at 50% 0%, #4b2c1d 0%, #281a0f 50%, #140e07 100%);
+}
+
+body[data-theme="thanksgiving"] .boardcard {
+  background: linear-gradient(140deg, #5a3315 0%, #332016 28%, #4e361b 72%, #7b5016 100%);
+  border-color: #9c6020;
+  box-shadow: 0 16px 50px #0a0503cc, 0 0 25px #c975122a, inset 0 0 0 2px #c9751255;
+}
+
+body[data-theme="thanksgiving"] .cell {
+  background: #331a0fcc;
+  border-color: #5a2e1c;
+  color: #f5deb3;
+}
+
+body[data-theme="thanksgiving"] .cell.safe {
+  background: #5a1b0fee;
+  border-color: #e07b12;
+  box-shadow: inset 0 0 10px #e07b1244;
+}
+
+body[data-theme="thanksgiving"] .cell.goal {
+  background: radial-gradient(circle, #5c2009 0%, #260f26 100%);
+  border-color: #e07b12;
+  box-shadow: inset 0 0 14px #e07b1288, 0 0 10px #e07b1244;
+}
+
+/* ==========================================================================
+   6. Christmas Theme
+   ========================================================================== */
+body[data-theme="christmas"] {
+  background: radial-gradient(ellipse at 50% 0%, #003300 0%, #001a00 50%, #000900 100%);
+}
+
+body[data-theme="christmas"] .boardcard {
+  background: linear-gradient(140deg, #006600 0%, #004400 28%, #003300 72%, #009900 100%);
+  border-color: #00ff00;
+  box-shadow: 0 16px 50px #001100cc, 0 0 25px #00ff122a, inset 0 0 0 2px #00ff1255;
+}
+
+body[data-theme="christmas"] .cell {
+  background: #002200cc;
+  border-color: #004400;
+  color: #e6ffe6;
+}
+
+body[data-theme="christmas"] .cell.safe {
+  background: #004400ee;
+  border-color: #00ff00;
+  box-shadow: inset 0 0 10px #00ff0044;
+}
+
+body[data-theme="christmas"] .cell.goal {
+  background: radial-gradient(circle, #005500 0%, #001a00 100%);
+  border-color: #00ff00;
+  box-shadow: inset 0 0 14px #00ff0088, 0 0 10px #00ff0044;
+}
+
+/* ==========================================================================
+   7. New Year Theme (Fireworks)
+   ========================================================================== */
+body[data-theme="newyear"] {
+  background: radial-gradient(ellipse at 50% 0%, #0a0010 0%, #050009 50%, #020004 100%);
+}
+
+body[data-theme="newyear"] .boardcard {
+  background: linear-gradient(140deg, #1a001f 0%, #0a0010 28%, #1f0025 72%, #3a0044 100%);
+  border-color: #ff00ff;
+  box-shadow: 0 16px 50px #0a0009cc, 0 0 25px #ff00ff2a, inset 0 0 0 2px #ff00ff55;
+}
+
+body[data-theme="newyear"] .cell {
+  background: #0a0010cc;
+  border-color: #3a0044;
+  color: #ffccff;
+}
+
+body[data-theme="newyear"] .cell.safe {
+  background: #1f001fcc;
+  border-color: #ff00ff;
+  box-shadow: inset 0 0 10px #ff00ff44;
+}
+
+body[data-theme="newyear"] .cell.goal {
+  background: radial-gradient(circle, #3a0044 0%, #12000a 100%);
+  border-color: #ff00ff;
+  box-shadow: inset 0 0 14px #ff00ff88, 0 0 10px #ff00ff44;
+}
+
+/* ==========================================================================
+   8. Pongal Theme (Harvest & Sun)
+   ========================================================================== */
+body[data-theme="pongal"] {
+  background: radial-gradient(ellipse at 50% 0%, #ffd700 0%, #ffae00 50%, #ff8c00 100%);
+}
+
+body[data-theme="pongal"] .boardcard {
+  background: linear-gradient(140deg, #ffcc00 0%, #ffb300 28%, #ff9900 72%, #ff6600 100%);
+  border-color: #ff9900;
+  box-shadow: 0 16px 50px #ff8800cc, 0 0 25px #ff66002a, inset 0 0 0 2px #ff660055;
+}
+
+body[data-theme="pongal"] .cell {
+  background: #ffdd33cc;
+  border-color: #ff8800;
+  color: #5a2d00;
+}
+
+body[data-theme="pongal"] .cell.safe {
+  background: #ffbb00ee;
+  border-color: #ff6600;
+  box-shadow: inset 0 0 10px #ff660044;
+}
+
+body[data-theme="pongal"] .cell.goal {
+  background: radial-gradient(circle, #ff6600 0%, #ff4400 100%);
+  border-color: #ff6600;
+  box-shadow: inset 0 0 14px #ff660088, 0 0 10px #ff660044;
+}
+
+/* Preserve existing Halloween styles after new sections */
