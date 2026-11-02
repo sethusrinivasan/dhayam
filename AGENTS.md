@@ -23,6 +23,7 @@ The game UI is in `site/index.html`. The tested, immutable rules engine is in `s
 - Keep each game action understandable on screen: square-by-square movement, explicit capture feedback, and a clear winner stop condition.
 - Maintain accessible labels, keyboard interaction, responsive layouts, and reduced-motion support.
 - Escape any organizer-provided player name before inserting it into HTML.
+- Prefer SQLite/PostgreSQL-style readable code: explicit control flow, descriptive names, small functions, and comments that explain why a non-obvious decision exists. Avoid cryptic abbreviations, clever indirection, and comments that merely restate code.
 
 ## Verification
 

@@ -1,0 +1,112 @@
+<!doctype html>
+<!--
+  Puter-style white-label integration preview for Dhayam.
+  Tracking issue: https://github.com/sethusrinivasan/dhayam/issues/10
+
+  The embed/v1 endpoint is a proposed integration contract. Replace the
+  placeholder script URL with the released version when issue #10 ships.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dhayam for Puter</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, sans-serif;
+        background: #171228;
+        color: #f5f3ff;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #30205d, #171228 55%);
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 1.25rem 1rem;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .brand img {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+      }
+
+      .brand strong {
+        color: #c4b5fd;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+
+      .game-shell {
+        overflow: hidden;
+        min-height: 760px;
+        border: 1px solid #6d28d9;
+        border-radius: 1rem;
+        background: #251a3f;
+        box-shadow: 0 1rem 4rem #0008;
+      }
+
+      iframe {
+        display: block;
+        width: 100%;
+        min-height: 760px;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <img src="https://puter.com/favicon.ico" alt="" />
+        <strong>Puter</strong>
+        <span>Games</span>
+      </div>
+      <a href="https://puter.com/app/checkers">Back to Checkers</a>
+    </header>
+
+    <main>
+      <section class="game-shell" id="dhayam-game" aria-label="Dhayam board game">
+        <!-- Proposed one-script integration: -->
+        <!--
+        <script
+          src="https://dhayam.cancun.workers.dev/embed/v1/embed.js"
+          data-container="#dhayam-game"
+          data-mode="solo"
+          data-theme="classic"
+          data-brand-name="Puter"
+          data-brand-logo="https://puter.com/favicon.ico"
+          data-height="760">
+        </script>
+        -->
+
+        <!-- Preview fallback until the versioned embed endpoint is released. -->
+        <iframe
+          title="Dhayam — ancient Tamil board game"
+          src="https://dhayam.cancun.workers.dev/"
+          loading="lazy"
+          allow="clipboard-write"
+        ></iframe>
+      </section>
+    </main>
+  </body>
+</html>

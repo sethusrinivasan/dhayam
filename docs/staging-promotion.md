@@ -1,5 +1,7 @@
 # Staging & Production Promotion Process
 
+> White-label embed implementation work must reference [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10) and add loader, iframe, origin-policy, and partner integration checks to the staging gate before production promotion.
+
 ## URLs
 
 | Environment | URL | Purpose |

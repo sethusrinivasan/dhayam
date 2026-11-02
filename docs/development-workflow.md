@@ -1,5 +1,7 @@
 # Development, Test, Debug, Staging & Deployment Workflow
 
+> **White-label embed:** The script-tag/iframe integration is tracked in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10). Its proposed contract, partner branding rules, and Puter sample are documented in [white-label-embed.md](white-label-embed.md); the runtime embed endpoint is not yet shipped.
+
 This guide details the complete development lifecycle for **Dhayam**, from local authoring and test verification to black box debugging with Flight Recorder, automated staging gates, and manual approval promotion to production.
 
 ```

@@ -12,3 +12,4 @@
 | **Autonomous MCP Game Engine** | Pure engine tools (`dhayam_play_ai_turn`, `dhayam_simulate_ai_match`, `dhayam_evaluate_moves`, `dhayam_simulate_online_match`) allow AI agents and developer workflows to simulate computer-to-computer matches programmatically. |
 | **Local Match Player Customization** | Organizers can rename players and choose avatars without requiring accounts or logins. |
 | **Tamper-Evident Flight Recorder** | In-memory and exportable event audit captures all rolls, moves, captures, and audio lifecycle events for diagnostics. |
+| **White-Label Embed Boundary** | The proposed third-party integration uses a versioned script loader and isolated iframe, keeping partner branding separate from Dhayam UI and rules. Tracked in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10). |

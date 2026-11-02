@@ -1,5 +1,7 @@
 # Dhayam Cloudflare Deployment & Frugal Edge Hosting Guide
 
+> **White-label integration:** Partner embedding, origin policy, versioning, and the Puter-style sample are specified in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10) and the [white-label embed design](white-label-embed.md).
+
 This guide describes how to deploy Dhayam to **Cloudflare** with frugal resource consumption while preserving **100% of the game on GitHub Pages**.
 
 ---
