@@ -1,13 +1,12 @@
 name: Production Liveness & E2E Validation
 
 on:
-  # Run after every production deploy (triggered by cloudflare.yml smoke check)
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   schedule:
-    # Every 6 hours: verify both staging and production remain healthy
+    # Every 6 hours: verify both staging and production remain healthy.
+    # Not triggered on push/pull_request — the deploy pipeline (cloudflare.yml)
+    # runs its own E2E gate against staging before any code reaches production,
+    # so firing the liveness check on push would race against an in-progress
+    # deploy and produce false failures against the old production build.
     - cron: '0 */6 * * *'
   workflow_dispatch:
 
