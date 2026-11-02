@@ -49,7 +49,7 @@ npm test
 npm run test:coverage
 ```
 
-### What `npm test` Validates (57+ automated checks):
+### What `npm test` Validates (68+ automated checks):
 1. **Frontend Syntax & Link Integrity**:
    - All `site/js/*.js` files parse cleanly in Node vm with zero syntax errors.
    - All script and stylesheet tags in `site/index.html` resolve to existing, non-empty files.
@@ -59,7 +59,8 @@ npm run test:coverage
    - Loads `site/index.html` with zero console exceptions (`Runtime.exceptionThrown`).
    - Verifies 49/49 board cells, player tokens, and roll action interactivity.
 3. **Pure Rules Engine (`src/game.ts`)**:
-   - Seat arrangements (2–4 players), 44-position symmetrical routes, opening entry allowances.
+   - Seat arrangements (2–32 players), 44-position symmetrical routes, opening entry allowances.
+   - 16-player two-rotation and 32-player eight-rotation seating, `MIN_PLAYERS`/`MAX_PLAYERS` exports.
    - Dice mappings (`0,0` ➔ 12), roll pool deduction, legal moves, single vs combined moves.
    - Safe square sanctuaries vs unsafe square single-capture and multi-piece block rules.
 4. **Cloudflare Worker & Model Context Protocol (MCP)**:

@@ -98,6 +98,7 @@ const INNER = [
   "B5",
 ];
 const APPROACH: Record<Seat, string> = { N: "C4", E: "D5", S: "E4", W: "D3" };
+// 32 names so createGame() never falls back to "Player N" for any supported count.
 const NAMES = [
   "Maya",
   "Leo",
@@ -107,6 +108,30 @@ const NAMES = [
   "Noah",
   "Zara",
   "Arun",
+  "Priya",
+  "Ethan",
+  "Layla",
+  "Omar",
+  "Cleo",
+  "Ravi",
+  "Mia",
+  "Luca",
+  "Diya",
+  "Finn",
+  "Hana",
+  "Bruno",
+  "Yara",
+  "Theo",
+  "Noor",
+  "Hugo",
+  "Isla",
+  "Felix",
+  "Sana",
+  "Rex",
+  "Aria",
+  "Jude",
+  "Leila",
+  "Milo",
 ];
 
 // The board stores one north-facing route. Rotating it gives every seat the
@@ -131,9 +156,13 @@ export const ROUTES: Record<Seat, string[]> = Object.fromEntries(
   SEATS.map((seat) => [seat, routeFor(seat)]),
 ) as Record<Seat, string[]>;
 
+/** Minimum and maximum player count supported by the engine. */
+export const MIN_PLAYERS = 2;
+export const MAX_PLAYERS = 32;
+
 export function createGame(playerCount = 4): Game {
-  if (!Number.isInteger(playerCount) || playerCount < 2 || playerCount > 8) {
-    throw new RangeError("Dhayam requires 2 to 8 players");
+  if (!Number.isInteger(playerCount) || playerCount < MIN_PLAYERS || playerCount > MAX_PLAYERS) {
+    throw new RangeError(`Dhayam requires ${MIN_PLAYERS} to ${MAX_PLAYERS} players`);
   }
   const seats: Seat[] =
     playerCount === 2

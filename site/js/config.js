@@ -65,6 +65,30 @@
         { name: "Noah", avatar: "🦉", color: "#00a6a6" },
         { name: "Zara", avatar: "🦄", color: "#ec4899" },
         { name: "Arun", avatar: "🦅", color: "#f97316" },
+        { name: "Priya", avatar: "🐲", color: "#84cc16" },
+        { name: "Ethan", avatar: "🦋", color: "#0ea5e9" },
+        { name: "Layla", avatar: "🐬", color: "#f43f5e" },
+        { name: "Omar", avatar: "🦀", color: "#14b8a6" },
+        { name: "Cleo", avatar: "🐸", color: "#a855f7" },
+        { name: "Ravi", avatar: "🦩", color: "#fb923c" },
+        { name: "Mia", avatar: "🐙", color: "#38bdf8" },
+        { name: "Luca", avatar: "🦜", color: "#4ade80" },
+        { name: "Diya", avatar: "🦝", color: "#c084fc" },
+        { name: "Finn", avatar: "🐻", color: "#fbbf24" },
+        { name: "Hana", avatar: "🦔", color: "#34d399" },
+        { name: "Bruno", avatar: "🦭", color: "#e879f9" },
+        { name: "Yara", avatar: "🐆", color: "#f9a8d4" },
+        { name: "Theo", avatar: "🦣", color: "#6ee7b7" },
+        { name: "Noor", avatar: "🦤", color: "#bef264" },
+        { name: "Hugo", avatar: "🦊", color: "#fde68a" },
+        { name: "Isla", avatar: "🐺", color: "#93c5fd" },
+        { name: "Felix", avatar: "🦨", color: "#fca5a5" },
+        { name: "Sana", avatar: "🦡", color: "#d8b4fe" },
+        { name: "Rex", avatar: "🦦", color: "#86efac" },
+        { name: "Aria", avatar: "🦢", color: "#67e8f9" },
+        { name: "Jude", avatar: "🐦", color: "#fdba74" },
+        { name: "Leila", avatar: "🦆", color: "#f9a8d4" },
+        { name: "Milo", avatar: "🐿️", color: "#a5f3fc" },
       ];
       // Every seat follows the same 44-position route. Rotating the north route
       // keeps movement rules consistent while giving each player a unique start.
@@ -106,10 +130,10 @@
 
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
-        version: "0.3.0",
-        build: 50,
-        timestamp: "2026-10-31 21:32 UTC",
-        releaseName: "Leaderboard Auto-Sorting, Leader Star & Social Sharing",
+        version: "0.3.1",
+        build: 51,
+        timestamp: "2026-11-01 00:00 UTC",
+        releaseName: "16/32 Player Support, Dynamic Build Badge, E2E Freshness Gate",
       };
        // Global player-count limits — update here, never hardcode elsewhere
        const MIN_PLAYERS = 2;
@@ -117,4 +141,10 @@
 
       if (typeof window !== "undefined") {
         window.BUILD_INFO = BUILD_INFO;
+        // Dynamically populate the build badge and timestamp so they always
+        // reflect the authoritative BUILD_INFO rather than a hardcoded string.
+        const _badgeEl = document.getElementById("buildNumberBadge");
+        const _tsEl = document.getElementById("buildUpdatedTimestamp");
+        if (_badgeEl) _badgeEl.textContent = "Build #" + BUILD_INFO.build + " (v" + BUILD_INFO.version + ")";
+        if (_tsEl) _tsEl.textContent = "Updated: " + BUILD_INFO.timestamp;
       }

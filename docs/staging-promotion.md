@@ -12,7 +12,7 @@
 
 ## CI Pipeline: Staging → Gate → Production
 
-Every push to `main` triggers the **four-job pipeline** in [`.github/workflows/cloudflare.yml`](../.github/workflows/cloudflare.yml):
+Every push to `main` triggers the **five-job pipeline** in [`.github/workflows/cloudflare.yml`](../.github/workflows/cloudflare.yml):
 
 ```
 Push to main
@@ -29,15 +29,21 @@ Push to main
 │   🧪 Staging Gate    │   ↳ HTTP 200 on root / /health / /mcp
 └────────┬─────────────┘   ↳ 49/49 board cells, 0 JS exceptions
          │ staging PASSED  ↳ Roll dice interaction verified
+         ▼                 ↳ 8/16/32-player newGame verified
+┌─────────────────────┐
+│ 3. await-approval   │   ⏸ Manual reviewer tests staging live
+│   👤 Human Gate     │   → GitHub Environments approval UI
+└────────┬────────────┘
+         │ approved
          ▼
 ┌─────────────────────┐
-│ 3. deploy-production│   wrangler deploy (production)
+│ 4. deploy-production│   wrangler deploy (production)
 │   🚀 Production     │   → dhayam.cancun.workers.dev
 └────────┬────────────┘
          │ success
          ▼
 ┌──────────────────────┐
-│ 4. smoke-production  │   E2E liveness check against prod URL
+│ 5. smoke-production  │   E2E liveness check against prod URL
 │   💨 Smoke Check     │
 └──────────────────────┘
 ```
@@ -61,6 +67,9 @@ Against staging before production promotion:
 | Players rendered | ≥ 2 `.player` cards in DOM |
 | Action button | `#actionBtn` enabled, not hidden |
 | Dice roll | `actionBtn.click()` → dice change state, no error |
+| 8-player support | `newGame(8, 0)` → 8 players created without error |
+| 16-player support | `newGame(16, 0)` → 16 players created without error |
+| 32-player support | `newGame(32, 0)` → 32 players created without error |
 
 ---
 

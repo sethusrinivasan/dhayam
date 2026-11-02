@@ -31,10 +31,10 @@ A succinct, one-page executive summary documenting how Dhayam was conceived, eng
 * **What was built**: Circular in-memory event buffer (`site/js/recorder.js`) capturing the last 400 system, DOM click, keyboard, WebSocket, and game transitions with 1-click clipboard export (`🛫`).
 * **Why it matters**: Allowed instant zero-setup post-mortem debugging of edge network issues directly from live users.
 
-### Milestone 5: 8-Player Scaling & Quantum Speed (32×–128×)
-* **What was built**: Expanded game capacity from 2–4 players up to 8 concurrent players (`P0` through `P7`) with dedicated avatars and color identities. Added Quantum Mode running at 32× speed (configurable up to 128× via slider) with commentary automatically muted for rapid demo simulations.
-* **Key Challenge**: At 128× speed, local execution attempts actions faster than network latency.
-* **Fix**: Applied a minimum WAN network pacing floor (160ms) for Cloudflare DO requests to allow SQLite persistence and 8-way fan-out to settle cleanly.
+### Milestone 5: 8-Player Scaling, Quantum Speed (32×–128×) & Full 32-Player Support
+* **What was built**: Expanded game capacity from 2–4 players up to 8 concurrent players (`P0` through `P7`) with dedicated avatars and color identities. Added Quantum Mode running at 32× speed (configurable up to 128× via slider) with commentary automatically muted for rapid demo simulations. Extended to 16 and 32 players: `MIN_PLAYERS = 2`, `MAX_PLAYERS = 32` are authoritative constants in `src/game.ts`; `THEMES` expanded to 32 entries; Durable Object engine lifted to 32-player cap; E2E freshness gate validates 8/16/32-player `newGame` calls.
+* **Key Challenge**: At 128× speed, local execution attempts actions faster than network latency. THEMES and avatar arrays previously hard-capped at 8 entries.
+* **Fix**: Applied a minimum WAN network pacing floor (160ms) for Cloudflare DO requests. Expanded THEMES to 32 unique named players with distinct avatars and colors, all arrays now wrap safely with modulo indexing.
 
 ### Milestone 6: Turn 22 Freeze RCA & Complete Resilience Overhaul
 * **The Incident**: User flight recorder revealed an 8-player live Cloudflare demo stalled indefinitely at Turn 22 with Noah holding a bonus roll of `12` (`pool: [12]`, `phase: "roll"`).

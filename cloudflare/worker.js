@@ -100,9 +100,9 @@ class DhayamEngine {
   }
 
   initNewMatch(names = ["Player 1", "Player 2"]) {
-    const count = Math.min(Math.max(names.length, 2), 8);
-    const avatars = ["🎃", "👻", "🧙", "🦇", "🐺", "🕷️", "💀", "🌙"];
-    const colors = ["#ff7518", "#2dd4bf", "#f59e0b", "#6366f1", "#ec4899", "#8b5cf6", "#10b981", "#06b6d4"];
+    const count = Math.min(Math.max(names.length, 2), 32);
+    const avatars = ["🎃", "👻", "🧙", "🦇", "🐺", "🕷️", "💀", "🌙", "🦊", "🐯", "🦚", "🦁", "🐘", "🦉", "🦄", "🦅", "🐲", "🦋", "🐬", "🦀", "🐸", "🦩", "🐙", "🦜", "🐺", "🦝", "🐻", "🦔", "🦭", "🐆", "🦣", "🦤"];
+    const colors = ["#ff7518", "#2dd4bf", "#f59e0b", "#6366f1", "#ec4899", "#8b5cf6", "#10b981", "#06b6d4", "#e74c3c", "#2389da", "#f4b400", "#2e9d57", "#8e5bd9", "#00a6a6", "#f97316", "#14b8a6", "#ef4444", "#3b82f6", "#eab308", "#22c55e", "#a855f7", "#06b6d4", "#f43f5e", "#0ea5e9", "#84cc16", "#d946ef", "#fb923c", "#4ade80", "#38bdf8", "#c084fc", "#fbbf24", "#34d399"];
 
     this.players = names.slice(0, count).map((name, i) => ({
       id: "P" + i,
@@ -688,14 +688,14 @@ let activeSessionGame = new DhayamEngine();
 const MCP_TOOLS = [
   {
     name: "dhayam_new_game",
-    description: "Start a new Dhayam / Dayakattai match with 2, 3, or 4 players.",
+    description: "Start a new Dhayam / Dayakattai match with 2 to 32 players.",
     inputSchema: {
       type: "object",
       properties: {
         player_names: {
           type: "array",
           items: { type: "string" },
-          description: "List of player names (2 to 4). Defaults to ['Player 1', 'Player 2']."
+          description: "List of player names (2 to 32). Defaults to ['Player 1', 'Player 2']."
         }
       }
     }
@@ -1015,7 +1015,7 @@ export class DhayamRoom extends DurableObject {
   ensureInitialized(targetCount = 2, code = "") {
     if (!this.engine) {
       this.roomCode = code;
-      this.targetPlayers = Math.min(Math.max(targetCount, 2), 8);
+      this.targetPlayers = Math.min(Math.max(targetCount, 2), 32);
       const names = Array.from({ length: this.targetPlayers }, (_, i) => "Player " + (i + 1));
       this.engine = new DhayamEngine();
       this.engine.initNewMatch(names);

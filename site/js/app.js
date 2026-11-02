@@ -101,7 +101,7 @@
               : Array.from({ length: count }, (_, i) => BASE_SEATS[i % BASE_SEATS.length]);
         game = {
           players: seats.map((seat, i) => {
-            const theme = THEMES[i];
+            const theme = THEMES[i % THEMES.length];
             return {
               id: "P" + i,
               name: computerCount ? (i === 0 ? "You" : theme.name) : theme.name,

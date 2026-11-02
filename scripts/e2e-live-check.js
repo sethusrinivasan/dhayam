@@ -159,10 +159,22 @@ async function runBrowserE2E(targetUrl) {
     const evalRes = await send("Runtime.evaluate", {
       expression: `(() => {
         let supports8 = false;
+        let supports16 = false;
+        let supports32 = false;
         try {
           newGame(8, 0);
           supports8 = (game?.players?.length === 8);
         } catch {}
+        try {
+          newGame(16, 0);
+          supports16 = (game?.players?.length === 16);
+        } catch {}
+        try {
+          newGame(32, 0);
+          supports32 = (game?.players?.length === 32);
+        } catch {}
+        // Restore default 2-player game for subsequent interaction tests
+        try { newGame(2, 1); } catch {}
         return {
           title: document.title,
           cellsCount: document.querySelectorAll('.cell').length,
@@ -181,7 +193,9 @@ async function runBrowserE2E(targetUrl) {
           buildText: document.getElementById('buildNumberBadge')?.textContent?.trim(),
           hasBuildUpdated: !!document.getElementById('buildUpdatedTimestamp'),
           speedMax: document.getElementById('demoSpeed')?.getAttribute('max'),
-          supports8
+          supports8,
+          supports16,
+          supports32
         };
       })()`,
       returnByValue: true,
@@ -217,6 +231,14 @@ async function runBrowserE2E(targetUrl) {
       console.error("  ✗ Stale deployment detected: 8 players match creation failed in newGame(8, 0)");
       return false;
     }
+    if (!state.supports16) {
+      console.error("  ✗ Stale deployment detected: 16 players match creation failed in newGame(16, 0)");
+      return false;
+    }
+    if (!state.supports32) {
+      console.error("  ✗ Stale deployment detected: 32 players match creation failed in newGame(32, 0)");
+      return false;
+    }
     if (!state.hasGameTimer) {
       console.error("  ✗ Stale deployment detected: missing game liveliness timer (#gameTimer)");
       return false;
@@ -225,7 +247,7 @@ async function runBrowserE2E(targetUrl) {
       console.error("  ✗ Stale deployment detected: missing build metadata badge (#buildNumberBadge)");
       return false;
     }
-    console.log(`  ✓ Feature freshness verified (8 players, Quantum 32×, 128× speed slider, Game Timer: "${state.gameTimerText}", Build: "${state.buildText}")`);
+    console.log(`  ✓ Feature freshness verified (8/16/32 players, Quantum 32×, 128× speed slider, Game Timer: "${state.gameTimerText}", Build: "${state.buildText}")`);
 
     if (!state.actionBtnVisible || state.actionBtnDisabled) {
       console.error(`  ✗ Action button not ready (visible: ${state.actionBtnVisible}, disabled: ${state.actionBtnDisabled})`);

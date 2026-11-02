@@ -3,7 +3,7 @@
 ## Automated checks
 
 ```sh
-npm test              # Runs 31 unit, regression, and Cloudflare MCP tests
+npm test              # Runs 68 unit, regression, and Cloudflare MCP tests
 ./test.sh             # Full 12-point suite: headless Chrome DOM, edge health, and MCP discovery
 npm run test:coverage
 ```
@@ -12,7 +12,8 @@ The GitHub Actions workflow runs the test suite on every push, pull request, and
 
 ### Test Suites Included:
 1. **`test/game.test.ts` (13 tests)**:
-   - Seating arrangements, 44-position rotational routes, Dayakattai dice face mapping (0+0 = 12).
+   - Seating arrangements for 2–32 players, 44-position rotational routes, Dayakattai dice face mapping (0+0 = 12).
+   - 16-player two-rotation seating, 32-player eight-rotation seating, `MIN_PLAYERS`/`MAX_PLAYERS` constants.
    - Reserve piece entry on 1, inner circuit capture prerequisites, safe squares, illegal multi-opponent landings, exact-roll finish, combined-roll allocation, and forged move rejection.
 
 2. **`test/multiplayer_regression.test.ts` (9 tests)**:

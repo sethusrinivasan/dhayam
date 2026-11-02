@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   FINISH_PROGRESS,
+  MAX_PLAYERS,
+  MIN_PLAYERS,
   ROUTES,
   applyMove,
   createGame,
@@ -33,8 +35,30 @@ test("creates the supported seating arrangements", () => {
     createGame(8).players.map((player) => player.seat),
     ["N", "E", "S", "W", "N", "E", "S", "W"],
   );
+  // 16-player: two full rotations of N/E/S/W
+  assert.equal(createGame(16).players.length, 16);
+  assert.deepEqual(
+    createGame(16).players.map((player) => player.seat),
+    ["N", "E", "S", "W", "N", "E", "S", "W", "N", "E", "S", "W", "N", "E", "S", "W"],
+  );
+  // 32-player: eight full rotations of N/E/S/W
+  assert.equal(createGame(32).players.length, 32);
+  assert.equal(
+    createGame(32).players.every((player) => ["N", "E", "S", "W"].includes(player.seat)),
+    true,
+  );
+  // Every player has a unique id and 6 pieces in reserve
+  const g32 = createGame(32);
+  assert.equal(new Set(g32.players.map((p) => p.id)).size, 32);
+  g32.players.forEach((p) => {
+    assert.equal(p.pieces.length, 6);
+    p.pieces.forEach((q) => assert.equal(q.progress, -1));
+  });
+  // Named constants match new limits
+  assert.equal(MIN_PLAYERS, 2);
+  assert.equal(MAX_PLAYERS, 32);
   assert.throws(() => createGame(1), RangeError);
-  assert.throws(() => createGame(9), RangeError);
+  assert.throws(() => createGame(33), RangeError);
 });
 
 test("builds a 44-position rotationally symmetric route for each seat", () => {
