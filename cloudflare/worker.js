@@ -1185,6 +1185,7 @@ export class DhayamRoom extends DurableObject {
         const existingClaim = this.claimedSeats[seat];
         if (existingClaim && existingClaim.token === token) {
           existingClaim.connected = true;
+          existingClaim.disconnectedAt = null; // cancel grace period
           if (name) {
             existingClaim.name = name;
             this.engine.players[seat].name = name;
@@ -1447,6 +1448,9 @@ export class DhayamRoom extends DurableObject {
       const claim = this.claimedSeats[attachment.seat];
       if (claim) {
         claim.connected = false;
+        // Record when this seat disconnected so the alarm handler knows
+        // which seats to abandon after the 60-second grace window.
+        claim.disconnectedAt = Date.now();
         this.persist();
         this.broadcast({
           type: "PRESENCE",
@@ -1455,13 +1459,88 @@ export class DhayamRoom extends DurableObject {
           name: claim.name,
           seats: this.getSeatsInfo()
         });
+
+        // Arm a 60-second grace period alarm.  If the player reconnects
+        // before it fires (CLAIM_SEAT with matching token), the reconnect
+        // handler clears disconnectedAt and the alarm handler skips them.
+        // We always overwrite the alarm to the latest disconnect time so
+        // concurrent disconnects all get a full 60 seconds.
+        try {
+          await this.ctx.storage.setAlarm(Date.now() + 60_000);
+        } catch (_e) {
+          // setAlarm may throw in local dev (workerd without alarm support);
+          // safe to ignore — the seat claim persists anyway.
+        }
       }
+    }
+  }
+
+  // Called by the Durable Object runtime when the alarm fires.
+  async alarm() {
+    const now = Date.now();
+    const GRACE_MS = 60_000;
+    let anyAbandoned = false;
+
+    for (const [seatStr, claim] of Object.entries(this.claimedSeats)) {
+      const seat = Number(seatStr);
+      // A seat is grace-expired when it is still disconnected AND the
+      // disconnectedAt timestamp is older than the grace window.
+      if (!claim.connected && claim.disconnectedAt && (now - claim.disconnectedAt) >= GRACE_MS) {
+        // Release the seat so another player can take it if needed.
+        delete this.claimedSeats[seat];
+        anyAbandoned = true;
+
+        // If it is currently this player's turn, pass it automatically
+        // so the game doesn't stall.
+        if (this.engine && this.engine.current === seat && this.engine.phase !== "done") {
+          this.engine.passTurn();
+        }
+
+        this.broadcast({
+          type: "SEAT_ABANDONED",
+          seat,
+          name: claim.name,
+          message: claim.name + " was disconnected and did not reconnect in time. Their seat is now open.",
+          seats: this.getSeatsInfo()
+        });
+
+        this.broadcast({
+          type: "SYNC_STATE",
+          game: this.engine ? this.engine.serialize() : null,
+          audit: this.engine ? this.engine.audit : [],
+          seats: this.getSeatsInfo()
+        });
+      }
+    }
+
+    if (anyAbandoned) {
+      this.persist();
     }
   }
 
   async webSocketError(ws, error) {
     console.warn("Durable Object webSocketError:", error);
   }
+}
+
+// ─── WebSocket Join Rate Limiter ──────────────────────────────────────────
+// Lightweight in-memory per-IP throttle.  Limits WebSocket upgrade attempts
+// to MAX_WS_JOINS_PER_WINDOW per IP in any RATE_WINDOW_MS rolling window.
+// Worker memory resets on cold-start, which is fine — this guards against
+// hot brute-force scans, not persistent offline enumeration.
+const _wsJoinRateMap = new Map(); // ip -> { count: number, resetAt: number }
+const MAX_WS_JOINS_PER_WINDOW = 10;
+const RATE_WINDOW_MS = 60_000; // 1 minute
+
+function checkWsJoinRateLimit(ip) {
+  const now = Date.now();
+  let entry = _wsJoinRateMap.get(ip);
+  if (!entry || now >= entry.resetAt) {
+    entry = { count: 0, resetAt: now + RATE_WINDOW_MS };
+    _wsJoinRateMap.set(ip, entry);
+  }
+  entry.count += 1;
+  return entry.count <= MAX_WS_JOINS_PER_WINDOW;
 }
 
 export default {
@@ -1475,6 +1554,16 @@ export default {
     // 1. Multiplayer WebSocket & Info endpoint: /api/room/:code/...
     const roomMatch = url.pathname.match(/^\/api\/room\/([A-Za-z0-9_-]+)(?:\/(ws|info))?$/);
     if (roomMatch && env && env.DHAYAM_ROOM) {
+      // Rate-limit WebSocket join attempts per IP to prevent room enumeration.
+      if (request.headers.get("Upgrade") === "websocket") {
+        const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "unknown";
+        if (!checkWsJoinRateLimit(clientIp)) {
+          return new Response(
+            JSON.stringify({ error: "Too many connection attempts. Please wait a moment before trying again." }),
+            { status: 429, headers: { ...CORS_HEADERS, "Retry-After": "60" } }
+          );
+        }
+      }
       const roomCode = roomMatch[1].toUpperCase();
       const id = env.DHAYAM_ROOM.idFromName(roomCode);
       const stub = env.DHAYAM_ROOM.get(id);

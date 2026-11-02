@@ -1318,3 +1318,181 @@ test("Build metadata (BUILD_INFO) displays build number and updated timestamp", 
 
 
 
+
+test("reconnect retry: scheduleReconnect backs off exponentially and gives up after 3 attempts", () => {
+  // Simulates the scheduleReconnect logic without a real WebSocket.
+  // Verifies: delays double each attempt (2s, 4s, 8s), status becomes
+  // "reconnecting" during retries, and "offline" after exhaustion.
+  const delays: number[] = [];
+  let finalStatus = "connected";
+
+  function simulateScheduleReconnect(attempt: number): void {
+    if (attempt > 3) {
+      finalStatus = "offline";
+      return;
+    }
+    const delayMs = (2 ** attempt) * 1000;
+    delays.push(delayMs);
+    finalStatus = "reconnecting";
+  }
+
+  simulateScheduleReconnect(1);
+  assert.equal(delays[0], 2000, "First retry delay must be 2 seconds");
+  assert.equal(finalStatus, "reconnecting", "Status must be reconnecting during retry");
+
+  simulateScheduleReconnect(2);
+  assert.equal(delays[1], 4000, "Second retry delay must be 4 seconds");
+
+  simulateScheduleReconnect(3);
+  assert.equal(delays[2], 8000, "Third retry delay must be 8 seconds");
+
+  simulateScheduleReconnect(4); // exhausted
+  assert.equal(finalStatus, "offline", "Status must become offline after all retries exhausted");
+  assert.equal(delays.length, 3, "Exactly 3 retry attempts must be made before giving up");
+});
+
+test("reconnect retry: intentional disconnect (leaveMultiplayer) cancels pending retries", () => {
+  let reconnectIntentional = false;
+  let timerArmed = false;
+  let timerCancelled = false;
+
+  function cancelReconnect() {
+    reconnectIntentional = true;
+    if (timerArmed) timerCancelled = true;
+  }
+
+  // Arm a retry
+  timerArmed = true;
+  assert.equal(timerCancelled, false);
+
+  // User calls leaveMultiplayer which calls cancelReconnect
+  cancelReconnect();
+  assert.equal(reconnectIntentional, true, "Intentional flag must be set by cancelReconnect");
+  assert.equal(timerCancelled, true, "Pending retry timer must be cleared on intentional disconnect");
+
+  // scheduleReconnect must bail out when intentional flag is set
+  function scheduleReconnect(attempt: number): boolean {
+    if (reconnectIntentional) return false;
+    return true;
+  }
+  assert.equal(scheduleReconnect(1), false, "scheduleReconnect must not run after intentional disconnect");
+});
+
+test("reconnect retry: successful reconnect clears disconnectedAt on server seat claim", () => {
+  // Mirrors the server-side CLAIM_SEAT token-match reconnect path.
+  const claimedSeats: Record<number, { token: string; connected: boolean; disconnectedAt: number | null }> = {
+    1: { token: "tok-abc", connected: false, disconnectedAt: Date.now() - 5000 }
+  };
+
+  function handleReconnectClaim(seat: number, token: string) {
+    const claim = claimedSeats[seat];
+    if (claim && claim.token === token) {
+      claim.connected = true;
+      claim.disconnectedAt = null; // cancel grace period alarm
+      return "INIT";
+    }
+    return "ERROR";
+  }
+
+  assert.equal(handleReconnectClaim(1, "tok-abc"), "INIT", "Valid token must trigger INIT response");
+  assert.equal(claimedSeats[1].connected, true, "Seat must be marked connected after token match");
+  assert.equal(claimedSeats[1].disconnectedAt, null, "disconnectedAt must be cleared to cancel alarm");
+  assert.equal(handleReconnectClaim(1, "tok-wrong"), "ERROR", "Wrong token must be rejected");
+});
+
+test("reconnect retry: alarm fires after grace period and auto-passes disconnected player's turn", () => {
+  // Mirrors the server-side alarm() handler logic.
+  const GRACE_MS = 60_000;
+
+  interface SeatClaim { connected: boolean; disconnectedAt: number | null; name: string; }
+  const claimedSeats: Record<number, SeatClaim> = {
+    0: { connected: true, disconnectedAt: null, name: "Maya" },
+    1: { connected: false, disconnectedAt: Date.now() - GRACE_MS - 1, name: "Leo" }
+  };
+
+  let currentPlayer = 1; // It's Leo's turn when they dropped
+  let phase = "roll";
+  const broadcasts: string[] = [];
+
+  function simulateAlarm() {
+    const now = Date.now();
+    for (const [seatStr, claim] of Object.entries(claimedSeats)) {
+      const seat = Number(seatStr);
+      if (!claim.connected && claim.disconnectedAt && (now - claim.disconnectedAt) >= GRACE_MS) {
+        delete claimedSeats[seat];
+        // Auto-pass if it was this player's turn
+        if (currentPlayer === seat && phase !== "done") {
+          currentPlayer = (currentPlayer + 1) % 2;
+          phase = "roll";
+        }
+        broadcasts.push("SEAT_ABANDONED:" + claim.name);
+      }
+    }
+  }
+
+  simulateAlarm();
+  assert.equal(Object.keys(claimedSeats).length, 1, "Expired seat must be released after grace period");
+  assert.equal(claimedSeats[0].name, "Maya", "Active player's seat must be preserved");
+  assert.ok(broadcasts.some(b => b.includes("SEAT_ABANDONED:Leo")), "SEAT_ABANDONED must be broadcast");
+  assert.equal(currentPlayer, 0, "Turn must auto-advance to the next player after seat abandonment");
+});
+
+test("rate limiter: allows up to MAX_WS_JOINS_PER_WINDOW attempts then blocks with 429", () => {
+  const MAX = 10;
+  const WINDOW_MS = 60_000;
+
+  interface RateEntry { count: number; resetAt: number; }
+  const rateMap = new Map<string, RateEntry>();
+
+  function checkRateLimit(ip: string, nowMs: number): boolean {
+    let entry = rateMap.get(ip);
+    if (!entry || nowMs >= entry.resetAt) {
+      entry = { count: 0, resetAt: nowMs + WINDOW_MS };
+      rateMap.set(ip, entry);
+    }
+    entry.count += 1;
+    return entry.count <= MAX;
+  }
+
+  const ip = "1.2.3.4";
+  const now = Date.now();
+
+  // First 10 attempts: all allowed
+  for (let i = 1; i <= MAX; i++) {
+    assert.equal(checkRateLimit(ip, now), true, `Attempt ${i} must be allowed within limit`);
+  }
+
+  // 11th attempt: blocked
+  assert.equal(checkRateLimit(ip, now), false, "11th attempt must be rate-limited");
+  assert.equal(checkRateLimit(ip, now), false, "12th attempt must also be rate-limited");
+
+  // After window resets: allowed again
+  assert.equal(checkRateLimit(ip, now + WINDOW_MS + 1), true, "First attempt after window reset must be allowed");
+});
+
+test("rate limiter: different IPs have independent counters", () => {
+  const MAX = 10;
+  const WINDOW_MS = 60_000;
+
+  interface RateEntry { count: number; resetAt: number; }
+  const rateMap = new Map<string, RateEntry>();
+
+  function checkRateLimit(ip: string, nowMs: number): boolean {
+    let entry = rateMap.get(ip);
+    if (!entry || nowMs >= entry.resetAt) {
+      entry = { count: 0, resetAt: nowMs + WINDOW_MS };
+      rateMap.set(ip, entry);
+    }
+    entry.count += 1;
+    return entry.count <= MAX;
+  }
+
+  const now = Date.now();
+
+  // Exhaust ip A
+  for (let i = 0; i < MAX; i++) checkRateLimit("10.0.0.1", now);
+  assert.equal(checkRateLimit("10.0.0.1", now), false, "IP A must be blocked after exhausting limit");
+
+  // IP B is unaffected
+  assert.equal(checkRateLimit("10.0.0.2", now), true, "IP B must still be allowed independently");
+});

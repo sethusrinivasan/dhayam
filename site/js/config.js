@@ -130,10 +130,10 @@
 
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
-        version: "0.3.1",
-        build: 51,
-        timestamp: "2026-11-01 00:00 UTC",
-        releaseName: "16/32 Player Support, Dynamic Build Badge, E2E Freshness Gate",
+        version: "0.3.2",
+        build: 52,
+        timestamp: "2026-11-02 05:00 UTC",
+        releaseName: "Reconnect Grace Period & Rate Limiting",
       };
        // Global player-count limits — update here, never hardcode elsewhere
        const MIN_PLAYERS = 2;

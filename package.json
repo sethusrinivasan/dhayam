@@ -1,7 +1,7 @@
 {
   "name": "dhayam",
-  "version": "0.3.1",
-  "build": 51,
+  "version": "0.3.2",
+  "build": 52,
   "private": true,
   "type": "module",
   "scripts": {

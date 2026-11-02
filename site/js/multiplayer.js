@@ -388,8 +388,90 @@ async function joinOnlineGame(roomCode) {
   joinOnlineGameP2P(cleanCode);
 }
 
+// ─── Reconnection state ────────────────────────────────────────────────────
+// Tracks whether the current socket drop was intentional (leaveMultiplayer)
+// or unexpected (network drop, phone lock, Wi-Fi handoff).  The retry loop
+// reads this flag so it never runs after the user explicitly leaves.
+let _reconnectIntentional = false;
+let _reconnectTimer = null;
+
 /**
- * Connect to Cloudflare Durable Objects WebSocket Room
+ * Cancel any pending reconnect attempt (called by leaveMultiplayer).
+ */
+function cancelReconnect() {
+  _reconnectIntentional = true;
+  if (_reconnectTimer) {
+    clearTimeout(_reconnectTimer);
+    _reconnectTimer = null;
+  }
+}
+
+/**
+ * Attempt to reconnect to a Cloudflare room after an unexpected socket drop.
+ *
+ * Strategy: exponential backoff — 2 s, 4 s, 8 s — then give up.
+ * The server holds the seat claim for 60 seconds via a DO alarm, so three
+ * attempts comfortably fit inside the grace window.
+ *
+ * @param {string}  roomCode   - the room to rejoin
+ * @param {boolean} isHost     - were we the host?
+ * @param {number}  playerCount
+ * @param {number}  attempt    - 1-based attempt counter (max 3)
+ */
+function scheduleReconnect(roomCode, isHost, playerCount, attempt = 1) {
+  if (_reconnectIntentional || !multiplayer.active) return;
+  if (attempt > 3) {
+    // All retries exhausted — tell the user and reset state.
+    multiplayer.status = "offline";
+    updateMultiplayerBadge();
+    showModal(
+      "Connection Lost",
+      "<p>Could not reconnect to Room <strong>" + escapeHtml(roomCode) +
+      "</strong> after 3 attempts.</p>" +
+      "<p style='font-size:0.85rem;color:#d8c4ab;margin-top:8px;'>" +
+      "Your seat is reserved for 60 seconds. Refresh the page or " +
+      "use the invite link to rejoin before it expires.</p>",
+      "Leave Match",
+      leaveMultiplayer
+    );
+    return;
+  }
+
+  const delayMs = (2 ** attempt) * 1000; // 2s, 4s, 8s
+  multiplayer.status = "reconnecting";
+  updateMultiplayerBadge();
+
+  if (typeof FlightRecorder !== "undefined") {
+    FlightRecorder.record("MP_RECONNECT_SCHEDULED", {
+      roomCode, attempt, delayMs
+    });
+  }
+
+  _reconnectTimer = setTimeout(async () => {
+    _reconnectTimer = null;
+    if (_reconnectIntentional || !multiplayer.active) return;
+
+    try {
+      await connectCloudflareRoom(roomCode, isHost, playerCount);
+      // Success: connectCloudflareRoom resolves and the INIT/ROOM_STATE
+      // handler restores the full game state automatically.
+      if (typeof FlightRecorder !== "undefined") {
+        FlightRecorder.record("MP_RECONNECT_SUCCESS", { roomCode, attempt });
+      }
+    } catch (_err) {
+      // This attempt failed — schedule the next one.
+      scheduleReconnect(roomCode, isHost, playerCount, attempt + 1);
+    }
+  }, delayMs);
+}
+
+/**
+ * Connect to Cloudflare Durable Objects WebSocket Room.
+ *
+ * On unexpected disconnect the socket.onclose handler will call
+ * scheduleReconnect() automatically using the stored session token,
+ * giving the player up to 3 automatic retry attempts before showing
+ * the "Connection Lost" modal.
  */
 function connectCloudflareRoom(roomCode, isHost, playerCount = 2, customName = null) {
   return new Promise((resolve, reject) => {
@@ -403,12 +485,15 @@ function connectCloudflareRoom(roomCode, isHost, playerCount = 2, customName = n
     const seat = saved && saved.roomCode === roomCode ? saved.seat : isHost ? 0 : "";
     const wsUrl = `${wsProtocol}//${window.location.host}/api/room/${roomCode}/ws?code=${roomCode}&players=${playerCount}&token=${token}&seat=${seat}`;
 
-    showModal(
-      isHost ? "Creating Room " + roomCode : "Connecting to Room " + roomCode,
-      '<div style="text-align:center;padding:16px 0;"><div class="mp-spinner"></div><p style="margin-top:12px;color:#f2dec5;">Connecting to Cloudflare Edge…</p></div>',
-      "Cancel",
-      leaveMultiplayer
-    );
+    // Only show the connecting modal on the first connect (not on auto-retries).
+    if (multiplayer.status !== "reconnecting") {
+      showModal(
+        isHost ? "Creating Room " + roomCode : "Connecting to Room " + roomCode,
+        '<div style="text-align:center;padding:16px 0;"><div class="mp-spinner"></div><p style="margin-top:12px;color:#f2dec5;">Connecting to Cloudflare Edge…</p></div>',
+        "Cancel",
+        leaveMultiplayer
+      );
+    }
 
     let socket;
     try {
@@ -421,9 +506,7 @@ function connectCloudflareRoom(roomCode, isHost, playerCount = 2, customName = n
     const timeout = setTimeout(() => {
       if (!settled && socket.readyState !== WebSocket.OPEN) {
         settled = true;
-        try {
-          socket.close();
-        } catch (e) {}
+        try { socket.close(); } catch (e) {}
         reject(new Error("WebSocket connection timeout"));
       }
     }, 3500);
@@ -432,6 +515,9 @@ function connectCloudflareRoom(roomCode, isHost, playerCount = 2, customName = n
       if (settled) return;
       settled = true;
       clearTimeout(timeout);
+
+      // Reset intentional-disconnect flag — we have a live socket now.
+      _reconnectIntentional = false;
 
       multiplayer.active = true;
       multiplayer.transport = "cf_ws";
@@ -444,23 +530,19 @@ function connectCloudflareRoom(roomCode, isHost, playerCount = 2, customName = n
       if (isHost) {
         newGame(playerCount, 0);
         const hostName = game?.players[0]?.name || "Player 1";
-        socket.send(
-          JSON.stringify({
-            type: "CLAIM_SEAT",
-            seat: 0,
-            name: hostName,
-            token: token,
-          })
-        );
+        socket.send(JSON.stringify({
+          type: "CLAIM_SEAT",
+          seat: 0,
+          name: hostName,
+          token: token,
+        }));
       } else if (saved && saved.roomCode === roomCode && saved.seat !== undefined) {
-        socket.send(
-          JSON.stringify({
-            type: "CLAIM_SEAT",
-            seat: saved.seat,
-            name: saved.name || customName || "",
-            token: saved.token,
-          })
-        );
+        socket.send(JSON.stringify({
+          type: "CLAIM_SEAT",
+          seat: saved.seat,
+          name: saved.name || customName || "",
+          token: saved.token,
+        }));
       }
 
       resolve(socket);
@@ -475,13 +557,33 @@ function connectCloudflareRoom(roomCode, isHost, playerCount = 2, customName = n
       }
     };
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
+      // Premature close before the promise resolved — reject so the caller
+      // (or scheduleReconnect) can handle it.
       if (!settled) {
         settled = true;
         clearTimeout(timeout);
         reject(new Error("WebSocket closed prematurely"));
+        return;
       }
+
+      // Intentional close (leaveMultiplayer was called) — do nothing.
+      if (_reconnectIntentional) {
+        updateMultiplayerBadge();
+        return;
+      }
+
+      // Unexpected drop while we were in an active session — trigger retry.
       if (multiplayer.active && multiplayer.status === "connected") {
+        if (typeof FlightRecorder !== "undefined") {
+          FlightRecorder.record("MP_UNEXPECTED_DISCONNECT", {
+            roomCode,
+            code: event.code,
+            reason: event.reason || "network drop",
+          });
+        }
+        scheduleReconnect(roomCode, isHost, playerCount, 1);
+      } else {
         updateMultiplayerBadge();
       }
     };
@@ -653,6 +755,25 @@ function handleWsMessage(msg) {
         updateHostLobbySeats();
       }
       updateMultiplayerBadge();
+      break;
+    }
+
+    case "SEAT_ABANDONED": {
+      // A disconnected player's grace period expired server-side.
+      if (multiplayer.claimedSeats[msg.seat]) {
+        delete multiplayer.claimedSeats[msg.seat];
+      }
+      if (msg.seats) {
+        msg.seats.forEach((s) => {
+          if (s.claimed) {
+            multiplayer.claimedSeats[s.seat] = { name: s.claimedBy, connected: s.connected };
+          }
+        });
+      }
+      updateMultiplayerBadge();
+      if (typeof showToast === "function" && msg.message) {
+        showToast("🚪 " + escapeHtml(msg.message));
+      }
       break;
     }
 
@@ -1290,6 +1411,15 @@ function updateMultiplayerBadge() {
   const role = multiplayer.isHost ? "Host" : "Guest";
   const seatName = game?.players[multiplayer.mySeat]?.name || "Player";
   const transportLabel = multiplayer.transport === "cf_ws" ? "⚡ Cloudflare Edge" : "P2P";
+
+  // Show amber reconnecting state when mid-retry
+  if (multiplayer.status === "reconnecting") {
+    badge.innerHTML = '<span class="mp-dot mp-dot-reconnecting"></span> Reconnecting…';
+    badge.title = "Connection lost — attempting to rejoin Room " + multiplayer.roomCode;
+    badge.onclick = null;
+    return;
+  }
+
   badge.innerHTML = '<span class="mp-dot"></span> Room ' + multiplayer.roomCode + " · " + seatName;
   badge.title = "Online match active (" + role + " via " + transportLabel + "). Click to show QR code and room details.";
   badge.onclick = () => {
@@ -1364,6 +1494,9 @@ function updateEmoteBar() {
  * Leave current multiplayer match and disconnect peer/socket
  */
 function leaveMultiplayer() {
+  // Mark as intentional BEFORE closing the socket so the onclose handler
+  // does not trigger the reconnect retry loop.
+  cancelReconnect();
   if (multiplayer.ws) {
     try {
       multiplayer.ws.close();
