@@ -14,7 +14,7 @@
 
 ## CI Pipeline: Staging → Gate → Production
 
-Every push to `main` triggers the **five-job pipeline** in [`.github/workflows/cloudflare.yml`](../.github/workflows/cloudflare.yml):
+Every push to `main` triggers the **four-job pipeline** in [`.github/workflows/cloudflare.yml`](../.github/workflows/cloudflare.yml):
 
 ```
 Push to main
@@ -33,19 +33,19 @@ Push to main
          │ staging PASSED  ↳ Roll dice interaction verified
          ▼                 ↳ 8/16/32-player newGame verified
 ┌─────────────────────┐
-│ 3. await-approval   │   ⏸ Manual reviewer tests staging live
+│ 3. deploy-production │   ⏸ Production environment review gate
 │   👤 Human Gate     │   → GitHub Environments approval UI
 └────────┬────────────┘
          │ approved
          ▼
 ┌─────────────────────┐
-│ 4. deploy-production│   wrangler deploy (production)
+│ 3. deploy-production│   wrangler deploy (production)
 │   🚀 Production     │   → dhayam.cancun.workers.dev
 └────────┬────────────┘
          │ success
          ▼
 ┌──────────────────────┐
-│ 5. smoke-production  │   E2E liveness check against prod URL
+│ 4. smoke-production  │   E2E liveness check against prod URL
 │   💨 Smoke Check     │
 └──────────────────────┘
 ```

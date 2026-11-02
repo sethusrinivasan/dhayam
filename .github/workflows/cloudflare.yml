@@ -14,21 +14,14 @@ name: Deploy to Cloudflare (Staging → Manual Approval → Production)
 #    │  Posts staging URL and E2E report as a GitHub summary               │
 #    └────────────────────────────────────────────────────────────────────┘
 #                              │ PASSES
-#    ┌── Job 3: await-approval ─────────────────────────────────────────────┐
-#    │  ⏸  PAUSES here — requires manual review in GitHub UI               │
-#    │  Reviewer sees: staging URL, E2E pass, commit SHA, and diff link     │
-#    │  Reviewer manually tests https://dhayam-staging.cancun.workers.dev   │
-#    │  Then clicks ✅ "Approve and deploy" (or ❌ "Reject")               │
+#    ┌── Job 3: deploy-production ─────────────────────────────────────────┐
+#    │  ⏸  Production environment reviewers approve in the GitHub UI        │
 #    └────────────────────────────────────────────────────────────────────┘
 #                              │ APPROVED
-#    ┌── Job 4: deploy-production ─────────────────────────────────────────┐
-#    │  Deploy to dhayam.cancun.workers.dev (production)                  │
-#    └────────────────────────────────────────────────────────────────────┘
-#                              │
-#    ┌── Job 5: smoke-production ──────────────────────────────────────────┐
+#    ┌── Job 4: smoke-production ───────────────────────────────────────────┐
 #    │  Final E2E smoke check on production                               │
 #    └────────────────────────────────────────────────────────────────────┘
-#
+#                              │
 # ─────────────────────────────────────────────────────────────────────────
 
 on:
@@ -134,36 +127,10 @@ jobs:
           > Approval request will appear in the **[Environments tab](https://github.com/sethusrinivasan/dhayam/deployments)** after this job finishes.
           EOF
 
-  # ─── Job 3: Manual Approval Gate ───────────────────────────────────────
-  await-approval:
-    name: "⏸ [3/5] Manual Approval — Test Staging Before Promoting"
-    needs: validate-staging
-    runs-on: ubuntu-latest
-    # No environment here — staging is already live and accessible without any gate.
-    # The production environment gate is applied in Job 4 (deploy-production) only.
-
-    steps:
-      - name: "🧑‍💻 Await manual approval before production"
-        run: |
-          echo "✅ Staging verified. Awaiting manual approval for production promotion."
-          echo "Staging: https://dhayam-staging.cancun.workers.dev"
-
-      - name: "📋 Record approval gate in job summary"
-        run: |
-          cat >> $GITHUB_STEP_SUMMARY << EOF
-          ## ⏸ Awaiting Manual Approval for Production
-
-          | Item | Value |
-          |------|-------|
-          | **Staging URL** | [dhayam-staging.cancun.workers.dev](https://dhayam-staging.cancun.workers.dev) |
-          | **Commit** | \`${{ github.sha }}\` |
-          | **Next step** | Approve in the Environments tab to promote to production |
-          EOF
-
-  # ─── Job 4: Deploy to Production ───────────────────────────────────────
+  # ─── Job 3: Deploy to Production ───────────────────────────────────────
   deploy-production:
-    name: "🚀 [4/5] Deploy to Production"
-    needs: [deploy-staging, await-approval]
+    name: "🚀 [3/4] Deploy to Production"
+    needs: [deploy-staging, validate-staging]
     runs-on: ubuntu-latest
     # The production environment gate (required reviewers) lives here — only production is gated.
     environment:
@@ -171,7 +138,7 @@ jobs:
       url: https://dhayam.cancun.workers.dev
     if: |
       always() && (
-        needs.await-approval.result == 'success' ||
+        needs.validate-staging.result == 'success' ||
         (github.event_name == 'workflow_dispatch' && github.event.inputs.skip_approval == 'true')
       )
 
@@ -198,9 +165,9 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
 
-  # ─── Job 5: Production Smoke Check ─────────────────────────────────────
+  # ─── Job 4: Production Smoke Check ─────────────────────────────────────
   smoke-production:
-    name: "💨 [5/5] Production Smoke Check"
+    name: "💨 [4/4] Production Smoke Check"
     needs: deploy-production
     runs-on: ubuntu-latest
     if: needs.deploy-production.result == 'success'

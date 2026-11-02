@@ -135,7 +135,7 @@ If the staging validation gate fails for any reason, the pipeline terminates imm
 
 ## 5. Production Promotion Gate & Deployment Flow
 
-Dhayam employs a **5-job CI pipeline** defined in [`.github/workflows/cloudflare.yml`](file:///home/home/github/dhayam/.github/workflows/cloudflare.yml):
+Dhayam employs a **4-job deployment pipeline** defined in [`.github/workflows/cloudflare.yml`](file:///home/home/github/dhayam/.github/workflows/cloudflare.yml):
 
 ```
 Push to main
@@ -154,7 +154,7 @@ Push to main
               │ PASSED
               ▼
 ┌───────────────────────────┐
-│ 3. await-approval         │   ⏸ Manual Review Gate in GitHub UI
+│ 3. deploy-production      │   ⏸ Production environment review gate
 │    👤 Human Review        │   ↳ Staging URL, diff link, test evidence
 └─────────────┬─────────────┘
               │ APPROVED
@@ -173,11 +173,11 @@ Push to main
 
 ### Reviewer Promotion Steps:
 1. When a pull request merges into `main`, Jobs 1 and 2 run automatically.
-2. In the GitHub Actions tab, Job 3 **await-approval** pauses the workflow in the `production` environment.
+2. In the GitHub Actions tab, Job 3 **deploy-production** pauses at the `production` environment review gate.
 3. The reviewer opens the staging URL: `https://dhayam-staging.cancun.workers.dev`.
 4. The reviewer validates the UI, plays a turn or runs the demo, and inspects the Flight Recorder.
 5. In GitHub Actions, click **Review deployments** ➔ select **production** ➔ click **Approve and deploy**.
-6. Job 4 deploys to production `https://dhayam.cancun.workers.dev`, and Job 5 performs the final smoke check.
+6. Job 3 deploys to production `https://dhayam.cancun.workers.dev`, and Job 4 performs the final smoke check.
 
 ### Emergency Bypass:
 In rare emergencies where staging edge infrastructure is temporarily unreachable, maintainers can run `workflow_dispatch` with `skip_approval: true` to deploy directly to production.

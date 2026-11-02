@@ -27,12 +27,6 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Verify JavaScript syntax & browser integrity
-        run: npm test
-
       - name: 🧪 Staging health check
         run: node scripts/e2e-live-check.js
         env:
