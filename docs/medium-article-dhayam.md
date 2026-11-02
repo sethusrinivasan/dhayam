@@ -28,9 +28,9 @@ At the project's current scale, the estimated application hosting cost is **$0 p
 
 ## White-label integration for partner portals
 
-The proposed integration, tracked in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10), uses one versioned script tag that creates an isolated iframe. A partner keeps its own navigation, branding, and product shell, while Dhayam owns the rules, board UI, multiplayer synchronization, and audit lifecycle. This is safer than injecting Dhayam’s CSS and JavaScript directly into a partner page because it prevents style collisions and gives the embed a stable version boundary.
+The shipped v1 integration, tracked in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10), uses one versioned script tag that creates an isolated iframe. A partner keeps its own navigation, branding, and product shell, while Dhayam owns the rules, board UI, multiplayer synchronization, and audit lifecycle. This is safer than injecting Dhayam’s CSS and JavaScript directly into a partner page because it prevents style collisions and gives the embed a stable version boundary.
 
-The design includes validated brand tokens, responsive `postMessage` resize events, lifecycle callbacks, explicit parent-origin checks, and CSP `frame-ancestors` controls. A [Puter-style integration sample](https://github.com/sethusrinivasan/dhayam/blob/main/docs/examples/puter-dhayam-embed.html) is included, modeled on the [Puter Checkers app](https://puter.com/app/checkers). The proposed contract is documented in the [white-label embed design](https://github.com/sethusrinivasan/dhayam/blob/main/docs/white-label-embed.md).
+The implementation includes validated brand tokens, responsive `postMessage` resize events, lifecycle callbacks, explicit parent-origin checks, and CSP `frame-ancestors` controls. A [Puter-style integration sample](https://github.com/sethusrinivasan/dhayam/blob/main/docs/examples/puter-dhayam-embed.html) is included, modeled on the [Puter Checkers app](https://puter.com/app/checkers). The contract is documented in the [white-label embed design](https://github.com/sethusrinivasan/dhayam/blob/main/docs/white-label-embed.md).
 
 ## Design patterns used deliberately
 

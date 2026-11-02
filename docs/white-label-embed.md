@@ -2,7 +2,7 @@
 
 **Tracking issue:** [#10 — Design white-label script-tag embed integration](https://github.com/sethusrinivasan/dhayam/issues/10)
 
-This document defines the proposed integration for portals that want to host Dhayam inside their own branded experience. The target is a one-script installation with an isolated game surface, validated branding, responsive sizing, and optional multiplayer.
+This document defines the v1 integration for portals that want to host Dhayam inside their own branded experience. It is a one-script installation with an isolated game surface, validated branding, responsive sizing, and the existing game modes.
 
 The design is modeled for portals such as [Puter](https://puter.com/) and its [Checkers app](https://puter.com/app/checkers): the host owns the page shell and product identity, while Dhayam owns the board, rules, game state, and multiplayer protocol.
 
@@ -78,7 +78,7 @@ The loader should support both a one-script form and an explicit mount form.
 </script>
 ```
 
-The API is a proposed contract for implementation under issue #10. Until `/embed/v1/embed.js` is shipped, these snippets are integration-preview examples rather than live endpoints.
+The loader is shipped at `/embed/v1/embed.js`. The `/embed` iframe route currently starts the existing solo game shell; multiplayer room joining and richer host commands remain future compatible extensions.
 
 ## Initial configuration
 
@@ -208,15 +208,14 @@ The implementation should be tested through:
 6. solo and multiplayer room flows;
 7. staging E2E validation before production promotion.
 
-## Implementation phases
+## Implementation status
 
-1. Add the `/embed` route and isolate the existing game shell.
-2. Add `/embed/v1/embed.js` with `data-*` configuration and `DhayamEmbed.mount`.
-3. Add validated brand tokens and co-branding controls.
-4. Implement `READY`, `RESIZE`, `GAME_STARTED`, `GAME_OVER`, and `ERROR`.
-5. Add CSP and parent-origin validation.
-6. Add integration tests and the Puter-style staging sample.
-7. Publish the partner guide and announce the stable embed version.
+1. Shipped `/embed` and `/embed/v1/embed.js` with the iframe boundary.
+2. Shipped validated `data-*` branding, constrained themes, and responsive resizing.
+3. Shipped `READY`, `RESIZE`, `GAME_STARTED`, and `GAME_OVER` lifecycle messages.
+4. Shipped parent-origin and iframe-source validation plus route-specific framing headers.
+5. Added a headless Chrome script-tag integration test and the Puter-style sample.
+6. Track multiplayer room configuration and additional commands as follow-up work under issue #10.
 
 ## Readable implementation rules
 

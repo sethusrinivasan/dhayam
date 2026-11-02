@@ -447,6 +447,13 @@
               playerName: player.name,
             },
           });
+          if (typeof DhayamEmbedHost !== "undefined") {
+            DhayamEmbedHost.gameOver({
+              winner: player.name,
+              playerId: player.id,
+              rank: player.rank,
+            });
+          }
           speakGame(commentary);
           if (multiplayer.active && multiplayer.isHost) broadcastState();
           render();

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { createServer } from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
@@ -8,6 +9,47 @@ import vm from "node:vm";
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 const SITE_DIR = path.join(ROOT_DIR, "site");
 const JS_DIR = path.join(SITE_DIR, "js");
+
+function serveEmbedTestPage() {
+  const server = createServer((request, response) => {
+    const requestPath = new URL(request.url || "/", "http://127.0.0.1").pathname;
+    if (requestPath === "/host.html") {
+      response.setHeader("Content-Type", "text/html; charset=utf-8");
+      response.end(`<!doctype html>
+        <div id="game"></div>
+        <script>
+          window.embedEvents = [];
+          window.rawEmbedEvents = [];
+          window.addEventListener("message", (event) => {
+            if (event.data?.source === "dhayam-embed") window.rawEmbedEvents.push(event.data.type);
+          });
+        </script>
+        <script src="/embed/v1/embed.js" data-container="#game"
+          data-brand-name="Puter" data-primary-color="#123456" data-height="500"
+          ></script>`);
+      return;
+    }
+
+    const filePath = requestPath === "/embed"
+      ? path.join(SITE_DIR, "index.html")
+      : path.join(SITE_DIR, requestPath.replace(/^\/+/, ""));
+    if (!filePath.startsWith(SITE_DIR) || !fs.existsSync(filePath)) {
+      response.statusCode = 404;
+      response.end("Not found");
+      return;
+    }
+    const contentTypes: Record<string, string> = {
+      ".css": "text/css",
+      ".html": "text/html; charset=utf-8",
+      ".js": "text/javascript",
+      ".json": "application/json",
+      ".svg": "image/svg+xml",
+    };
+    response.setHeader("Content-Type", contentTypes[path.extname(filePath)] || "application/octet-stream");
+    response.end(fs.readFileSync(filePath));
+  });
+  return server;
+}
 
 test("all site/js/*.js files have valid JavaScript syntax", () => {
   const jsFiles = fs.readdirSync(JS_DIR).filter((f) => f.endsWith(".js"));
@@ -103,6 +145,116 @@ test("headless Chrome loads site/index.html with zero runtime exceptions and res
   let stderrOutput = "";
   chrome.stderr?.on("data", (data) => {
     stderrOutput += data.toString();
+  });
+
+  test("script-tag embed creates an iframe, applies branding, and reports READY", async (t) => {
+    const chromePath = ["/usr/bin/google-chrome", "/usr/bin/chromium-browser", "/usr/bin/chromium"].find((p) =>
+      fs.existsSync(p),
+    );
+    if (!chromePath) {
+      t.skip("No Chrome or Chromium binary found on host; skipping embed browser check.");
+      return;
+    }
+
+    const server = serveEmbedTestPage();
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    const port = address.port;
+    const debugPort = 9334;
+    const chrome = spawn(
+      chromePath,
+      [
+        "--headless=new",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        `--remote-debugging-port=${debugPort}`,
+        "about:blank",
+      ],
+      { stdio: "ignore" },
+    );
+
+    try {
+      let ready = false;
+      for (let i = 0; i < 50; i++) {
+        try {
+          const response = await fetch(`http://127.0.0.1:${debugPort}/json/version`);
+          if (response.ok) {
+            ready = true;
+            break;
+          }
+        } catch {
+          // Chrome may need a moment to bind its debugging port.
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      if (!ready) {
+        t.skip("Chrome remote debugging port could not start for embed browser check.");
+        return;
+      }
+
+      const targets = await (await fetch(`http://127.0.0.1:${debugPort}/json/list`)).json();
+      const pageTarget = targets.find((target: any) => target.type === "page");
+      assert.ok(pageTarget);
+      const socket = new WebSocket(pageTarget.webSocketDebuggerUrl);
+      await new Promise((resolve, reject) => {
+        socket.onopen = resolve;
+        socket.onerror = reject;
+      });
+
+      let messageId = 1;
+      const evaluate = (expression: string) => {
+        const id = messageId++;
+        return new Promise<any>((resolve, reject) => {
+          const handler = (event: MessageEvent) => {
+            const message = JSON.parse(event.data);
+            if (message.id !== id) return;
+            socket.removeEventListener("message", handler);
+            if (message.error) reject(message.error);
+            else resolve(message.result?.result?.value);
+          };
+          socket.addEventListener("message", handler);
+          socket.send(JSON.stringify({
+            id,
+            method: "Runtime.evaluate",
+            params: { expression, awaitPromise: true, returnByValue: true },
+          }));
+        });
+      };
+
+      const navigateId = messageId++;
+      socket.send(JSON.stringify({
+        id: navigateId,
+        method: "Page.navigate",
+        params: { url: `http://127.0.0.1:${port}/host.html` },
+      }));
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+
+      let state = await evaluate(`(() => {
+        const frame = document.querySelector('#game iframe');
+        return {
+          iframe: Boolean(frame),
+          frameHeight: frame?.style.height,
+          frameSrc: frame?.src,
+          brand: frame?.contentWindow.document.querySelector('#brandName')?.textContent,
+          embedded: frame?.contentWindow.document.body.classList.contains('embed-mode'),
+          events: window.embedEvents,
+          rawEvents: window.rawEmbedEvents
+        };
+      })()`);
+
+      assert.equal(state.iframe, true);
+      assert.equal(state.brand, "Puter");
+      assert.equal(state.embedded, true);
+      assert.ok(Number.parseInt(state.frameHeight, 10) >= 480);
+      assert.ok(state.rawEvents.includes("READY"), `Expected READY event, got ${state.rawEvents.join(", ")}`);
+      socket.close();
+    } finally {
+      chrome.kill();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   try {

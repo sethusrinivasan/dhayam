@@ -820,6 +820,9 @@
       if ("speechSynthesis" in window)
         speechSynthesis.addEventListener("voiceschanged", refreshVoices);
       newGame(2, 1);
+      if (typeof DhayamEmbedHost !== "undefined") {
+        DhayamEmbedHost.gameStarted({ mode: "solo", playerCount: 2 });
+      }
       if (typeof initMultiplayerFromUrl === "function") {
         initMultiplayerFromUrl();
       }

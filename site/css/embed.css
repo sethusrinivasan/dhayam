@@ -1,0 +1,26 @@
+/*
+ * Keep the embedded game compact without changing the normal full-page layout.
+ */
+.embed-mode {
+  --embed-primary: #6d28d9;
+  --embed-accent: #f59e0b;
+}
+
+.embed-mode .shell {
+  min-height: 100vh;
+}
+
+.embed-mode .footer,
+.embed-mode #flightRecorderTopBtn,
+.embed-mode #shareBtn,
+.embed-mode #qrBtn {
+  display: none;
+}
+
+.embed-mode .brand h1 {
+  color: var(--embed-primary);
+}
+
+.embed-mode .brand .sub {
+  color: var(--embed-accent);
+}

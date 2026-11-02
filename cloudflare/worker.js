@@ -1674,6 +1674,19 @@ export default {
       }
     }
 
+    // The embed reuses the tested game shell but needs framing headers that
+    // are different from the standalone application.
+    if (url.pathname === "/embed" && env && env.ASSETS) {
+      const asset = await env.ASSETS.fetch(new Request(new URL("/index.html", request.url)));
+      const headers = new Headers(asset.headers);
+      headers.delete("X-Frame-Options");
+      headers.set(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: https://*.workers.dev; font-src 'self' data:; object-src 'none'; frame-ancestors https: http://localhost:*",
+      );
+      return new Response(asset.body, { status: asset.status, headers });
+    }
+
     // 3. Static asset delivery (if configured in Cloudflare Pages / Workers static assets)
     if (env && env.ASSETS && typeof env.ASSETS.fetch === "function") {
       return env.ASSETS.fetch(request);

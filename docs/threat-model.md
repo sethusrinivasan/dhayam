@@ -1,6 +1,6 @@
 # Threat model and privacy
 
-The proposed white-label embed security model is tracked in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10), including iframe isolation, `postMessage` origin validation, CSP `frame-ancestors`, and partner-branding input validation.
+The white-label embed security model is tracked in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10), including iframe isolation, `postMessage` origin validation, CSP `frame-ancestors`, and partner-branding input validation.
 
 Dhayam is a local casual game. It is not an anti-cheat system, competitive multiplayer service, or authoritative tournament record.
 

@@ -1,10 +1,9 @@
 <!doctype html>
 <!--
-  Puter-style white-label integration preview for Dhayam.
+  Puter-style white-label integration example for Dhayam.
   Tracking issue: https://github.com/sethusrinivasan/dhayam/issues/10
 
-  The embed/v1 endpoint is a proposed integration contract. Replace the
-  placeholder script URL with the released version when issue #10 ships.
+  This example uses the released v1 loader from the Dhayam production origin.
 -->
 <html lang="en">
   <head>
@@ -86,8 +85,6 @@
 
     <main>
       <section class="game-shell" id="dhayam-game" aria-label="Dhayam board game">
-        <!-- Proposed one-script integration: -->
-        <!--
         <script
           src="https://dhayam.cancun.workers.dev/embed/v1/embed.js"
           data-container="#dhayam-game"
@@ -97,15 +94,6 @@
           data-brand-logo="https://puter.com/favicon.ico"
           data-height="760">
         </script>
-        -->
-
-        <!-- Preview fallback until the versioned embed endpoint is released. -->
-        <iframe
-          title="Dhayam — ancient Tamil board game"
-          src="https://dhayam.cancun.workers.dev/"
-          loading="lazy"
-          allow="clipboard-write"
-        ></iframe>
       </section>
     </main>
   </body>

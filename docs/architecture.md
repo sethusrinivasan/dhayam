@@ -1,6 +1,6 @@
 # Dhayam Architecture & Technical Design
 
-> **White-label integration:** The proposed script-tag and iframe integration for third-party portals is tracked in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10). See the [white-label embed design](white-label-embed.md) and [Puter sample](examples/puter-dhayam-embed.html).
+> **White-label integration:** The shipped v1 script-tag and iframe integration for third-party portals is tracked in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10). See the [white-label embed design](white-label-embed.md) and [Puter sample](examples/puter-dhayam-embed.html).
 
 An authentic, zero-dependency, modular web architecture designed for lifelong longevity, instant load times (<30KB gzipped), and $0 hosting cost.
 

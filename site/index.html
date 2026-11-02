@@ -28,14 +28,16 @@
     <link rel="stylesheet" href="css/multiplayer.css" />
     <link rel="stylesheet" href="css/themes.css" />
     <link rel="stylesheet" href="css/responsive.css" />
+    <link rel="stylesheet" href="css/embed.css" />
   </head>
   <body data-theme="halloween">
     <main class="shell">
       <header class="top">
         <div class="brand">
           <div class="logo" aria-hidden="true">✺</div>
+          <img id="brandLogo" class="brand-logo" alt="" hidden />
           <div>
-            <h1>Dhayam</h1>
+            <h1 id="brandName">Dhayam</h1>
             <div class="sub">Play · Connect · Celebrate</div>
           </div>
         </div>
@@ -286,6 +288,7 @@
     </div>
     <!-- Modular Dhayam Architecture: Separation of Concerns -->
     <script src="js/recorder.js"></script>
+    <script src="js/embed-host.js"></script>
     <script src="js/config.js"></script>
     <script src="js/state.js"></script>
     <script src="js/themes.js"></script>
