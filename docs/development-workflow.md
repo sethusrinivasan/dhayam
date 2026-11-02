@@ -105,6 +105,27 @@ When debugging an issue—especially in multiplayer or automated demo modes acro
   - Click the **🛫** button on the top menu bar to copy the full diagnostic JSON bundle directly to your clipboard.
   - Paste into bug reports or analysis prompts for instantaneous root-cause diagnosis.
 
+### Host-side freeze and crash collection
+
+The browser recorder cannot observe a compositor, GPU-driver, kernel, or desktop-session
+failure after the browser stops responding. Immediately after recovery, collect host evidence
+with:
+
+```sh
+SINCE='2026-11-02 08:55:00' UNTIL='2026-11-02 10:06:00' \
+  ./scripts/collect-postmortem.sh
+```
+
+Omit `SINCE` and `UNTIL` to collect the last 15 minutes. The collector writes text files under
+`/tmp/dhayam-postmortem-*` and deliberately excludes browser profiles, cookies, game data, and
+binary crash dumps. Attach its text files together with the copied Flight Recorder JSON.
+
+For a complete postmortem, record the workload before reproducing it: player count, demo speed,
+quantum/super-speed state, browser version, display session (Wayland/X11), GPU driver, and the
+approximate incident time. Inspect `journal_incident.txt`, `crash-reports.txt`, and `gpu.txt`
+first. A Chrome GPU-process crash followed by `gnome-shell` or `nouveau` faults is an
+operating-system graphics incident, not evidence that the rules engine deadlocked.
+
 ### Turn Watchdog & Deadlock Prevention:
 In real online demos or multiplayer sessions where edge network packets may be lost or delayed:
 - Every action sent to the edge arms a 6-second safety watchdog (`demoWatchdogTimer`).

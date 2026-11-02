@@ -147,7 +147,7 @@ test("headless Chrome loads site/index.html with zero runtime exceptions and res
     stderrOutput += data.toString();
   });
 
-  test("script-tag embed creates an iframe, applies branding, and reports READY", async (t) => {
+  await (async () => {
     const chromePath = ["/usr/bin/google-chrome", "/usr/bin/chromium-browser", "/usr/bin/chromium"].find((p) =>
       fs.existsSync(p),
     );
@@ -255,7 +255,7 @@ test("headless Chrome loads site/index.html with zero runtime exceptions and res
       chrome.kill();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
-  });
+  })();
 
   try {
     // Wait for Chrome debugging port to open (up to 5 seconds)

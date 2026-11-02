@@ -6,6 +6,31 @@
  */
 "use strict";
 
+      let animationRenderPending = false;
+
+      function renderAnimationStep() {
+        const isFastDemo =
+          typeof demo !== "undefined" &&
+          demo &&
+          typeof demoSpeed !== "undefined" &&
+          demoSpeed >= 32;
+        if (!isFastDemo) {
+          render();
+          return;
+        }
+        if (animationRenderPending) return;
+        animationRenderPending = true;
+        const flush = () => {
+          animationRenderPending = false;
+          render();
+        };
+        if (typeof requestAnimationFrame === "function") {
+          requestAnimationFrame(flush);
+        } else {
+          setTimeout(flush, 16);
+        }
+      }
+
       function render() {
         if (!game) return;
         const opts = options();

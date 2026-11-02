@@ -194,7 +194,7 @@
         if (piece.progress < 0) {
           piece.progress = 0;
           completed++;
-          render();
+          renderAnimationStep();
           $("statusTitle").textContent = playerName + " is moving";
           $("statusText").textContent =
             "Entering the board · step " + completed + " of " + totalSteps;
@@ -203,12 +203,13 @@
         while (piece.progress < targetProgress) {
           piece.progress++;
           completed++;
-          render();
+          renderAnimationStep();
           $("statusTitle").textContent = playerName + " is moving";
           $("statusText").textContent =
             "Following the route · step " + completed + " of " + totalSteps;
           await waitForMoveStep();
         }
+        render();
       }
       async function animateScriptedPiece(player, piece, targetProgress) {
         moving = true;
