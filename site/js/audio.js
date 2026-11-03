@@ -288,9 +288,9 @@
         if (!$("audioToggle")) return;
         $("audioToggle").textContent = available
           ? audioEnabled
-            ? "🔊"
-            : "🔇"
-          : "🔇";
+            ? "🔊 Voice commentary: On"
+            : "🔇 Voice commentary: Off"
+          : "🔇 Voice commentary unavailable";
         $("audioToggle").setAttribute(
           "aria-label",
           available

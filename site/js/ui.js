@@ -120,6 +120,12 @@
                 const isCurrentPlayer = p === active();
                 const hasAnyMove = pieces.some((piece) => opts.some((o) => o.piece.id === piece.id));
                 const selectable = isCurrentPlayer && (hasAnyMove || pieces.some((piece) => legal.has(piece.id)));
+                const pieceMoves = pieces
+                  .map((piece) => ({
+                    piece,
+                    move: legal.get(piece.id) || opts.find((option) => option.piece.id === piece.id),
+                  }))
+                  .filter(({ move }) => move);
                 const t = document.createElement("span");
                 const isCrowded = pieces.length >= 2;
                 const maxProgress = Math.max(...pieces.map((piece) => piece.progress));
@@ -144,7 +150,14 @@
                   (selectable ? " selectable" : "") +
                   (isCrowded ? " crowded" : "") +
                   tierClass;
+                t.dataset.pieceIds = pieces.map((piece) => piece.id).join(",");
                 t.style.background = p.color;
+                if (pieces.some((piece) => piece.id === movingPieceId)) {
+                  const cellSize = Math.min(el.clientWidth, el.clientHeight);
+                  if (cellSize > 0) {
+                    t.style.setProperty("--moving-token-size", cellSize + "px");
+                  }
+                }
                 t.innerHTML = '<span class="tokenemoji">' + p.avatar + "</span>";
                 const pieceNumbers = pieces.map(
                   (piece) => p.pieces.indexOf(piece) + 1,
@@ -162,11 +175,59 @@
                   ids.title = "Stacked pieces: #" + pieceNumbers.join(", #");
                 }
                 t.appendChild(ids);
+                if (pieces.some((piece) => piece.id === movingPieceId)) {
+                  const countdown = document.createElement("span");
+                  countdown.className = "move-countdown";
+                  countdown.textContent = String(Math.max(1, movingStepRemaining));
+                  countdown.setAttribute("aria-label", "Steps remaining: " + movingStepRemaining);
+                  t.appendChild(countdown);
+                }
+
+                if (pieceMoves.length > 1 && isCurrentPlayer && game.phase === "move") {
+                  const hintList = document.createElement("span");
+                  hintList.className = "piece-route-hints";
+                  for (const { piece, move } of pieceMoves) {
+                    const pieceNumber = p.pieces.indexOf(piece) + 1;
+                    const currentSquare = node(p, piece);
+                    const nextProgress = piece.progress < 0 ? 0 : piece.progress + 1;
+                    const nextSquare = ROUTES[p.seat][Math.min(nextProgress, 43)];
+                    const targetSquare = ROUTES[p.seat][move.test.progress];
+                    const routeName = move.test.progress >= 25 ? "inner" : "outer";
+                    const arrow =
+                      currentSquare === targetSquare && routeName === "inner"
+                        ? "↘"
+                        : nextSquare === targetSquare
+                          ? "→"
+                          : "↗";
+                    const hint = document.createElement("button");
+                    hint.type = "button";
+                    hint.className = "piece-route-hint";
+                    hint.textContent = "#" + pieceNumber + " " + arrow + " " + routeName;
+                    hint.title =
+                      "Move piece #" +
+                      pieceNumber +
+                      " toward the " +
+                      routeName +
+                      " track";
+                    hint.onclick = (event) => {
+                      event.stopPropagation();
+                      if (multiplayer.active && !isMyTurn()) return;
+                      selectedPieceId = piece.id;
+                      if ($("moveChoice")) $("moveChoice").value = piece.id;
+                      apply(move, "piece-route-choice");
+                    };
+                    hintList.appendChild(hint);
+                  }
+                  el.appendChild(hintList);
+                }
 
                 // Direct piece click or touch: immediately initiate "move selected piece" action
                 if (isCurrentPlayer && !demo && !active().computer && !moving) {
                   t.style.cursor = "pointer";
-                  t.title = "Click to move piece " + pieceNumbers.join(", ");
+                  const hasAmbiguousMove = pieceMoves.length > 1;
+                  t.title = hasAmbiguousMove
+                    ? "Choose which piece to move below the stack"
+                    : "Click to move piece " + pieceNumbers.join(", ");
                   t.setAttribute("role", "button");
                   t.setAttribute("tabindex", "0");
                   const onPieceTouch = (e) => {
@@ -186,9 +247,13 @@
                     }
                     if (game.phase !== "move") return;
 
-                    let moveOpt = pieces
-                      .map((piece) => legal.get(piece.id))
-                      .find(Boolean);
+                    if (pieceMoves.length > 1) {
+                      $("statusText").textContent =
+                        "Choose a numbered piece below the stack.";
+                      return;
+                    }
+
+                    let moveOpt = pieceMoves[0]?.move;
                     if (!moveOpt) {
                       const anyOpt = opts.find((o) =>
                         pieces.some((piece) => piece.id === o.piece.id),
@@ -235,6 +300,15 @@
             const isClickableTurn = !demo && (multiplayer.active ? isMyTurn() : !active().computer) && !moving;
             if (can && isClickableTurn)
               el.onclick = () => {
+                const currentGroup = occupied.filter((item) => item.p === active());
+                const currentMoves = currentGroup
+                  .map((item) => legal.get(item.piece.id) || opts.find((option) => option.piece.id === item.piece.id))
+                  .filter(Boolean);
+                if (currentMoves.length > 1) {
+                  $("statusText").textContent =
+                    "Choose a numbered piece below the stack.";
+                  return;
+                }
                 let o = occupied
                   .map((x) => legal.get(x.piece.id))
                   .find(Boolean) || (canEntry ? (entry || anyEntryOpt) : null);
@@ -400,9 +474,9 @@
             game.computerCount +
             " computer" +
             (game.computerCount === 1 ? "" : "s") +
-            " · House variant"
+            ""
           : game.players.length +
-            " players · Local pass-and-play · House variant";
+            " players · Local pass-and-play";
         setDieFace(
           "dieA",
           game.last ? game.last.a : 0,
@@ -789,7 +863,7 @@
         }
         setTimeout(() => {
           if (splash.parentNode) splash.parentNode.removeChild(splash);
-        }, 2400);
+        }, 3800);
       }
       window.showCaptureSplash = showCaptureSplash;
 
@@ -843,7 +917,7 @@
               });
             });
 
-            const animDuration = (typeof demo !== "undefined" && demo) ? scaledDemoDelay(950) : 950;
+            const animDuration = (typeof demo !== "undefined" && demo) ? scaledDemoDelay(1450) : 1450;
             setTimeout(() => {
               if (flyer.parentNode) flyer.parentNode.removeChild(flyer);
               if (playerCard) {

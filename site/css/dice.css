@@ -6,9 +6,10 @@
  */
 .dice {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: clamp(14px, 2vw, 24px);
+  gap: clamp(10px, 1.5vh, 18px);
   margin: clamp(4px, 0.8vh, 12px) 0 clamp(6px, 1.2vh, 14px);
   padding: clamp(4px, 0.6vh, 8px) 5px;
   perspective: 1000px;
@@ -42,9 +43,9 @@
 }
 
 .die {
-  --die-size: clamp(66px, 9.4vh, 88px);
-  --cube-size: clamp(54px, 7.6vh, 72px);
-  --cube-depth: clamp(27px, 3.8vh, 36px);
+  --die-size: clamp(112px, 15vh, 138px);
+  --cube-size: clamp(96px, 13vh, 118px);
+  --cube-depth: clamp(48px, 6.5vh, 59px);
   --cube-inset: 5px;
   position: relative;
   width: var(--die-size);
@@ -94,7 +95,7 @@
     inset 4px 4px 7px #fff7,
     inset -5px -5px 8px #6d321f77;
   color: #4c2413;
-  font-size: clamp(26px, 3.8vh, 36px);
+  font-size: clamp(34px, 5vh, 48px);
   font-weight: 950;
   line-height: 1;
   backface-visibility: hidden;

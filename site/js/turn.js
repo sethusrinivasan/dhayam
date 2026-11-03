@@ -191,9 +191,12 @@
               : targetProgress - piece.progress,
           playerName = player.name;
         let completed = 0;
+        movingStepRemaining = totalSteps;
+        render();
         if (piece.progress < 0) {
           piece.progress = 0;
           completed++;
+          movingStepRemaining = totalSteps - completed;
           renderAnimationStep();
           $("statusTitle").textContent = playerName + " is moving";
           $("statusText").textContent =
@@ -203,6 +206,7 @@
         while (piece.progress < targetProgress) {
           piece.progress++;
           completed++;
+          movingStepRemaining = totalSteps - completed;
           renderAnimationStep();
           $("statusTitle").textContent = playerName + " is moving";
           $("statusText").textContent =
@@ -214,6 +218,7 @@
       async function animateScriptedPiece(player, piece, targetProgress) {
         moving = true;
         movingPieceId = piece.id;
+        movingStepRemaining = 1;
         render();
         await animatePiece(player, piece, targetProgress);
         moving = false;
@@ -414,6 +419,7 @@
         } finally {
           moving = false;
           movingPieceId = null;
+          movingStepRemaining = 0;
         }
 
         recordAudit("MOVE", {

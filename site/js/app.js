@@ -155,7 +155,7 @@
                 computer: p.computer,
                 seat: p.seat,
               })),
-              theme: document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween",
+              theme: document.body ? document.body.getAttribute("data-theme") || "wood" : "wood",
               rulesVariant: "Dhayam 7x7 house variant; first-round entry allowances",
             });
           } else {
@@ -176,15 +176,115 @@
         $("modalTitle").textContent = title;
         $("modalContent").innerHTML = html;
         $("modalConfirm").textContent = actionLabel;
+        $("modalConfirm").style.display = "";
         modalAction = action;
         $("modalback").classList.add("open");
       }
       function closeModal() {
         $("modalback").classList.remove("open");
+        $("modalConfirm").style.display = "";
+        $("modalCancel").textContent = "Close";
+      }
+      function openShareModal() {
+        const shareUrl = window.location.href.split("#")[0];
+        const currentGame = typeof game !== "undefined" ? game : null;
+        const activePlayer = currentGame?.players?.[currentGame.current];
+        const playerNames = currentGame?.players?.map((player) => player.name).join(", ");
+        const shareTitle = "🎲 Dhayam — Roll, Capture, Celebrate";
+        const shareCaption = [
+          "🎲 Discover Dhayam, a traditional board game of Tamil Nadu!",
+          "Roll the dice, outmaneuver your opponents, capture pieces, and race to the center.",
+          "Play solo, pass-and-play, or invite friends to join online.",
+          activePlayer && playerNames
+            ? `We're playing now — ${activePlayer.name}'s turn in a match with ${playerNames}.`
+            : "Ready for a friendly match?",
+        ].join("\n");
+        const shareText = `${shareCaption}\nJoin the game:\n${shareUrl}`;
+        const shareMessage = shareText;
+        const encodedText = encodeURIComponent(shareCaption);
+        const encodedMessage = encodeURIComponent(shareMessage);
+        const encodedUrl = encodeURIComponent(shareUrl);
+        const preview = escapeHtml(`${shareTitle}\n\n${shareText}\n\n${shareUrl}`);
+
+        showModal(
+          "Share Dhayam",
+          '<div class="share-modal-content">' +
+            '<p class="share-intro">Preview the message and choose where to share it.</p>' +
+            '<div class="share-preview" aria-label="Share preview">' +
+              '<strong>' + escapeHtml(shareTitle) + '</strong>' +
+              '<p>' + escapeHtml(shareText).replace(/\n/g, "<br>") + '</p>' +
+              '<a href="' + escapeHtml(shareUrl) + '" target="_blank" rel="noopener noreferrer">' +
+                escapeHtml(shareUrl) +
+              '</a>' +
+            '</div>' +
+            '<div class="share-actions" aria-label="Social sharing options">' +
+              '<button type="button" class="btn share-action share-whatsapp" data-share-url="https://wa.me/?text=' + encodedMessage + '">💬 WhatsApp</button>' +
+              '<button type="button" class="btn share-action share-facebook" data-share-url="https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl + '">📘 Facebook</button>' +
+              '<button type="button" class="btn share-action share-x" data-share-url="https://twitter.com/intent/tweet?text=' + encodedText + '&url=' + encodedUrl + '">𝕏 Twitter / X</button>' +
+              '<button type="button" class="btn share-action share-instagram" id="shareInstagramBtn">📷 Instagram</button>' +
+            '</div>' +
+            '<div class="share-secondary-actions">' +
+              '<button type="button" class="btn secondary" id="nativeShareBtn">📤 Share from device</button>' +
+              '<button type="button" class="btn secondary" id="copyShareTextBtn">📋 Copy text</button>' +
+            '</div>' +
+            '<p class="share-note" id="shareFeedback" aria-live="polite">Instagram does not support prefilled web posts, so its button copies the preview and opens Instagram.</p>' +
+            '<textarea class="share-copy-source" aria-hidden="true" tabindex="-1">' + preview + '</textarea>' +
+          '</div>',
+          "Close",
+          () => {},
+        );
+        $("modalConfirm").style.display = "none";
+        $("modalCancel").textContent = "Done";
+
+        const feedback = $("shareFeedback");
+        const setFeedback = (message) => {
+          if (feedback) feedback.textContent = message;
+        };
+        const copyShareText = async (message = shareMessage) => {
+          try {
+            await navigator.clipboard.writeText(message);
+          } catch {
+            const source = $("shareCopyTextBtn");
+            const textarea = document.createElement("textarea");
+            textarea.value = message;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            textarea.remove();
+            void source;
+          }
+          setFeedback("✓ Share text copied to your clipboard.");
+        };
+        document.querySelectorAll("[data-share-url]").forEach((button) => {
+          button.onclick = () => {
+            window.open(button.dataset.shareUrl, "_blank", "noopener,noreferrer");
+          };
+        });
+        $("shareInstagramBtn").onclick = async () => {
+          await copyShareText();
+          window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+        };
+        $("copyShareTextBtn").onclick = () => copyShareText();
+        $("nativeShareBtn").onclick = async () => {
+          if (!navigator.share) {
+            setFeedback("Device sharing is unavailable here. Use a social button or copy the text.");
+            return;
+          }
+          try {
+            await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+            setFeedback("✓ Share sheet opened.");
+          } catch (error) {
+            if (error?.name !== "AbortError") {
+              setFeedback("Device sharing was unavailable. Use a social button or copy the text.");
+            }
+          }
+        };
       }
       function openSettingsModal() {
         const themeOptions = [
-          { id: "halloween", name: "🎃 Halloween (Default)", desc: "Spooky pumpkin night & haunted board" },
+          { id: "halloween", name: "🎃 Halloween", desc: "Spooky pumpkin night & haunted board" },
           { id: "wood", name: "🪵 Heritage Wood", desc: "Warm teak wood & temple gold" },
           { id: "bronze", name: "🏛️ Royal Bronze", desc: "Ancient stone courtyard & polished copper" },
           { id: "nebula", name: "🌌 Midnight Nebula", desc: "Deep cosmic indigo & starlight" },
@@ -212,7 +312,7 @@
         const fields = game.players
           .map(
             (player, index) =>
-              '<div style="margin-bottom:8px;">' +
+              '<div class="settings-player">' +
               '<label for="playerName' +
               index +
               '" style="display:flex;align-items:center;gap:6px;font-size:0.85rem;color:#f3dfc6;margin-bottom:3px;">' +
@@ -238,40 +338,37 @@
 
         const content =
           '<div class="settings-modal-content">' +
-          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">🎨 Board Theme</h3>' +
-          '<p style="font-size:0.8rem;color:#cdbda8;margin:0 0 8px 0;">Switch visual aesthetic. Halloween is the default theme.</p>' +
+          '<section class="settings-section">' +
+          '<h3 class="settings-heading">🎨 Board theme</h3>' +
+          '<div class="settings-theme-grid">' +
           themeButtons +
-          '<div class="divider" style="margin:12px 0;"></div>' +
-          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">👥 Player Names</h3>' +
-          '<p style="font-size:0.8rem;color:#cdbda8;margin:0 0 8px 0;">Names appear in the match, spoken turns, and the game audit transcript.</p>' +
-          fields +
-          '<div class="divider" style="margin:12px 0;"></div>' +
-          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">🔊 Voice Commentary</h3>' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0;">' +
-          '<div>' +
-          '<strong style="font-size:0.88rem;color:#fff1db;">Spoken Moves & Captures</strong>' +
-          '<p style="margin:2px 0 0;font-size:0.78rem;color:#cdbda8;">Speaks rolls, legal moves, and captures aloud.</p>' +
           '</div>' +
-          '<button type="button" class="pill" id="settingsAudioBtn" style="padding:6px 12px;font-weight:700;">' +
+          '</section>' +
+          '<section class="settings-section">' +
+          '<h3 class="settings-heading">👥 Player names</h3>' +
+          '<p class="settings-help">Names appear in the match, commentary, and audit.</p>' +
+          '<div class="settings-player-grid">' +
+          fields +
+          '</div>' +
+          '</section>' +
+          '<section class="settings-section settings-tools">' +
+          '<h3 class="settings-heading">Tools</h3>' +
+          '<div class="settings-tool-row">' +
+          '<div><strong>🔊 Voice commentary</strong><span>Spoken rolls, moves, and captures</span></div>' +
+          '<button type="button" class="pill" id="settingsAudioBtn">' +
           (audioEnabled ? "🔊 Enabled" : "🔇 Muted") +
           '</button>' +
           '</div>' +
-          '<div class="divider" style="margin:12px 0;"></div>' +
-          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">🛫 Flight Recorder & Debug Log</h3>' +
-          '<p style="font-size:0.78rem;color:#cdbda8;margin:0 0 8px 0;">Captures chronological user clicks, state transitions, touch inputs, timing, and errors. One-click copy for diagnostics.</p>' +
-          '<button type="button" class="btn secondary full" id="settingsFlightRecorderBtn" style="width:100%;border-color:#f59e0b88;color:#fcd34d;">🛫 Copy Flight Recorder Data (' +
+          '<div class="settings-tool-grid">' +
+          '<button type="button" class="btn secondary settings-tool" id="settingsFlightRecorderBtn">🛫 Copy diagnostics (' +
           (typeof FlightRecorder !== "undefined" ? FlightRecorder.getEventCount() : 0) +
           ' events)</button>' +
-          '<p id="settingsFlightFeedback" style="margin:4px 0 0;font-size:0.82rem;color:#a3e635;min-height:1.2em;"></p>' +
-          '<div class="divider" style="margin:12px 0;"></div>' +
-          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">📋 Match Audit & Export</h3>' +
-          '<p style="font-size:0.78rem;color:#cdbda8;margin:0 0 8px 0;">Copy the full timestamped JSON audit recording every roll, capture, and state.</p>' +
-          '<button type="button" class="btn secondary full" id="settingsCopyAuditBtn" style="width:100%;">📋 Copy Game Audit JSON</button>' +
-          '<p id="settingsAuditFeedback" style="margin:4px 0 0;font-size:0.82rem;color:#a3e635;min-height:1.2em;"></p>' +
-          '<div class="divider" style="margin:12px 0;"></div>' +
-          '<h3 style="margin:0 0 6px 0;font-size:0.95rem;color:#ffe6ba;">↺ Reset Match</h3>' +
-          '<button type="button" class="btn secondary full" id="settingsResetBtn" style="width:100%;border-color:#b9434288;color:#ffb3b3;">↺ Reset Current Match</button>' +
-          '</div>';
+          '<button type="button" class="btn secondary settings-tool" id="settingsCopyAuditBtn">📋 Copy game audit</button>' +
+          '<button type="button" class="btn secondary settings-tool settings-danger" id="settingsResetBtn">↺ Reset match</button>' +
+          '</div>' +
+          '<p id="settingsFlightFeedback" class="settings-feedback"></p>' +
+          '<p id="settingsAuditFeedback" class="settings-feedback"></p>' +
+          '</section>';
 
         showModal("⚙️ Match Settings", content, "Save Settings", () => {
           game.players.forEach((player, index) => {
@@ -387,6 +484,25 @@
       if ($("audioToggle")) $("audioToggle").onclick = toggleAudio;
       if ($("flightRecorderTopBtn") && typeof FlightRecorder !== "undefined") {
         $("flightRecorderTopBtn").onclick = () => FlightRecorder.copy();
+      }
+      if ($("copyGameSummaryBtn")) $("copyGameSummaryBtn").onclick = copyGameSummary;
+      if ($("copyTurnDetailsBtn")) $("copyTurnDetailsBtn").onclick = copyTurnDetails;
+      if ($("shareBtn")) {
+        $("shareBtn").addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openShareModal();
+          const menu = $("shareBtn").closest("details");
+          if (menu) menu.removeAttribute("open");
+        });
+      }
+      const actionMenu = document.querySelector(".action-menu");
+      if (actionMenu) {
+        actionMenu.addEventListener("click", (event) => {
+          if (event.target.closest(".menu-item")) {
+            actionMenu.removeAttribute("open");
+          }
+        });
       }
       if ($("settingsBtn")) $("settingsBtn").onclick = openSettingsModal;
       if ($("copyAuditBtn")) $("copyAuditBtn").onclick = copyGameAudit;

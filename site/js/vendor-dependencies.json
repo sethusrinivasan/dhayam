@@ -1,0 +1,16 @@
+{
+  "qrcode-generator": {
+    "version": "2.0.4",
+    "source": "https://registry.npmjs.org/qrcode-generator/-/qrcode-generator-2.0.4.tgz",
+    "integrity": "sha512-mZSiP6RnbHl4xL2Ap5HfkjLnmxfKcPWpWe/c+5XxCuetEenqmNFf1FH/ftXPCtFG5/TDobjsjz6sSNL0Sr8Z9g==",
+    "file": "qrcode.min.js",
+    "sha512": "6956442d17b131245541982084da4c5da80da665f0d637cadc06ea5c2318c1c449aafe13e18129ce936d953068997d6ad1a4ff7a3d4fafde6ba666024eae8bf7"
+  },
+  "peerjs": {
+    "version": "1.5.5",
+    "source": "https://registry.npmjs.org/peerjs/-/peerjs-1.5.5.tgz",
+    "integrity": "sha512-viMUCPDL6CSfOu0ZqVcFqbWRXNHIbv2lPqNbrBIjbFYrflebOjItJ4hPfhjnuUCstqciHVu9vVJ7jFqqKi/EuQ==",
+    "file": "peerjs.min.js",
+    "sha512": "5c429e597fa62373affad8367af0e555017354e229e13f09ddc35c0843da1141a9c4957779968df2b1eebe714fbd0a462411cf9aba332433299b6c5c0efb66c9"
+  }
+}

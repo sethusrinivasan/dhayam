@@ -106,6 +106,8 @@ test("MCP Server on Cloudflare: POST tools/list returns complete catalog", async
     "dhayam_move_piece",
     "dhayam_pass",
     "dhayam_get_audit_log",
+    "dhayam_get_game_summary",
+    "dhayam_get_turn_details",
     "dhayam_get_share_url",
     "dhayam_evaluate_moves",
     "dhayam_play_ai_turn",
@@ -195,6 +197,15 @@ test("MCP Server on Cloudflare: tools/call full gameplay loop (new game, roll, s
   const auditRes = await callTool("dhayam_get_audit_log", { state });
   assert.ok(Array.isArray(auditRes.audit));
   assert.ok(auditRes.audit.length >= 2, "Audit log must contain at least GAME_CREATED and ROLL");
+
+  const summaryRes = await callTool("dhayam_get_game_summary", { state });
+  assert.equal(summaryRes.format, "dhayam-game-summary-v1");
+  assert.ok(Array.isArray(summaryRes.legal_moves));
+  assert.ok(Array.isArray(summaryRes.players));
+
+  const turnDetailsRes = await callTool("dhayam_get_turn_details", { state });
+  assert.equal(turnDetailsRes.format, "dhayam-turn-details-v1");
+  assert.ok(Array.isArray(turnDetailsRes.turns));
 
   // 6. dhayam_get_share_url
   const shareRes = await callTool("dhayam_get_share_url", {});

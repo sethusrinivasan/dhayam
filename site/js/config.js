@@ -130,9 +130,9 @@
 
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
-        version: "0.3.2",
-        build: 52,
-        timestamp: "2026-11-02 05:00 UTC",
+        version: "0.4.0",
+        build: 1,
+        timestamp: "2026-11-03 18:30 UTC",
         releaseName: "Reconnect Grace Period & Rate Limiting",
       };
        // Global player-count limits — update here, never hardcode elsewhere

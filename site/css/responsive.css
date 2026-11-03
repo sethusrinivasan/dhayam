@@ -18,15 +18,15 @@
     height: min(100%, calc(100dvh - 200px));
   }
   .die {
-    --die-size: clamp(56px, 7.5vh, 70px);
-    --cube-size: clamp(46px, 6.2vh, 58px);
-    --cube-depth: clamp(23px, 3.1vh, 29px);
+    --die-size: clamp(96px, 13vh, 116px);
+    --cube-size: clamp(82px, 11.2vh, 98px);
+    --cube-depth: clamp(41px, 5.6vh, 49px);
   }
   .dieface {
-    font-size: clamp(22px, 3.2vh, 28px);
+    font-size: clamp(30px, 4.4vh, 40px);
   }
   .dice {
-    gap: 16px;
+    gap: 10px;
     margin: 6px 0 10px;
   }
 }
@@ -46,6 +46,18 @@
   .pill {
     padding: 6px 10px;
     font-size: 11.5px;
+  }
+  .menu-trigger span {
+    display: none;
+  }
+  .audio-toggle {
+    max-width: 42px;
+    padding-left: 7px;
+    padding-right: 7px;
+    font-size: 0;
+  }
+  .audio-toggle::first-letter {
+    font-size: 13px;
   }
   .layout {
     display: flex;
@@ -116,12 +128,16 @@
     font-size: 13px;
   }
   .die {
-    --die-size: 46px;
-    --cube-size: 38px;
-    --cube-depth: 19px;
+    --die-size: 70px;
+    --cube-size: 58px;
+    --cube-depth: 29px;
   }
   .dieface {
-    font-size: 20px;
+    font-size: 24px;
+  }
+  .dice {
+    gap: 5px;
+    margin: 0;
   }
 }
 
@@ -148,6 +164,18 @@
   .pill {
     padding: 4px 7px;
     font-size: 10px;
+  }
+  .menu-trigger span {
+    display: none;
+  }
+  .audio-toggle {
+    max-width: 36px;
+    padding-left: 5px;
+    padding-right: 5px;
+    font-size: 0;
+  }
+  .audio-toggle::first-letter {
+    font-size: 12px;
   }
   .layout {
     display: flex;
@@ -195,7 +223,13 @@
   }
   .controlactions .btn {
     flex: 1;
-    min-height: 38px;
+    min-height: 48px;
+  }
+  .controlactions #actionBtn,
+  .controlactions #passBtn {
+    min-height: 50px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
   .side {
     flex: 0 0 auto;
@@ -238,18 +272,18 @@
     display: none;
   }
   .die {
-    --die-size: 38px;
-    --cube-size: 31px;
-    --cube-depth: 15.5px;
+    --die-size: 60px;
+    --cube-size: 50px;
+    --cube-depth: 25px;
     --cube-inset: 3px;
   }
   .dice {
     margin: 2px 0;
-    gap: 8px;
+    gap: 3px;
     padding: 2px;
   }
   .dieface {
-    font-size: 16px;
+    font-size: 21px;
     border-radius: 5px;
   }
   .side .helper, .side .divider {
@@ -275,7 +309,16 @@
     padding: 1px 5px;
     margin-top: 1px;
   }
-  #editPlayersBtn, #copyAuditBtn, #audioToggle {
+  .settings-theme-grid,
+  .settings-player-grid,
+  .settings-tool-grid {
+    grid-template-columns: 1fr;
+  }
+  .share-actions,
+  .share-secondary-actions {
+    grid-template-columns: 1fr;
+  }
+  #editPlayersBtn, #copyAuditBtn {
     display: none;
   }
   #resetBtn {
@@ -304,6 +347,9 @@
     padding: 3px 5px;
     font-size: 9.5px;
   }
+  .timer-pill {
+    font-size: 9px;
+  }
   .boardwrap {
     height: min(94vw, calc(100dvh - 240px));
     width: min(94vw, calc(100dvh - 240px));
@@ -317,12 +363,12 @@
     max-height: 70px;
   }
   .die {
-    --die-size: 34px;
-    --cube-size: 28px;
-    --cube-depth: 14px;
+    --die-size: 54px;
+    --cube-size: 45px;
+    --cube-depth: 22.5px;
   }
   .dieface {
-    font-size: 14px;
+    font-size: 19px;
   }
 }
 

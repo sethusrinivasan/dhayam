@@ -14,6 +14,14 @@
 const MP_PREFIX = "dhayam-v1-";
 const MP_SESSION_KEY = "dhayam_mp_session_v1";
 
+function createClaimedSeats() {
+  return Object.create(null);
+}
+
+function isValidSeatIndex(seat) {
+  return Number.isInteger(seat) && seat >= 0 && seat < 32;
+}
+
 /**
  * Session storage helpers for page reload / tab recovery
  */
@@ -615,10 +623,10 @@ function handleWsMessage(msg) {
   switch (msg.type) {
     case "ROOM_STATE": {
       multiplayer.roomTargetCount = msg.targetPlayers || multiplayer.roomTargetCount;
-      multiplayer.claimedSeats = {};
+      multiplayer.claimedSeats = createClaimedSeats();
       if (msg.seats) {
         msg.seats.forEach((s) => {
-          if (s.claimed) {
+          if (s.claimed && isValidSeatIndex(s.seat)) {
             multiplayer.claimedSeats[s.seat] = { name: s.claimedBy, connected: s.connected };
           }
         });
@@ -642,9 +650,9 @@ function handleWsMessage(msg) {
 
     case "ROOM_UPDATE": {
       if (msg.seats) {
-        multiplayer.claimedSeats = {};
+        multiplayer.claimedSeats = createClaimedSeats();
         msg.seats.forEach((s) => {
-          if (s.claimed) {
+          if (s.claimed && isValidSeatIndex(s.seat)) {
             multiplayer.claimedSeats[s.seat] = { name: s.claimedBy, connected: s.connected };
           }
         });
@@ -729,9 +737,9 @@ function handleWsMessage(msg) {
     case "SYNC_STATE": {
       applyRemoteState(msg.game, msg.audit);
       if (msg.seats) {
-        multiplayer.claimedSeats = {};
+        multiplayer.claimedSeats = createClaimedSeats();
         msg.seats.forEach((s) => {
-          if (s.claimed) {
+          if (s.claimed && isValidSeatIndex(s.seat)) {
             multiplayer.claimedSeats[s.seat] = { name: s.claimedBy, connected: s.connected };
           }
         });
@@ -748,7 +756,7 @@ function handleWsMessage(msg) {
     }
 
     case "PRESENCE": {
-      if (multiplayer.claimedSeats[msg.seat]) {
+      if (isValidSeatIndex(msg.seat) && multiplayer.claimedSeats[msg.seat]) {
         multiplayer.claimedSeats[msg.seat].connected = msg.connected;
       }
       if (msg.seats) {
@@ -760,12 +768,12 @@ function handleWsMessage(msg) {
 
     case "SEAT_ABANDONED": {
       // A disconnected player's grace period expired server-side.
-      if (multiplayer.claimedSeats[msg.seat]) {
+      if (isValidSeatIndex(msg.seat) && multiplayer.claimedSeats[msg.seat]) {
         delete multiplayer.claimedSeats[msg.seat];
       }
       if (msg.seats) {
         msg.seats.forEach((s) => {
-          if (s.claimed) {
+          if (s.claimed && isValidSeatIndex(s.seat)) {
             multiplayer.claimedSeats[s.seat] = { name: s.claimedBy, connected: s.connected };
           }
         });
@@ -946,7 +954,7 @@ function handleHostReceivedDataP2P(conn, data) {
     const guestName = data.customName ? cleanPlayerName(data.customName, originalName) : originalName;
     game.players[seat].name = guestName;
 
-    if (!multiplayer.claimedSeats) multiplayer.claimedSeats = {};
+    if (!multiplayer.claimedSeats) multiplayer.claimedSeats = createClaimedSeats();
     multiplayer.claimedSeats[seat] = {
       peerId: conn.peer,
       name: guestName,
@@ -1517,7 +1525,7 @@ function leaveMultiplayer() {
   multiplayer.roomCode = null;
   multiplayer.connections = [];
   multiplayer.status = "offline";
-  multiplayer.claimedSeats = {};
+  multiplayer.claimedSeats = createClaimedSeats();
   multiplayer.token = null;
   updateMultiplayerBadge();
   updateEmoteBar();

@@ -11,6 +11,18 @@ const embedQuery = new URLSearchParams(window.location.search);
 const embedParentOrigin = embedQuery.get("parentOrigin");
 const embedMode = embedQuery.get("embed") === "1";
 
+function getSafeLogoUrl(value) {
+  if (typeof value !== "string" || value.length > 2048) return "";
+  try {
+    const url = new URL(value, window.location.href);
+    if (url.protocol !== "https:" || url.username || url.password) return "";
+    if (!/\.(?:avif|gif|jpe?g|png|webp)$/i.test(url.pathname)) return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 function isTrustedEmbedMessage(event) {
   return (
     embedMode &&
@@ -44,8 +56,9 @@ function applyEmbedConfig(config = {}) {
   const brandName = document.getElementById("brandName");
   const brandLogo = document.getElementById("brandLogo");
   if (brandName && typeof brand.name === "string") brandName.textContent = brand.name.slice(0, 80);
-  if (brandLogo && /^https:\/\//i.test(brand.logoUrl || "")) {
-    brandLogo.src = brand.logoUrl;
+  const safeLogoUrl = getSafeLogoUrl(brand.logoUrl);
+  if (brandLogo && safeLogoUrl) {
+    brandLogo.src = safeLogoUrl;
     brandLogo.alt = brand.name ? `${brand.name} logo` : "Partner logo";
     brandLogo.hidden = false;
   }

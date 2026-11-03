@@ -80,6 +80,19 @@
   flex-shrink: 0;
 }
 
+.controlactions #actionBtn,
+.controlactions #passBtn {
+  min-width: clamp(132px, 12vw, 178px);
+  min-height: clamp(48px, 6vh, 58px);
+  padding: clamp(9px, 1.3vh, 13px) clamp(14px, 1.8vw, 20px);
+  font-size: clamp(12px, 1.6vh, 15px);
+}
+
+/* actionBtn is the single primary turn action; moveBtn remains as a JS hook. */
+.controlactions #moveBtn {
+  display: none !important;
+}
+
 .movechoice {
   border: 1px solid #ffffff38;
   background: #201710;

@@ -218,7 +218,7 @@
             multiplayer.active = false;
             multiplayer.isHost = false;
             multiplayer.roomCode = null;
-            multiplayer.claimedSeats = {};
+            multiplayer.claimedSeats = Object.create(null);
             if (typeof updateMultiplayerBadge === "function") updateMultiplayerBadge();
           }
         }
@@ -483,7 +483,7 @@
           multiplayer.status = "connected";
           multiplayer.mySeat = 0;
           multiplayer.roomTargetCount = demoPlayerCount;
-          multiplayer.claimedSeats = {};
+          multiplayer.claimedSeats = Object.create(null);
           if (game && game.players) {
             game.players.forEach((p, idx) => {
               multiplayer.claimedSeats[idx] = {
@@ -499,7 +499,7 @@
           multiplayer.active = false;
           multiplayer.isHost = false;
           multiplayer.roomCode = null;
-          multiplayer.claimedSeats = {};
+          multiplayer.claimedSeats = Object.create(null);
           if (typeof updateMultiplayerBadge === "function") updateMultiplayerBadge();
         }
 
@@ -518,7 +518,7 @@
                 seat: p.seat,
                 computer: false,
               })),
-              theme: document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween",
+              theme: document.body ? document.body.getAttribute("data-theme") || "wood" : "wood",
               rulesVariant: "Dhayam 7x7 scripted demo",
             });
           }
@@ -553,7 +553,7 @@
         multiplayer.status = "connecting";
         multiplayer.mySeat = 0;
         multiplayer.roomTargetCount = demoPlayerCount;
-        multiplayer.claimedSeats = {};
+        multiplayer.claimedSeats = Object.create(null);
         if (typeof updateMultiplayerBadge === "function") updateMultiplayerBadge();
 
         const pNames =
@@ -581,7 +581,7 @@
                 seat: SEATS[i % 4],
                 computer: false,
               })),
-              theme: document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween",
+              theme: document.body ? document.body.getAttribute("data-theme") || "wood" : "wood",
               rulesVariant: "Dhayam 7x7 live Cloudflare Durable Objects multiplayer demo",
             });
           }

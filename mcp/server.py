@@ -318,10 +318,67 @@ class DhayamGame:
                     "captured": p["captured"],
                     "finished": sum(1 for q in p["pieces"] if q["progress"] == 43),
                     "on_board": sum(1 for q in p["pieces"] if 0 <= q["progress"] < 43),
-                    "waiting": sum(1 for q in p["pieces"] if q["progress"] < 0)
+                    "waiting": sum(1 for q in p["pieces"] if q["progress"] < 0),
                 }
                 for p in self.players
-            ]
+            ],
+        }
+
+    def get_game_summary(self) -> Dict[str, Any]:
+        return {
+            "format": "dhayam-game-summary-v1",
+            "game": {
+                "phase": self.phase,
+                "turn": self.turn,
+                "current_player": self.active_player()["name"],
+                "current_seat": self.active_player()["seat"],
+                "pool": list(self.pool),
+            },
+            "players": [
+                {
+                    "id": p["id"],
+                    "name": p["name"],
+                    "seat": p["seat"],
+                    "captured": p["captured"],
+                    "waiting": sum(1 for q in p["pieces"] if q["progress"] < 0),
+                    "on_board": sum(1 for q in p["pieces"] if 0 <= q["progress"] < 43),
+                    "finished": sum(1 for q in p["pieces"] if q["progress"] == 43),
+                    "pieces": [
+                        {
+                            "piece_id": q["id"],
+                            "piece_number": index + 1,
+                            "progress": q["progress"],
+                            "square": self.piece_node(p, q),
+                        }
+                        for index, q in enumerate(p["pieces"])
+                    ],
+                }
+                for p in self.players
+            ],
+            "legal_moves": self.get_legal_moves(),
+            "analysis_prompt": "Choose the strongest legal move for the current player. Explain safety, capture, progress, and overcrowding tradeoffs.",
+        }
+
+    def get_turn_details(self) -> Dict[str, Any]:
+        turns: Dict[int, List[Dict[str, Any]]] = {}
+        for event in self.audit:
+            turn = int(event.get("turn", 0))
+            turns.setdefault(turn, []).append(event)
+        return {
+            "format": "dhayam-turn-details-v1",
+            "game": {
+                "phase": self.phase,
+                "current_turn": self.turn,
+                "current_player": self.active_player()["name"],
+            },
+            "turns": [
+                {
+                    "turn": turn,
+                    "player": next((event.get("player") for event in events if event.get("player")), None),
+                    "events": events,
+                }
+                for turn, events in sorted(turns.items())
+            ],
         }
 
     def serialize(self) -> Dict[str, Any]:
@@ -627,6 +684,16 @@ TOOLS = [
         "inputSchema": {"type": "object", "properties": {}}
     },
     {
+        "name": "dhayam_get_game_summary",
+        "description": "Return an AI-ready snapshot of the current board, player progress, dice pool, and legal candidate moves for choosing the next best move.",
+        "inputSchema": {"type": "object", "properties": {}}
+    },
+    {
+        "name": "dhayam_get_turn_details",
+        "description": "Return ordered turn-by-turn game events grouped by turn for AI analysis, fairness review, and explaining the next move.",
+        "inputSchema": {"type": "object", "properties": {}}
+    },
+    {
         "name": "dhayam_get_share_url",
         "description": "Generate a direct GitHub Pages link to view or play this game in a web browser.",
         "inputSchema": {
@@ -751,6 +818,12 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Any:
 
     if name == "dhayam_get_audit_log":
         return {"audit_events": CURRENT_GAME.audit}
+
+    if name == "dhayam_get_game_summary":
+        return CURRENT_GAME.get_game_summary()
+
+    if name == "dhayam_get_turn_details":
+        return CURRENT_GAME.get_turn_details()
 
     if name == "dhayam_get_share_url":
         base = args.get("base_url") or "https://sethusrinivasan.github.io/dhayam/"

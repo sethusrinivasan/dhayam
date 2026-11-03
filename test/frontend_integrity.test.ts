@@ -357,6 +357,31 @@ test("headless Chrome loads site/index.html with zero runtime exceptions and res
     assert.equal(state.actionBtnDisabled, false, "Expected actionBtn to be enabled for player turn");
     assert.ok(state.statusTitle.length > 0, "Expected statusTitle to have non-empty turn announcement");
 
+    await send("Runtime.evaluate", {
+      expression: `(() => {
+        const menu = document.querySelector('.action-menu');
+        menu?.setAttribute('open', '');
+        document.getElementById('shareBtn')?.click();
+        return {
+          modalOpen: document.getElementById('modalback')?.classList.contains('open'),
+          title: document.getElementById('modalTitle')?.textContent?.trim(),
+          menuClosed: !menu?.hasAttribute('open'),
+          menuItems: document.querySelectorAll('.menu-item').length
+        };
+      })()`,
+      returnByValue: true,
+    }).then((result) => {
+      const shareState = result.result.value;
+      assert.equal(shareState.modalOpen, true, "Share should open the modal dialog");
+      assert.equal(shareState.title, "Share Dhayam", "Share dialog should have the expected title");
+      assert.equal(shareState.menuClosed, true, "Share should close the action menu");
+      assert.ok(shareState.menuItems >= 9, "Expected all game menu actions to be present");
+    });
+
+    await send("Runtime.evaluate", {
+      expression: `document.getElementById('modalCancel')?.click()`,
+    });
+
     // Click action button and verify roll proceeds without exceptions
     await send("Runtime.evaluate", {
       expression: `document.getElementById('actionBtn').click()`,

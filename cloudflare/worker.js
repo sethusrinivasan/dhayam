@@ -427,6 +427,59 @@ class DhayamEngine {
     };
   }
 
+  getGameSummary() {
+    const active = this.activePlayer();
+    return {
+      format: "dhayam-game-summary-v1",
+      game: {
+        phase: this.phase,
+        turn: this.turn,
+        current_player: active.name,
+        current_seat: active.seat,
+        pool: [...this.pool]
+      },
+      players: this.players.map((p) => ({
+        id: p.id,
+        name: p.name,
+        seat: p.seat,
+        captured: p.captured,
+        waiting: p.pieces.filter((q) => q.progress < 0).length,
+        on_board: p.pieces.filter((q) => q.progress >= 0 && q.progress < 43).length,
+        finished: p.pieces.filter((q) => q.progress === 43).length,
+        pieces: p.pieces.map((q, index) => ({
+          piece_id: q.id,
+          piece_number: index + 1,
+          progress: q.progress,
+          square: this.pieceNode(p, q)
+        }))
+      })),
+      legal_moves: this.getLegalMoves(),
+      analysis_prompt: "Choose the strongest legal move for the current player. Explain safety, capture, progress, and overcrowding tradeoffs."
+    };
+  }
+
+  getTurnDetails() {
+    const grouped = new Map();
+    for (const event of this.audit) {
+      const turn = Number(event.turn || 0);
+      if (!grouped.has(turn)) grouped.set(turn, []);
+      grouped.get(turn).push(event);
+    }
+    return {
+      format: "dhayam-turn-details-v1",
+      game: {
+        phase: this.phase,
+        current_turn: this.turn,
+        current_player: this.activePlayer().name
+      },
+      turns: [...grouped.entries()].sort((a, b) => a[0] - b[0]).map(([turn, events]) => ({
+        turn,
+        player: events.find((event) => event.player)?.player || null,
+        events
+      }))
+    };
+  }
+
   evaluateMoves(strategy = "balanced") {
     if (this.phase !== "move" || !this.pool.length) return [];
     const p = this.activePlayer();
@@ -739,6 +792,16 @@ const MCP_TOOLS = [
     inputSchema: { type: "object", properties: { state: { type: "object" } } }
   },
   {
+    name: "dhayam_get_game_summary",
+    description: "Return an AI-ready snapshot of the current board, player progress, dice pool, and legal candidate moves for choosing the next best move.",
+    inputSchema: { type: "object", properties: { state: { type: "object" } } }
+  },
+  {
+    name: "dhayam_get_turn_details",
+    description: "Return ordered turn-by-turn game events grouped by turn for AI analysis, fairness review, and explaining the next move.",
+    inputSchema: { type: "object", properties: { state: { type: "object" } } }
+  },
+  {
     name: "dhayam_get_share_url",
     description: "Generate a direct link to view or play this game in a web browser on GitHub Pages or Cloudflare.",
     inputSchema: {
@@ -934,6 +997,10 @@ async function handleMcpToolCall(name, args = {}, env = null) {
     result = { ...passRes, state: engine.serialize() };
   } else if (name === "dhayam_get_audit_log") {
     result = { audit: engine.audit, state: engine.serialize() };
+  } else if (name === "dhayam_get_game_summary") {
+    result = { ...engine.getGameSummary(), state: engine.serialize() };
+  } else if (name === "dhayam_get_turn_details") {
+    result = { ...engine.getTurnDetails(), state: engine.serialize() };
   } else if (name === "dhayam_get_share_url") {
     const base = args.base_url || "https://sethusrinivasan.github.io/dhayam/";
     result = {

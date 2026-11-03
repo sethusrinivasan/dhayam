@@ -1,7 +1,7 @@
 /**
  * themes.js - Board Theme Management & Halloween Default Configuration
  *
- * Persists theme preference in localStorage, defaults to 'halloween' on launch,
+ * Persists theme preference in localStorage, defaults to 'wood' on launch,
  * and updates DOM attributes and board symbols dynamically.
  */
 "use strict";
@@ -61,10 +61,10 @@ const THEME_DEFINITIONS = {
   },
 };
 
-let currentTheme = localStorage.getItem("dhayam_theme") || "halloween";
+let currentTheme = localStorage.getItem("dhayam_theme") || "wood";
 
 function applyTheme(themeId) {
-  if (!THEME_DEFINITIONS[themeId]) themeId = "halloween";
+  if (!THEME_DEFINITIONS[themeId]) themeId = "wood";
   currentTheme = themeId;
   localStorage.setItem("dhayam_theme", themeId);
   if (document.documentElement) {

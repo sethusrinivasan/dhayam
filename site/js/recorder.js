@@ -32,7 +32,7 @@
       transport: config.transport || "local",
       seat: config.seat ?? 0,
       players: Array.isArray(config.players) ? config.players : null,
-      theme: config.theme || (document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween"),
+      theme: config.theme || (document.body ? document.body.getAttribute("data-theme") || "wood" : "wood"),
       rulesVariant: config.rulesVariant || "Dhayam 7x7 house variant",
       ...config,
     };
@@ -72,7 +72,7 @@
         maxTouchPoints: navigator.maxTouchPoints || 0,
         hasTouch: "ontouchstart" in window,
       },
-      theme: document.body ? document.body.getAttribute("data-theme") || "halloween" : "halloween",
+      theme: document.body ? document.body.getAttribute("data-theme") || "wood" : "wood",
       audio: typeof audioEnabled !== "undefined" ? audioEnabled : null,
       build: typeof window !== "undefined" && window.BUILD_INFO ? window.BUILD_INFO : null,
       gameInitConfig: gameInitConfig,

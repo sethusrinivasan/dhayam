@@ -170,6 +170,121 @@
         }
         return lines.join("\n");
       }
+      function gameSummaryText() {
+        const playerLines = game.players.map((player) => {
+          const waiting = player.pieces.filter((piece) => piece.progress < 0).length;
+          const onBoard = player.pieces.filter(
+            (piece) => piece.progress >= 0 && piece.progress < 43,
+          ).length;
+          const finished = player.pieces.filter((piece) => piece.progress === 43).length;
+          return (
+            "- " +
+            player.name +
+            " (" +
+            player.seat +
+            "): waiting=" +
+            waiting +
+            ", on_board=" +
+            onBoard +
+            ", finished=" +
+            finished +
+            ", captured=" +
+            Boolean(player.captured)
+          );
+        });
+        const candidates = typeof options === "function"
+          ? options().map((move) => ({
+              piece: "Piece " + (game.players[game.current].pieces.indexOf(move.piece) + 1),
+              from: node(game.players[game.current], move.piece) || "reserve",
+              to: move.test.destination || ROUTES[game.players[game.current].seat][move.test.progress],
+              dice: move.values,
+              captures: move.test.targets.length,
+            }))
+          : [];
+        return [
+          "DHAYAM GAME SUMMARY",
+          "Game ID: " + audit.id,
+          "Mode: " + audit.mode,
+          "Phase: " + game.phase,
+          "Turn: " + game.turn,
+          "Current player: " + active().name + " (" + active().seat + ")",
+          "Dice pool: [" + game.pool.join(", ") + "]",
+          "",
+          "PLAYERS",
+          ...playerLines,
+          "",
+          "LEGAL CANDIDATES FOR NEXT MOVE",
+          ...(candidates.length
+            ? candidates.map(
+                (candidate) =>
+                  "- " +
+                  candidate.piece +
+                  ": " +
+                  candidate.from +
+                  " -> " +
+                  candidate.to +
+                  ", dice=[" +
+                  candidate.dice.join(", ") +
+                  "], captures=" +
+                  candidate.captures,
+              )
+            : ["- No legal move is currently available."]),
+          "",
+          "Use the turn-by-turn export for ordered history and the current audit for fairness analysis.",
+        ].join("\n");
+      }
+      function turnDetailsText() {
+        const turns = new Map();
+        for (const event of audit.events) {
+          const key = String(event.turn);
+          if (!turns.has(key)) turns.set(key, []);
+          turns.get(key).push(event);
+        }
+        return JSON.stringify(
+          {
+            format: "dhayam-turn-details-v1",
+            game: {
+              id: audit.id,
+              mode: audit.mode,
+              phase: game.phase,
+              currentPlayer: active().name,
+              currentTurn: game.turn,
+            },
+            turns: [...turns.entries()].map(([turn, events]) => ({
+              turn: Number(turn),
+              player: events.find((event) => event.playerName)?.playerName || null,
+              events,
+            })),
+          },
+          null,
+          2,
+        );
+      }
+      async function copyText(text, button, successText) {
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          const area = document.createElement("textarea");
+          area.value = text;
+          area.style.position = "fixed";
+          area.style.opacity = "0";
+          document.body.appendChild(area);
+          area.select();
+          document.execCommand("copy");
+          area.remove();
+        }
+        if (button) {
+          const original = button.textContent;
+          button.textContent = successText;
+          setTimeout(() => (button.textContent = original), 2200);
+        }
+      }
+      async function copyGameSummary() {
+        await copyText(gameSummaryText(), $("copyGameSummaryBtn"), "✓ Summary copied");
+      }
+      async function copyTurnDetails() {
+        await copyText(turnDetailsText(), $("copyTurnDetailsBtn"), "✓ Details copied");
+      }
       async function copyGameAudit(feedbackEl = null) {
         const text = auditText();
         try {

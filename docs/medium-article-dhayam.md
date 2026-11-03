@@ -172,7 +172,7 @@ This is different from the repository’s local [`mcp/server.py`](https://github
 
 ## Current state and lessons
 
-The current release is v0.3.2/build 52. The test suite contains 72 passing checks spanning frontend integrity, headless browser behavior, rules, multiplayer regressions, Cloudflare endpoints, and MCP workflows.
+The current release is v0.4.0/build 1. The test suite contains 72 checks spanning frontend integrity, headless browser behavior, rules, multiplayer regressions, Cloudflare endpoints, and MCP workflows.
 
 The project’s main lesson is that “small” applications still need explicit boundaries. The browser owns presentation, the rules engine owns legality, the Durable Object owns online authority, the audit explains what happened, and the deployment pipeline controls what reaches users. Keeping those responsibilities separate made it possible to add multiplayer resilience and 32-player support without turning every UI change into a rules change.
 

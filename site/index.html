@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="halloween">
+<html lang="en" data-theme="wood">
   <head>
     <meta charset="utf-8" />
     <meta
@@ -30,7 +30,7 @@
     <link rel="stylesheet" href="css/responsive.css" />
     <link rel="stylesheet" href="css/embed.css" />
   </head>
-  <body data-theme="halloween">
+  <body data-theme="wood">
     <main class="shell">
       <header class="top">
         <div class="brand">
@@ -38,18 +38,25 @@
           <img id="brandLogo" class="brand-logo" alt="" hidden />
           <div>
             <h1 id="brandName">Dhayam</h1>
-            <div class="sub">Play · Connect · Celebrate</div>
+            <div class="sub">A traditional board game of Tamil Nadu</div>
           </div>
         </div>
         <nav class="topnav">
-          <button class="pill" id="qrBtn" aria-label="Show QR code to scan and play on phone">📱 Scan QR</button>
-          <button class="pill" id="newBtn">＋ New game</button>
-          <button class="pill" id="guideBtn">? How to play</button>
-          <button class="pill" id="demoBtn">✦ Demo</button>
-          <button class="pill icon-pill" id="flightRecorderTopBtn" aria-label="Copy Flight Recorder diagnostic data" title="Copy Flight Recorder data">🛫</button>
-          <button class="pill icon-pill" id="shareBtn" aria-label="Share Dhayam on social media" title="Share Dhayam on social media">📢</button>
-          <button class="pill icon-pill" id="audioToggle" aria-label="Toggle voice commentary" title="Toggle voice commentary">🔇</button>
-          <button class="pill icon-pill" id="settingsBtn" aria-label="Game settings" title="Open game settings">⚙️</button>
+          <details class="action-menu">
+            <summary class="pill menu-trigger">☰ <span>Game menu</span></summary>
+            <div class="menu-panel" role="menu" aria-label="Game menu">
+              <button class="menu-item" id="newBtn" role="menuitem">＋ New game</button>
+              <button class="menu-item" id="guideBtn" role="menuitem">? How to play</button>
+              <button class="menu-item" id="demoBtn" role="menuitem">✦ Demo</button>
+              <button class="menu-item" id="qrBtn" role="menuitem" aria-label="Show QR code to scan and play on phone">📱 Scan QR</button>
+              <button class="menu-item" id="settingsBtn" role="menuitem">⚙️ Settings</button>
+              <button class="menu-item" id="copyGameSummaryBtn" role="menuitem">📌 Copy game summary</button>
+              <button class="menu-item" id="copyTurnDetailsBtn" role="menuitem">🧾 Copy turn-by-turn details</button>
+              <button type="button" class="menu-item" id="shareBtn" role="menuitem" aria-label="Share Dhayam on social media" title="Share Dhayam on social media">📢 Share</button>
+              <button class="menu-item" id="flightRecorderTopBtn" role="menuitem" aria-label="Copy Flight Recorder diagnostic data" title="Copy Flight Recorder data">🛫 Copy diagnostics</button>
+            </div>
+          </details>
+          <button class="pill audio-toggle" id="audioToggle" aria-label="Toggle voice commentary" title="Toggle voice commentary">🔇 Voice commentary: Off</button>
           <span class="pill timer-pill" id="gameTimer" role="timer" aria-label="Game liveliness timer" title="Page liveliness: updates every 30s with second-level accuracy">⏱️ 00:00</span>
         </nav>
       </header>
@@ -151,7 +158,7 @@
               <button class="btn" id="actionBtn" type="button">
                 🎲 Roll Dice
               </button>
-              <button class="btn" id="moveBtn" type="button" disabled>
+              <button class="btn" id="moveBtn" type="button" disabled hidden>
                 Move selected piece
               </button>
               <button class="btn secondary" id="passBtn" type="button" hidden>
@@ -217,11 +224,10 @@
             <div id="players"></div>
             <div class="divider"></div>
             <div class="small" id="gameInfo">
-              1 human · 1 computer · House variant
+              1 human · 1 computer
             </div>
           </div>
           <div class="panel">
-            <h2>Dayakattai dice</h2>
             <div class="dice">
               <div
                 class="die"
@@ -261,13 +267,10 @@
         </aside>
       </div>
       <footer class="footer" role="contentinfo">
-        <div class="footer-links">
-          <span>Dhayam · Hosted on <a href="https://dhayam.cancun.workers.dev" target="_blank" rel="noopener">⚡ Cloudflare Edge</a> · <a href="https://github.com/sethusrinivasan/dhayam" target="_blank" rel="noopener">⭐ View Project & Rules on GitHub</a></span>
-        </div>
         <div class="footer-build" id="footerBuildInfo" aria-label="Build metadata">
-          <span class="build-badge" id="buildNumberBadge">Build #51 (v0.3.1)</span>
+          <span class="build-badge" id="buildNumberBadge">Build #1 (v0.4.0)</span>
           <span class="build-sep">·</span>
-          <span class="build-updated" id="buildUpdatedTimestamp">Updated: 2026-11-01 00:00 UTC</span>
+          <span class="build-updated" id="buildUpdatedTimestamp">Updated: 2026-11-03 18:30 UTC</span>
         </div>
       </footer>
     </main>
@@ -281,8 +284,8 @@
         <h2 id="modalTitle">New family game</h2>
         <div id="modalContent"></div>
         <div class="actions">
-          <button class="btn secondary" id="modalCancel">Close</button
-          ><button class="btn" id="modalConfirm">Start game</button>
+          <button class="btn secondary" id="modalCancel">Close</button>
+          <button class="btn" id="modalConfirm">Start game</button>
         </div>
       </div>
     </div>
