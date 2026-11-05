@@ -336,8 +336,17 @@
           )
           .join("");
 
+        const curLang = typeof getLanguage === "function" ? getLanguage() : "en";
         const content =
           '<div class="settings-modal-content">' +
+          '<section class="settings-section">' +
+          '<h3 class="settings-heading">🌐 Language / \u0bae\u0bca\u0bb4\u0bbf</h3>' +
+          '<label class="settings-theme-label" for="settingsLanguage">Game language and voice commentary</label>' +
+          '<select id="settingsLanguage" class="settings-theme-select">' +
+          '<option value="en"' + (curLang === "en" ? " selected" : "") + '>English (English audio & interface)</option>' +
+          '<option value="ta"' + (curLang === "ta" ? " selected" : "") + '>\u0ba4\u0bae\u0bbf\u0bb4\u0bcd (Tamil audio & interface)</option>' +
+          '</select>' +
+          '</section>' +
           '<section class="settings-section">' +
           '<h3 class="settings-heading">🎨 Board theme</h3>' +
           '<label class="settings-theme-label" for="settingsTheme">Choose a board theme</label>' +
@@ -380,6 +389,10 @@
           '</section>';
 
         showModal("⚙️ Match Settings", content, "Save Settings", () => {
+          const langSelect = $("settingsLanguage");
+          if (langSelect && typeof setLanguage === "function" && langSelect.value !== getLanguage()) {
+            setLanguage(langSelect.value);
+          }
           const secretInput = $("rollSecret");
           if (secretInput && typeof setRollSecret === "function") {
             setRollSecret(secretInput.value);
@@ -400,6 +413,12 @@
         });
 
         setTimeout(() => {
+          const langSelect = $("settingsLanguage");
+          if (langSelect && typeof setLanguage === "function") {
+            langSelect.onchange = () => {
+              setLanguage(langSelect.value);
+            };
+          }
           const themeSelect = $("settingsTheme");
           if (themeSelect) {
             themeSelect.onchange = () => {

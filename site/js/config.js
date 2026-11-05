@@ -130,10 +130,10 @@
 
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
-        version: "0.4.0",
-        build: 3,
-        timestamp: "2026-11-04 22:25 UTC",
-        releaseName: "Authentic Bilingual Tamil & English Localization (i18n)",
+        version: "0.4.1",
+        build: 4,
+        timestamp: "2026-11-05 15:30 UTC",
+        releaseName: "Human-like Speech Commentary & Sound Settings",
       };
        // Global player-count limits — update here, never hardcode elsewhere
        const MIN_PLAYERS = 2;

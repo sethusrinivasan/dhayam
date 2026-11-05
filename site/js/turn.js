@@ -6,6 +6,151 @@
  */
 "use strict";
 
+      const TAMIL_SPOKEN_NUMBERS = {
+        1: "\u0ba4\u0bbe\u0baf\u0bae\u0bcd",
+        2: "\u0b87\u0bb0\u0ba3\u0bcd\u0b9f\u0bc1",
+        3: "\u0bae\u0bc2\u0ba9\u0bcd\u0bb1\u0bc1",
+        4: "\u0ba8\u0bbe\u0ba9\u0bcd\u0b95\u0bc1",
+        5: "\u0b80\u0ba8\u0bcd\u0ba4\u0bc1",
+        6: "\u0b86\u0bb1\u0bc1",
+        12: "\u0baa\u0ba9\u0bcd\u0ba9\u0bbf\u0bb0\u0ba3\u0bcd\u0b9f\u0bc1",
+      };
+
+      const TANGLISH_SPOKEN_NUMBERS = {
+        1: "Dhayam",
+        2: "irandu",
+        3: "moondru",
+        4: "naangu",
+        5: "ainthu",
+        6: "aaru",
+        12: "pannirandu",
+      };
+
+      /**
+       * Generates friendly, human-like guidance for the player following a dice roll.
+       * Replaces bureaucratic repetitive phrases ("choose a legal move") with tactical,
+       * engaging advice tailored to the state of the board.
+       */
+      function announceRollAndGuidance(player, val, bonus, opts) {
+        const valWordTa = TAMIL_SPOKEN_NUMBERS[val] || val;
+        const valWordTanglish = TANGLISH_SPOKEN_NUMBERS[val] || val;
+
+        // 1. Bonus rolls
+        if (bonus) {
+          if (val === 1) {
+            return {
+              text: player.name + " rolled a 1 — Dhayam! That earns another roll. Roll again!",
+              ta: player.name + " \u0ba4\u0bbe\u0baf\u0bae\u0bcd \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd! \u0b95\u0bc2\u0b9f\u0bc1\u0ba4\u0bb2\u0bcd \u0bb5\u0bbe\u0baf\u0bcd\u0baa\u0bcd\u0baa\u0bc1, \u0bae\u0bc0\u0ba3\u0bcd\u0b9f\u0bc1\u0bae\u0bcd \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd!",
+              tanglish: player.name + " Dhayam uruttinaar! Kooduthal vaaippu, meendum uruttungal!",
+            };
+          }
+          if (val === 12) {
+            return {
+              text: player.name + " rolled a 12! Double sixes — take another throw!",
+              ta: player.name + " \u0baa\u0ba9\u0bcd\u0ba9\u0bbf\u0bb0\u0ba3\u0bcd\u0b9f\u0bc1 \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd! \u0b87\u0bb0\u0b9f\u0bcd\u0b9f\u0bc8 \u0b86\u0bb1\u0bc1, \u0bae\u0bc0\u0ba3\u0bcd\u0b9f\u0bc1\u0bae\u0bcd \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd!",
+              tanglish: player.name + " pannirandu uruttinaar! Irattai aaru, meendum uruttungal!",
+            };
+          }
+          return {
+            text: player.name + " rolled a " + val + "! That earns a bonus throw. Roll again!",
+            ta: player.name + " " + valWordTa + " \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd! \u0b95\u0bc2\u0b9f\u0bc1\u0ba4\u0bb2\u0bcd \u0bb5\u0bbe\u0baf\u0bcd\u0baa\u0bcd\u0baa\u0bc1, \u0bae\u0bc0\u0ba3\u0bcd\u0b9f\u0bc1\u0bae\u0bcd \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd!",
+            tanglish: player.name + " " + valWordTanglish + " uruttinaar! Kooduthal vaaippu, meendum uruttungal!",
+          };
+        }
+
+        // 2. Blocked / No options
+        if (!opts || opts.length === 0) {
+          return {
+            text: player.name + " rolled " + val + ", but the path is blocked this time. Passing to the next player.",
+            ta: player.name + " " + valWordTa + " \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd, \u0b86\u0ba9\u0bbe\u0bb2\u0bcd \u0bb5\u0bb4\u0bbf \u0b85\u0b9f\u0bc8\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0bc1\u0bb3\u0bcd\u0bb3\u0ba4\u0bc1. \u0b85\u0b9f\u0bc1\u0ba4\u0bcd\u0ba4\u0bb5\u0bb0\u0bcd \u0bae\u0bc1\u0bb1\u0bc8.",
+            tanglish: player.name + " " + valWordTanglish + " uruttinaar, aanaal vazhi adaipattullathu. Aduthavar murai.",
+          };
+        }
+
+        // 3. Center Goal milestone opportunity
+        const canGoal = opts.some((m) => m.test.progress === 43);
+        if (canGoal) {
+          return {
+            text: player.name + " rolled " + val + "! You can reach the center goal now!",
+            ta: player.name + " " + valWordTa + " \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd! \u0baa\u0bb0\u0bae\u0baa\u0ba4\u0ba4\u0bcd\u0ba4\u0bc8 \u0b85\u0b9f\u0bc8\u0baf \u0b85\u0bb0\u0bc1\u0bae\u0bc8\u0baf\u0bbe\u0ba9 \u0bb5\u0bbe\u0baf\u0bcd\u0baa\u0bcd\u0baa\u0bc1!",
+            tanglish: player.name + " " + valWordTanglish + " uruttinaar! Paramapadathai adaiya arumaiyaana vaaippu!",
+          };
+        }
+
+        // 4. Capture opportunity
+        const captureMove = opts.find((m) => m.test.targets && m.test.targets.length > 0);
+        if (captureMove) {
+          const victim = captureMove.test.targets[0]?.other?.name || "an opponent";
+          return {
+            text: player.name + " rolled " + val + "! You have a chance to capture " + victim + "!",
+            ta: player.name + " " + valWordTa + " \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd! \u0b8e\u0ba4\u0bbf\u0bb0\u0bbf \u0b95\u0bbe\u0baf\u0bc8 \u0bb5\u0bc6\u0b9f\u0bcd\u0b9f\u0bc1\u0bae\u0bcd \u0bb5\u0bbe\u0baf\u0bcd\u0baa\u0bcd\u0baa\u0bc1 \u0b89\u0bb3\u0bcd\u0bb3\u0ba4\u0bc1!",
+            tanglish: player.name + " " + valWordTanglish + " uruttinaar! Ethiri kaayai vettum vaaippu ullathu!",
+          };
+        }
+
+        // 5. Piece entry opportunity
+        const canEnter = opts.some((m) => m.piece && m.piece.progress < 0);
+        if (canEnter) {
+          return {
+            text: player.name + " rolled " + (val === 1 ? "a 1" : val) + "! Time to bring a new piece onto the board.",
+            ta: player.name + " " + valWordTa + " \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd! \u0baa\u0bc1\u0ba4\u0bbf\u0baf \u0b95\u0bbe\u0baf\u0bc8 \u0b95\u0bb3\u0ba4\u0bcd\u0ba4\u0bbf\u0bb2\u0bcd \u0b87\u0bb1\u0b95\u0bcd\u0b95\u0bb2\u0bbe\u0bae\u0bcd.",
+            tanglish: player.name + " " + valWordTanglish + " uruttinaar! Puthiya kaayai kalathil irakkalaam.",
+          };
+        }
+
+        // 6. Safe sanctuary opportunity
+        const canSanctuary = opts.some((m) => {
+          const dest = typeof ROUTES !== "undefined" && ROUTES[player.seat] ? ROUTES[player.seat][m.test.progress] : null;
+          return dest && typeof SAFE !== "undefined" && SAFE.has(dest);
+        });
+        if (canSanctuary) {
+          return {
+            text: player.name + " rolled " + val + "! A safe sanctuary square is open for you.",
+            ta: player.name + " " + valWordTa + " \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd! \u0baa\u0bbe\u0ba4\u0bc1\u0b95\u0bbe\u0baa\u0bcd\u0baa\u0bc1 \u0bae\u0bb2\u0bc8\u0b95\u0bcd \u0b95\u0b9f\u0bcd\u0b9f\u0ba4\u0bcd\u0ba4\u0bc8 \u0b85\u0b9f\u0bc8\u0baf\u0bb2\u0bbe\u0bae\u0bcd.",
+            tanglish: player.name + " " + valWordTanglish + " uruttinaar! Paathukaappu malai kattathai adaiyalaam.",
+          };
+        }
+
+        // 7. Varied friendly guidance
+        const promptsEn = [
+          player.name + " rolled " + val + ". Which piece would you like to advance?",
+          player.name + " rolled " + val + ". Pick your piece and advance along the path.",
+          player.name + " rolled " + val + ". Tap your piece to step forward!",
+          player.name + " rolled " + val + ". Step forward along the trail.",
+        ];
+        const promptsTa = [
+          player.name + " " + valWordTa + " \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd. \u0b8e\u0ba8\u0bcd\u0ba4 \u0b95\u0bbe\u0baf\u0bc8 \u0ba8\u0b95\u0bb0\u0bcd\u0ba4\u0bcd\u0ba4\u0baa\u0bcd \u0baa\u0bcb\u0b95\u0bbf\u0bb1\u0bc0\u0bb0\u0bcd\u0b95\u0bb3\u0bcd?",
+          player.name + " " + valWordTa + " \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd. \u0b95\u0bbe\u0baf\u0bc8\u0ba4\u0bcd \u0ba4\u0bc7\u0bb0\u0bcd\u0ba8\u0bcd\u0ba4\u0bc6\u0b9f\u0bc1\u0ba4\u0bcd\u0ba4\u0bc1 \u0bae\u0bc1\u0ba9\u0bcd\u0ba9\u0bc7\u0bb1\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd.",
+          player.name + " " + valWordTa + " \u0b89\u0bb0\u0bc1\u0b9f\u0bcd\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd. \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0b95\u0bbe\u0baf\u0bc8 \u0ba8\u0b95\u0bb0\u0bcd\u0ba4\u0bcd\u0ba4\u0bbf \u0bb5\u0bbe\u0bb0\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd.",
+        ];
+        const promptsTanglish = [
+          player.name + " " + valWordTanglish + " uruttinaar. Entha kaayai nagartha pogireerkal?",
+          player.name + " " + valWordTanglish + " uruttinaar. Kaayai therntheduthu munnerungal.",
+          player.name + " " + valWordTanglish + " uruttinaar. Ungal kaayai nagarthi vaarungal.",
+        ];
+        const turnVal = (typeof game !== "undefined" && game ? game.turn : 1) + val;
+        const pIdx = turnVal % promptsEn.length;
+        const taIdx = turnVal % promptsTa.length;
+
+        return {
+          text: promptsEn[pIdx],
+          ta: promptsTa[taIdx],
+          tanglish: promptsTanglish[taIdx],
+        };
+      }
+      window.announceRollAndGuidance = announceRollAndGuidance;
+
+      function speakGuidance(guidance) {
+        if (!guidance || typeof speakGame !== "function") return;
+        const isTamil = typeof getLanguage === "function" && getLanguage() === "ta";
+        if (isTamil) {
+          speakGame(guidance.ta, { tanglish: guidance.tanglish });
+        } else {
+          speakGame(guidance.text);
+        }
+      }
+      window.speakGuidance = speakGuidance;
+
       function finishRoll(d) {
         const player = active();
         const val = typeof d.value === "number" ? d.value : (typeof d.val === "number" ? d.val : (d.a + d.b === 0 ? 12 : d.a + d.b));
@@ -47,46 +192,17 @@
           legalMoveCount,
           pacingAssist: Boolean(d.pacingAssist),
         });
+        const guidance = announceRollAndGuidance(player, val, bonus, bonus ? [] : options());
         if (!bonus) {
           if (!legalMoveCount) {
             game.pool = [];
-            speakGame(
-              typeof getLanguage === "function" && getLanguage() === "ta"
-                ? t("speech_roll_pass", { name: player.name, val })
-                : (player.name +
-                    " rolled " +
-                    val +
-                    " but has no legal move. The turn passes.")
-            );
+            speakGuidance(guidance);
             recordAudit("PASS", { reason: "NO_LEGAL_MOVE" });
-            nextTurn(typeof t === "function" ? t("no_legal_moves_passed") : "No legal moves — turn passed.");
+            nextTurn(typeof t === "function" ? t("no_legal_moves_passed") : "No moves available — turn passed.");
             return;
           }
         }
-        if (typeof getLanguage === "function" && getLanguage() === "ta") {
-          speakGame(
-            val === 1
-              ? t("speech_roll_dhayam", { name: player.name, val })
-              : bonus
-                ? t("speech_roll_bonus", { name: player.name, val })
-                : t("speech_roll_normal", { name: player.name, val })
-          );
-        } else {
-          speakGame(
-            player.name +
-              " rolled " +
-              val +
-              "." +
-              (d.pacingAssist
-                ? " The pacing assist selected a playable outcome."
-                : "") +
-              (bonus
-                ? " That earns another roll."
-                : specialRoll
-                  ? " Its reduced bonus chance did not extend this turn, so now choose a legal move."
-                  : " Now choose a legal move."),
-          );
-        }
+        speakGuidance(guidance);
         if (multiplayer.active && multiplayer.isHost) {
           broadcastState();
         }
@@ -288,33 +404,31 @@
             ? getPlayerAvatarSpeechName(player)
             : "piece";
         let commentary = "";
+        let tanglishCommentary = "";
+        const stepSum = opt.values.reduce((sum, v) => sum + v, 0);
         if (typeof getLanguage === "function" && getLanguage() === "ta") {
-          const joinedVals = opt.values.join(" + ");
           if (wasReserve) {
-            commentary = opt.test.openingEntry
-              ? t("speech_move_opening_enter", { name: player.name, values: joinedVals })
-              : t("speech_move_enter", { name: player.name, values: joinedVals });
+            commentary = player.name + " \u0baa\u0bc1\u0ba4\u0bbf\u0baf \u0b95\u0bbe\u0baf\u0bc8 \u0b95\u0bb3\u0ba4\u0bcd\u0ba4\u0bbf\u0bb2\u0bcd \u0b87\u0bb1\u0b95\u0bcd\u0b95\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd.";
+            tanglishCommentary = player.name + " puthiya kaayai kalathil irakkinaar.";
           } else {
-            commentary = t("speech_move_advance", { name: player.name, values: joinedVals });
+            commentary = player.name + " \u0b95\u0bbe\u0baf\u0bc8 " + stepSum + " \u0b95\u0b9f\u0bcd\u0b9f\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0ba8\u0b95\u0bb0\u0bcd\u0ba4\u0bcd\u0ba4\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd.";
+            tanglishCommentary = player.name + " kaayai " + stepSum + " kattangal nagarthinaar.";
           }
           if (captureCount) {
             const victimDesc = capturedPieces.map((cp) => cp.playerName).join(", ");
-            commentary += " " + t("speech_move_capture", { victim: victimDesc });
+            commentary += " \u0bb5\u0bc6\u0b9f\u0bcd\u0b9f\u0bc1! " + victimDesc + " \u0b95\u0bbe\u0baf\u0bcd \u0bb5\u0bc6\u0b9f\u0bcd\u0b9f\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1!";
+            tanglishCommentary += " Vettu! " + victimDesc + " kaay vettappattathu!";
           }
           if (willFinish) {
-            commentary += " " + t("speech_move_goal", { name: player.name });
+            commentary += " \u0bb5\u0bbe\u0bb4\u0bcd\u0ba4\u0bcd\u0ba4\u0bc1\u0b95\u0bb3\u0bcd " + player.name + "! \u0b95\u0bbe\u0baf\u0bcd \u0baa\u0bb0\u0bae\u0baa\u0ba4\u0ba4\u0bcd\u0ba4\u0bc8 \u0b85\u0b9f\u0bc8\u0ba8\u0bcd\u0ba4\u0ba4\u0bc1!";
+            tanglishCommentary += " Vaazhthukkal " + player.name + "! Kaay Paramapadathai adainthathu!";
           }
         } else {
-          commentary =
-            player.name +
-            (wasReserve
-              ? opt.test.openingEntry
-                ? " uses the opening entry allowance to enter a " + avName + " onto the board (+1 bonus point) and"
-                : " enters a " + avName + " onto the board (+1 bonus point) and"
-              : " moves a " + avName) +
-            " uses " +
-            opt.values.join(" plus ") +
-            ".";
+          if (wasReserve) {
+            commentary = player.name + " brings a " + avName + " onto the board.";
+          } else {
+            commentary = player.name + " advances the " + avName + " " + stepSum + (stepSum === 1 ? " square." : " squares.");
+          }
           if (captureCount) {
             const victimDesc = capturedPieces
               .map((cp) => {
@@ -326,15 +440,15 @@
                 return cp.playerName + "’s " + victimAv;
               })
               .join(" and ");
-            commentary += " " + victimDesc + " is captured and returns to reserve!";
+            commentary += " Capture! " + victimDesc + " is captured and sent back to reserve!";
           }
           if (willFinish) {
-            commentary += " 🎉 Congratulations " + player.name + "! The " + avName + " reaches the center goal (+1 bonus point)!";
+            commentary += " Congratulations " + player.name + "! The " + avName + " reaches the center goal!";
           }
         }
         moving = true;
         movingPieceId = piece.id;
-        speakGame(commentary);
+        speakGame(commentary, { tanglish: tanglishCommentary });
 
         try {
           if (multiplayer.active && multiplayer.isHost && multiplayer.transport !== "cf_ws") {
@@ -478,25 +592,15 @@
             rank: 1,
           });
           if (typeof getLanguage === "function" && getLanguage() === "ta") {
-            commentary += " " + (typeof t === "function" ? t("speech_winner", { name: player.name }) : player.name + " \u0bb5\u0bc6\u0bb1\u0bcd\u0bb1\u0bbf \u0baa\u0bc6\u0bb1\u0bcd\u0bb1\u0bbe\u0bb0\u0bcd!");
+            const winTa = player.name + " \u0bb5\u0bc6\u0bb1\u0bcd\u0bb1\u0bbf \u0baa\u0bc6\u0bb1\u0bcd\u0bb1\u0bbe\u0bb0\u0bcd! \u0bb5\u0bbe\u0bb4\u0bcd\u0ba4\u0bcd\u0ba4\u0bc1\u0b95\u0bb3\u0bcd!";
+            const winTanglish = player.name + " vetri petraar! Vaazhthukkal!";
+            commentary += " " + winTa;
+            speakGame(commentary, { tanglish: tanglishCommentary + " " + winTanglish });
           } else {
             commentary +=
               " " + player.name + " finishes all six pieces and wins the game!";
+            speakGame(commentary);
           }
-          recordAudit("GAME_END", {
-            winner: {
-              playerId: player.id,
-              playerName: player.name,
-            },
-          });
-          if (typeof DhayamEmbedHost !== "undefined") {
-            DhayamEmbedHost.gameOver({
-              winner: player.name,
-              playerId: player.id,
-              rank: player.rank,
-            });
-          }
-          speakGame(commentary);
           if (multiplayer.active && multiplayer.isHost) broadcastState();
           render();
           return;
@@ -641,29 +745,8 @@
             }
 
             const pName = activeP ? activeP.name : "Player";
-            if (!isBonus && game.phase === "roll") {
-              speakGame(
-                typeof getLanguage === "function" && getLanguage() === "ta"
-                  ? t("speech_roll_pass", { name: pName, val })
-                  : pName + " rolled " + val + " but has no legal move. The turn passes."
-              );
-            } else {
-              speakGame(
-                typeof getLanguage === "function" && getLanguage() === "ta"
-                  ? (val === 1
-                      ? t("speech_roll_dhayam", { name: pName, val })
-                      : isBonus
-                        ? t("speech_roll_bonus", { name: pName, val })
-                        : t("speech_roll_normal", { name: pName, val }))
-                  : pName +
-                      " rolled " +
-                      val +
-                      "." +
-                      (isBonus
-                        ? " That earns another roll."
-                        : " Now choose a legal move.")
-              );
-            }
+            const guidance = announceRollAndGuidance(activeP || { name: pName }, val, isBonus, isBonus ? [] : options());
+            speakGuidance(guidance);
 
             if (typeof checkPendingRemoteState === "function" && checkPendingRemoteState()) {
               // Applied pending remote state

@@ -79,6 +79,20 @@
         if ("speechSynthesis" in window)
           availableVoices = speechSynthesis.getVoices();
       }
+
+      function hasTamilVoice() {
+        if (typeof speechSynthesis === "undefined") return false;
+        const voices = speechSynthesis.getVoices() || [];
+        return Boolean(
+          voices.find((voice) => {
+            const langCode = (voice.lang || "").toLowerCase();
+            const voiceName = (voice.name || "").toLowerCase();
+            return langCode.startsWith("ta") || voiceName.includes("tamil");
+          })
+        );
+      }
+      window.hasTamilVoice = hasTamilVoice;
+
       function voiceForPlayer(player) {
         if (!player || !availableVoices.length) return null;
         if (typeof getLanguage === "function" && getLanguage() === "ta") {
@@ -88,6 +102,9 @@
             return langCode.startsWith("ta") || voiceName.includes("tamil");
           });
           if (tamilVoice) return tamilVoice;
+          // Never assign an English voice to speak Tamil Unicode script.
+          // Returning null allows browser's speech.lang = "ta-IN" default or cloud voice to engage.
+          return null;
         }
         const playerIndex = game.players.indexOf(player),
           hints =
@@ -114,11 +131,35 @@
       }
       window.isAudioSpeaking = isAudioSpeaking;
 
-      function speakGame(message) {
+      function sanitizeSpeechText(text) {
+        if (!text) return "";
+        return text
+          // Strip emojis so TTS does not read "Party popper" or "Trophy"
+          .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
+          // Strip parenthetical notes like (+1 bonus point)
+          .replace(/\s*\(\+?\d+[^)]*\)/g, "")
+          // Clean multiple spaces and whitespace
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+      window.sanitizeSpeechText = sanitizeSpeechText;
+
+      function speakGame(message, options) {
         if (!audioEnabled || demo || !("speechSynthesis" in window)) {
           commentaryUntil = 0;
           return 0;
         }
+
+        const isTamil = typeof getLanguage === "function" && getLanguage() === "ta";
+        let spokenText = message;
+        // If system has no native Tamil voice installed and Tanglish phonetic is provided,
+        // use smooth phonetic Tanglish so English TTS engines pronounce it cleanly instead of choking.
+        if (isTamil && options && options.tanglish && !hasTamilVoice()) {
+          spokenText = options.tanglish;
+        }
+
+        spokenText = sanitizeSpeechText(spokenText);
+        if (!spokenText) return 0;
 
         // If an existing speech is still speaking, record interruption before cancelling
         if (speechSynthesis.speaking && currentUtterance) {
@@ -134,21 +175,25 @@
         }
 
         speechSynthesis.cancel();
-        const words = message.trim().split(/\s+/).length,
+        const words = spokenText.trim().split(/\s+/).length,
           duration = Math.max(2200, Math.round((words / 2.1) * 1000) + 750),
-          speech = new SpeechSynthesisUtterance(message);
+          speech = new SpeechSynthesisUtterance(spokenText);
         const id = ++speechIdCounter;
         speech._id = id;
         currentUtterance = speech;
         speechStartTime = Date.now();
 
-        speech.voice = voiceForPlayer(active());
-        if (typeof getLanguage === "function" && getLanguage() === "ta") {
-          speech.lang = "ta-IN";
+        const activeVoice = voiceForPlayer(active());
+        if (activeVoice) {
+          speech.voice = activeVoice;
+        }
+
+        if (isTamil) {
+          speech.lang = hasTamilVoice() ? "ta-IN" : (activeVoice ? activeVoice.lang : "ta-IN");
         } else {
           speech.lang = "en-US";
         }
-        speech.rate = 0.86;
+        speech.rate = 0.88;
         speech.pitch = 1;
         speech.volume = 1;
 

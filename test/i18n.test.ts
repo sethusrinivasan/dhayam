@@ -165,7 +165,7 @@ test("i18n interpolates named parameters accurately in English and Tamil", () =>
 
   // English interpolation
   const enRoll = env.t("speech_roll_normal", { name: "Alex", val: 5 });
-  assert.equal(enRoll, "Alex rolled 5. Now choose a legal move.");
+  assert.equal(enRoll, "Alex rolled 5. Pick your piece and advance along the path.");
 
   const enTurn = env.t("turn_title", { name: "Maya" });
   assert.equal(enTurn, "Maya’s turn");
@@ -188,3 +188,64 @@ test("i18n language toggle logs event to FlightRecorder", () => {
   assert.ok(changeEvent, "Must record LANGUAGE_CHANGED event in FlightRecorder");
   assert.equal(changeEvent.data.lang, "ta");
 });
+
+test("sanitizeSpeechText strips emojis and parenthetical scoring from speech", () => {
+  const audioCode = fs.readFileSync(path.join(JS_DIR, "audio.js"), "utf-8");
+  const sandbox: any = { window: {}, console, document: { addEventListener: () => {} } };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(audioCode, sandbox);
+
+  const raw = "\ud83c\udf89 Congratulations Alex! The pumpkin reaches the center goal (+1 bonus point)!";
+  const cleaned = sandbox.sanitizeSpeechText(raw);
+  assert.equal(cleaned, "Congratulations Alex! The pumpkin reaches the center goal!");
+  assert.ok(!cleaned.includes("\ud83c\udf89"), "Emojis must be stripped from spoken text");
+  assert.ok(!cleaned.includes("(+1"), "Parenthetical score must be stripped from spoken text");
+});
+
+test("announceRollAndGuidance provides friendly human guidance without 'legal move' rhetoric", () => {
+  const configCode = fs.readFileSync(path.join(JS_DIR, "config.js"), "utf-8");
+  const i18nCode = fs.readFileSync(path.join(JS_DIR, "i18n.js"), "utf-8");
+  const turnCode = fs.readFileSync(path.join(JS_DIR, "turn.js"), "utf-8");
+
+  const sandbox: any = {
+    window: {},
+    console,
+    document: { addEventListener: () => {}, getElementById: () => null },
+    game: { turn: 1 },
+    ROUTES: { N: ["D7", "D6", "D5", "D4"] },
+    SAFE: new Set(["D7"]),
+    active: () => ({ name: "Alex", seat: "N" }),
+    options: () => [],
+    recordAudit: () => {},
+    render: () => {},
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext([configCode, i18nCode, turnCode].join("\n;\n"), sandbox);
+
+  const player = { name: "Alex", seat: "N" };
+
+  // 1. Normal guidance
+  const guidance = sandbox.announceRollAndGuidance(player, 3, false, [{ piece: { id: "p0" }, test: { progress: 2 } }]);
+  assert.ok(!guidance.text.toLowerCase().includes("legal move"), "Must never say 'legal move'");
+  assert.ok(guidance.text.includes("Alex rolled 3"), "Must include roll announcement");
+
+  // 2. Goal guidance
+  const goalGuidance = sandbox.announceRollAndGuidance(player, 1, false, [{ piece: { id: "p0" }, test: { progress: 43 } }]);
+  assert.ok(goalGuidance.text.includes("center goal"), "Must advise player about center goal");
+  assert.ok(!goalGuidance.text.toLowerCase().includes("legal move"));
+
+  // 3. Capture guidance
+  const captureGuidance = sandbox.announceRollAndGuidance(player, 4, false, [
+    { piece: { id: "p0" }, test: { targets: [{ other: { name: "Maya" } }] } },
+  ]);
+  assert.ok(captureGuidance.text.includes("capture Maya"), "Must advise player about capture");
+  assert.ok(!captureGuidance.text.toLowerCase().includes("legal move"));
+
+  // 4. Blocked guidance
+  const blockedGuidance = sandbox.announceRollAndGuidance(player, 2, false, []);
+  assert.ok(!blockedGuidance.text.toLowerCase().includes("legal move"));
+  assert.ok(blockedGuidance.text.includes("path is blocked"), "Must provide friendly blocked guidance");
+});
+

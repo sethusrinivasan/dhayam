@@ -73,9 +73,9 @@ A succinct, one-page executive summary documenting how Dhayam was conceived, eng
 ### Milestone 10: Authentic Bilingual Tamil & English Localization (i18n)
 * **What was built**:
   1. **Default English Experience**: Game cleanly initializes in English by default across fresh browser sessions, retaining familiar terminology and navigation without unexpected language shifts.
-  2. **Dedicated User Toggle (`#langToggle`)**: Top navigation provides an accessible, high-contrast language toggle button (`🌐 தமிழ்` / `🌐 English`) with keyboard navigation (`tabindex="0"`) and title tooltips. Preference is persisted to `localStorage["dhayam_lang"]` and recorded in Flight Recorder (`LANGUAGE_CHANGED`).
+  2. **Dedicated User Toggle**: Preference is persisted to `localStorage["dhayam_lang"]` and recorded in Flight Recorder (`LANGUAGE_CHANGED`).
   3. **Authentic Cultural Vocabulary (Tamil)**:
-     - Tactical Badges: `🎯 பரமபதம்` (Goal), `⚔️ வெட்டு` (Capture), `🛡️ மலை` (Sanctuary Haven), `✨ களம் புகு` (Board Entry).
+     - Tactical Badges: `🎯 பரமபதம்` (Goal), `⚔️ வெட்டு` (Capture), `🛡️ மலை` (Sanctuary Haven), `✨ களம் புகu` (Board Entry).
      - Action Controls: `🎲 தாயக்கட்டையை உருட்டு` (Roll Dice), `👉 காயை நகர்த்து` (Move Selected Piece), `✨ களம் புகு` (Enter Piece), `முறையை விடு` (Pass Turn), `🏆 புதிய ஆட்டம்` (New Match).
      - Live Match Status: `Alex-ன் முறை` (Player's turn), `கடைசி உருட்டல்` (Last Roll), `தாயக்கட்டை` (Dhayam), `கூடுதல் வாய்ப்பு` (Bonus throw), `காத்திருப்பவை` (Waiting pieces), `களத்தில்` (On board), `பரமபதத்தில்` (Home).
   4. **Tamil Voice Synthesis & Speech Commentary**:
@@ -83,12 +83,24 @@ A succinct, one-page executive summary documenting how Dhayam was conceived, eng
      - Fully localized spoken announcements for rolls, bonus chains, piece entries, tactical captures, goal milestones, and match victory.
   5. **Zero Disk Unescaped Character Integrity**: All Tamil strings within `site/js/` are cleanly encoded using standard Unicode escape sequences (`\u0Bxx`), strictly adhering to codebase static integrity tests and preventing charset corruption across diverse host platforms.
 
+### Milestone 11: Human-like Commentary, Audio Sanitization & Game Settings Integration
+* **What was built**:
+  1. **Game Settings Language Selection**: Moved language selection from top navigation bar into the centralized Game Settings modal (`openSettingsModal`), providing a clean UI dropdown with automatic preview and persistence.
+  2. **Elimination of Rhetoric Prompts**: Replaced robotic, repetitive `"choose a legal move"` phrasing with context-aware, human-like prompts:
+     - Detects tactical opportunities: inner-track entry, opponent captures, sanctuary havens, center goal milestones, or forward route advancement.
+     - Conversational phrases like *"Strike an opponent or secure your position"*, *"Advance your piece towards the center"*, or *"Enter a new piece onto the board"*.
+  3. **Audio Sanitization**: Stripped emojis (`🎉`, `🏆`, `✨`, `⚔️`) and parenthetical score annotations `(+1 bonus point)` from speech synthesis text, preventing the speech synthesizer from reciting punctuation or raw Unicode descriptions aloud.
+  4. **Robust Tamil Audio & Tanglish Fallback**:
+     - Checked system voice availability via `hasTamilVoice()`.
+     - Avoided forcing English voices to read Tamil script (preventing distorted, garbled audio on systems lacking Tamil voice packs).
+     - Added natural spoken number words (*தாயம்*, *ஐந்து*, *ஆறு*, *பன்னிரண்டு*) and clean phonetic Tanglish fallback when native Tamil speech synthesizer is unavailable.
+
 ---
 
 ## 3. Verification & CI/CD Pipeline
 | Gate | Mechanism | Purpose |
 | :--- | :--- | :--- |
-| **Unit & Rules Tests** | `npm test` (95 tests) | Verifies immutable rules authority, MCP endpoints, bonus scoring, move destination previews, bilingual i18n switching, and regression guards |
+| **Unit & Rules Tests** | `npm test` (97 tests) | Verifies immutable rules authority, MCP endpoints, bonus scoring, move destination previews, bilingual i18n switching, speech sanitization, guidance logic, and regression guards |
 | **Deployment Gate** | `npx wrangler deploy --env staging` | Compiles Worker and deploys static assets with zero secret leakage |
 | **Automated E2E Gate** | `node scripts/e2e-live-check.js` | Headless Chrome verifies 49 cells, 8 players, Quantum 32×, 128× speed slider, Game Timer, Build badge, and live dice click |
 
