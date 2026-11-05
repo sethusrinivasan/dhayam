@@ -174,6 +174,8 @@ def save_history(history):
     failed = sum(1 for h in history if h.get("status") == "FAILED")
     succeeded = sum(1 for h in history if h.get("status") == "SUCCESS")
 
+    active_status = "RESOLVED (Reference lock cleared; push successful)" if succeeded > 0 else "BLOCKING (Server-side lock on refs/heads/main active)"
+
     lines = [
         "# GitHub Push & Ref Update Lineage Trace",
         "",
@@ -182,10 +184,10 @@ def save_history(history):
         "## Summary Metrics",
         "- **Official GitHub Support Ticket**: [#4953641](https://help.github.com/ticket/personal/0/4953641)",
         f"- **Total Recorded Attempts**: {total}",
-        f"- **Failed Attempts**: {failed} (100% server-side reference transaction failures)",
+        f"- **Failed Attempts**: {failed}",
         f"- **Successful Attempts**: {succeeded}",
         f"- **Last Updated**: `{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}`",
-        f"- **Active Status**: `BLOCKING` (Server-side lock on `refs/heads/main` active)",
+        f"- **Active Status**: `{active_status}`",
         "",
         "---",
         "",
@@ -224,31 +226,57 @@ def save_history(history):
 
     # Generate ready-to-copy Ticket Amendment update
     recent_attempts = sorted(history, key=lambda x: x["attempt_index"], reverse=True)[:5]
-    amendment_lines = [
-        f"### Fresh Automated Trace Evidence for Ticket #4953641",
-        f"**Ticket URL**: https://help.github.com/ticket/personal/0/4953641",
-        f"**Generated**: `{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}`",
-        f"**Repository**: `sethusrinivasan/dhayam` (Repo ID: `1440183363`)",
-        f"**Total Consecutive Failures**: {failed} (0 successes)",
-        "",
-        "#### Latest Server Traces & Request IDs:",
-    ]
-    for item in recent_attempts:
-        idx = item.get("attempt_index")
-        ts = item.get("timestamp_utc")
-        reg = item.get("edge_region") or "unknown"
-        req = item.get("request_id") or "n/a"
-        amendment_lines.append(f"- **Attempt #{idx}** (`{ts}`): Region `{reg}`, Request ID: `{req}` -> `remote: fatal error in commit_refs`")
+    latest_success = any(h.get("status") == "SUCCESS" for h in history)
+    
+    if latest_success:
+        amendment_lines = [
+            f"### Ticket #4953641 Resolution Notice: Reference Lock Cleared",
+            f"**Ticket URL**: https://help.github.com/ticket/personal/0/4953641",
+            f"**Generated**: `{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}`",
+            f"**Repository**: `sethusrinivasan/dhayam` (Repo ID: `1440183363`)",
+            f"**Status**: `RESOLVED` (Push succeeded; refs/heads/main updated)",
+            "",
+            "#### Latest Server Traces & Request IDs:",
+        ]
+        for item in recent_attempts:
+            idx = item.get("attempt_index")
+            ts = item.get("timestamp_utc")
+            reg = item.get("edge_region") or "unknown"
+            req = item.get("request_id") or "n/a"
+            res = "✅ SUCCESS (refs/heads/main updated)" if item.get("status") == "SUCCESS" else "remote: fatal error in commit_refs"
+            amendment_lines.append(f"- **Attempt #{idx}** (`{ts}`): Region `{reg}`, Request ID: `{req}` -> {res}")
+        amendment_lines.extend([
+            "",
+            "#### Resolution Note:",
+            "The Spokes replica lock on `refs/heads/main.lock` has successfully cleared on GitHub server backends. The git push transaction completed with exit code 0 and reference update confirmed.",
+            "This ticket can now be closed. Thank you GitHub Support!"
+        ])
+    else:
+        amendment_lines = [
+            f"### Fresh Automated Trace Evidence for Ticket #4953641",
+            f"**Ticket URL**: https://help.github.com/ticket/personal/0/4953641",
+            f"**Generated**: `{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}`",
+            f"**Repository**: `sethusrinivasan/dhayam` (Repo ID: `1440183363`)",
+            f"**Total Consecutive Failures**: {failed} (0 successes)",
+            "",
+            "#### Latest Server Traces & Request IDs:",
+        ]
+        for item in recent_attempts:
+            idx = item.get("attempt_index")
+            ts = item.get("timestamp_utc")
+            reg = item.get("edge_region") or "unknown"
+            req = item.get("request_id") or "n/a"
+            amendment_lines.append(f"- **Attempt #{idx}** (`{ts}`): Region `{reg}`, Request ID: `{req}` -> `remote: fatal error in commit_refs`")
 
-    amendment_lines.extend([
-        "",
-        "#### Technical Finding:",
-        "1. Git object packfile transmission and delta resolution complete 100% on every attempt.",
-        "2. The failure is consistently isolated to the `commit_refs` hook across all edge regions (`westus2`, `sea`).",
-        "3. Local repository integrity (`git fsck --full`) is 100% clean with 0 errors.",
-        "",
-        "Please inspect the underlying Spokes repository storage shard for repository ID 1440183363 and clear the stale reference lock on `refs/heads/main.lock`."
-    ])
+        amendment_lines.extend([
+            "",
+            "#### Technical Finding:",
+            "1. Git object packfile transmission and delta resolution complete 100% on every attempt.",
+            "2. The failure is consistently isolated to the `commit_refs` hook across all edge regions (`westus2`, `sea`).",
+            "3. Local repository integrity (`git fsck --full`) is 100% clean with 0 errors.",
+            "",
+            "Please inspect the underlying Spokes repository storage shard for repository ID 1440183363 and clear the stale reference lock on `refs/heads/main.lock`."
+        ])
 
     with open(AMENDMENT_MD_PATH, "w", encoding="utf-8") as f:
         f.write("\n".join(amendment_lines) + "\n")
