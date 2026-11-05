@@ -104,3 +104,14 @@
         if (!multiplayer.active) return !active().computer;
         return game.current === multiplayer.mySeat;
       }
+
+      if (typeof window !== "undefined") {
+        Object.defineProperty(window, "game", {
+          get: () => game,
+          set: (v) => { game = v; },
+          configurable: true,
+        });
+        window.active = active;
+        window.node = node;
+        window.isMyTurn = isMyTurn;
+      }

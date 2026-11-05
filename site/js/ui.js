@@ -220,6 +220,12 @@
                       if ($("moveChoice")) $("moveChoice").value = piece.id;
                       apply(move, "piece-route-choice");
                     };
+                    hint.addEventListener("mouseenter", () => {
+                      if (game && game.phase === "move") updateMovePreviews(piece.id);
+                    });
+                    hint.addEventListener("mouseleave", () => {
+                      if (game && game.phase === "move") updateMovePreviews(selectedPieceId);
+                    });
                     hintList.appendChild(hint);
                   }
                   el.appendChild(hintList);
@@ -295,6 +301,16 @@
                       onPieceTouch(e);
                     }
                   });
+                  t.addEventListener("mouseenter", () => {
+                    if (game && game.phase === "move") {
+                      updateMovePreviews(pieces[0]?.id);
+                    }
+                  });
+                  t.addEventListener("mouseleave", () => {
+                    if (game && game.phase === "move") {
+                      updateMovePreviews(selectedPieceId);
+                    }
+                  });
                 }
 
                 holder.appendChild(t);
@@ -302,43 +318,60 @@
               el.appendChild(holder);
             }
             const isClickableTurn = !demo && (multiplayer.active ? isMyTurn() : !active().computer) && !moving;
-            if (can && isClickableTurn)
+            if (isClickableTurn) {
               el.onclick = () => {
-                const currentGroup = occupied.filter((item) => item.p === active());
-                const currentMoves = currentGroup
-                  .map((item) => legal.get(item.piece.id) || opts.find((option) => option.piece.id === item.piece.id))
-                  .filter(Boolean);
-                if (currentMoves.length > 1) {
-                  $("statusText").textContent =
-                    "Choose a numbered piece below the stack.";
+                // 1. Direct Click on Destination Square (Interactive Move Destination)
+                if (el._previewMove && !el.classList.contains("source-selected")) {
+                  if (typeof FlightRecorder !== "undefined") {
+                    FlightRecorder.record("DESTINATION_CELL_CLICKED", {
+                      sq,
+                      pieceId: el._previewMove.piece.id,
+                      targetProgress: el._previewMove.test.progress,
+                    });
+                  }
+                  apply(el._previewMove, "destination-cell-click");
                   return;
                 }
-                let o = occupied
-                  .map((x) => legal.get(x.piece.id))
-                  .find(Boolean) || (canEntry ? (entry || anyEntryOpt) : null);
-                if (!o) {
-                  const anyOccupiedOpt = opts.find((opt) =>
-                    occupied.some((x) => x.piece.id === opt.piece.id)
-                  );
-                  if (anyOccupiedOpt) {
-                    selectedRoll = anyOccupiedOpt.indices.length === 1 ? anyOccupiedOpt.indices[0] : -1;
-                    selectedPieceId = anyOccupiedOpt.piece.id;
-                    o = anyOccupiedOpt;
+
+                // 2. Click on Origin or Entry Square
+                if (can) {
+                  const currentGroup = occupied.filter((item) => item.p === active());
+                  const currentMoves = currentGroup
+                    .map((item) => legal.get(item.piece.id) || opts.find((option) => option.piece.id === item.piece.id))
+                    .filter(Boolean);
+                  if (currentMoves.length > 1) {
+                    $("statusText").textContent =
+                      "Choose a numbered piece below the stack.";
+                    return;
                   }
-                }
-                if (o) {
-                  if (typeof FlightRecorder !== "undefined") {
-                    FlightRecorder.record("BOARD_CELL_CLICKED", { sq, pieceId: o.piece.id });
+                  let o = occupied
+                    .map((x) => legal.get(x.piece.id))
+                    .find(Boolean) || (canEntry ? (entry || anyEntryOpt) : null);
+                  if (!o) {
+                    const anyOccupiedOpt = opts.find((opt) =>
+                      occupied.some((x) => x.piece.id === opt.piece.id)
+                    );
+                    if (anyOccupiedOpt) {
+                      selectedRoll = anyOccupiedOpt.indices.length === 1 ? anyOccupiedOpt.indices[0] : -1;
+                      selectedPieceId = anyOccupiedOpt.piece.id;
+                      o = anyOccupiedOpt;
+                    }
                   }
-                  apply(o, canEntry ? "start-entry" : "board");
+                  if (o) {
+                    if (typeof FlightRecorder !== "undefined") {
+                      FlightRecorder.record("BOARD_CELL_CLICKED", { sq, pieceId: o.piece.id });
+                    }
+                    apply(o, canEntry ? "start-entry" : "board");
+                  }
                 }
               };
-            el.addEventListener("keydown", (e) => {
-              if ((e.key === "Enter" || e.key === " ") && can) {
-                e.preventDefault();
-                el.click();
-              }
-            });
+              el.addEventListener("keydown", (e) => {
+                if ((e.key === "Enter" || e.key === " ") && (can || el._previewMove)) {
+                  e.preventDefault();
+                  el.click();
+                }
+              });
+            }
             $("board").appendChild(el);
           }
         // Dynamic Leaderboard Sorting: High score users move up to the top of the table
@@ -457,6 +490,17 @@
               card.click();
             }
           };
+          card.addEventListener("mouseenter", () => {
+            if (game && game.phase === "move") {
+              const entryMove = entry || anyEntryOpt;
+              if (entryMove) updateMovePreviews(entryMove.piece.id);
+            }
+          });
+          card.addEventListener("mouseleave", () => {
+            if (game && game.phase === "move") {
+              updateMovePreviews(selectedPieceId);
+            }
+          });
         });
         $("playerLegend").innerHTML =
           '<span class="legendplayers" aria-label="Player color and avatar legend">' +
@@ -500,6 +544,12 @@
               ? "＋ Opening entry allowance"
               : "＋ Enter a piece";
             enter.onclick = () => apply(entry, "entry-button");
+            enter.addEventListener("mouseenter", () => {
+              if (game && game.phase === "move") updateMovePreviews(entry.piece.id);
+            });
+            enter.addEventListener("mouseleave", () => {
+              if (game && game.phase === "move") updateMovePreviews(selectedPieceId);
+            });
             enter.disabled = demo || active().computer || moving;
             $("rollChips").appendChild(enter);
           }
@@ -514,6 +564,12 @@
                 selectedPieceId = null;
                 render();
               };
+              b.addEventListener("mouseenter", () => {
+                if (game && game.phase === "move") updateMovePreviews(selectedPieceId, i);
+              });
+              b.addEventListener("mouseleave", () => {
+                if (game && game.phase === "move") updateMovePreviews(selectedPieceId, selectedRoll);
+              });
               b.disabled = demo || active().computer || moving;
               $("rollChips").appendChild(b);
             });
@@ -526,6 +582,12 @@
                 selectedPieceId = null;
                 render();
               };
+              b.addEventListener("mouseenter", () => {
+                if (game && game.phase === "move") updateMovePreviews(selectedPieceId, -1);
+              });
+              b.addEventListener("mouseleave", () => {
+                if (game && game.phase === "move") updateMovePreviews(selectedPieceId, selectedRoll);
+              });
               b.disabled = demo || active().computer || moving;
               $("rollChips").appendChild(b);
             }
@@ -570,6 +632,9 @@
             moveChoiceEl.onchange = (event) => {
               selectedPieceId = event.target.value;
               render();
+            };
+            moveChoiceEl.oninput = (event) => {
+              updateMovePreviews(event.target.value);
             };
           }
         }
@@ -795,6 +860,7 @@
 
         updateAudioToggle();
         scheduleComputerIfNeeded();
+        updateMovePreviews();
       }
 
       function calculatePlayerScore(p) {
@@ -813,6 +879,155 @@
         return score;
       }
       window.calculatePlayerScore = calculatePlayerScore;
+
+      function updateMovePreviews(overridePieceId, overrideRollIndex) {
+        if (typeof document === "undefined" || typeof document.querySelectorAll !== "function") return;
+
+        // Clear previous destination and source highlights
+        const prevCells = document.querySelectorAll(
+          ".cell.target-destination, .cell.source-selected, .cell.possible-destination",
+        );
+        prevCells.forEach((c) => {
+          c.classList.remove(
+            "target-destination",
+            "target-capture",
+            "target-sanctuary",
+            "target-goal",
+            "target-normal",
+            "source-selected",
+            "possible-destination",
+          );
+          delete c._previewMove;
+          const badge = c.querySelector(".destination-badge");
+          if (badge) badge.remove();
+          if (c._origAriaLabel) {
+            c.setAttribute("aria-label", c._origAriaLabel);
+            delete c._origAriaLabel;
+          }
+        });
+
+        if (!game || game.phase !== "move" || moving) return;
+
+        const p = active();
+        if (!p) return;
+        const isHumanTurn =
+          !demo && (multiplayer.active ? isMyTurn() : !p.computer);
+        if (!isHumanTurn && !demo) return;
+
+        const opts = typeof options === "function" ? options() : [];
+        if (!opts.length) return;
+
+        const rollIdx =
+          typeof overrideRollIndex === "number"
+            ? overrideRollIndex
+            : selectedRoll;
+
+        // 1. Identify the focused piece ID
+        let pieceId = overridePieceId || selectedPieceId;
+        if (!pieceId) {
+          const defaultOpt =
+            opts.find((o) =>
+              rollIdx === -1
+                ? o.indices.length === game.pool.length
+                : o.indices.length === 1 && o.indices[0] === rollIdx,
+            ) || opts[0];
+          pieceId = defaultOpt?.piece?.id;
+        }
+
+        // 2. Mark secondary possible destinations across all other candidate moves
+        opts.forEach((opt) => {
+          if (opt.piece.id !== pieceId) {
+            const otherSq = ROUTES[p.seat][opt.test.progress];
+            const otherCell = document.querySelector(`.cell[data-sq="${otherSq}"]`);
+            if (otherCell && !otherCell.classList.contains("possible-destination")) {
+              otherCell.classList.add("possible-destination");
+            }
+          }
+        });
+
+        // 3. Mark the source origin cell for the primary focused piece
+        if (pieceId) {
+          const piece = p.pieces.find((q) => q.id === pieceId);
+          if (piece) {
+            const originSq = node(p, piece) || START[p.seat];
+            const originCell = document.querySelector(`.cell[data-sq="${originSq}"]`);
+            if (originCell) originCell.classList.add("source-selected");
+          }
+        }
+
+        // 4. Find candidate moves for this focused piece
+        let candidateMoves = opts.filter((o) => o.piece.id === pieceId);
+        if (rollIdx !== undefined && rollIdx !== null) {
+          const matchingRollMoves = candidateMoves.filter((o) =>
+            rollIdx === -1
+              ? o.indices.length === game.pool.length
+              : o.indices.length === 1 && o.indices[0] === rollIdx,
+          );
+          if (matchingRollMoves.length > 0) {
+            candidateMoves = matchingRollMoves;
+          }
+        }
+
+        // 5. Render tactical highlights and badges on destination cells
+        for (const move of candidateMoves) {
+          const destSq = ROUTES[p.seat][move.test.progress];
+          const cellEl = document.querySelector(`.cell[data-sq="${destSq}"]`);
+          if (!cellEl) continue;
+
+          cellEl.classList.add("target-destination");
+          cellEl._previewMove = move;
+          if (!cellEl._origAriaLabel) {
+            cellEl._origAriaLabel = cellEl.getAttribute("aria-label") || destSq;
+          }
+
+          const badge = document.createElement("span");
+          badge.className = "destination-badge";
+          badge.setAttribute("aria-hidden", "true");
+
+          const pieceNumber = p.pieces.indexOf(move.piece) + 1;
+          let tacticalDesc = "";
+
+          if (move.test.progress === 43 || destSq === "D4") {
+            cellEl.classList.add("target-goal");
+            badge.classList.add("badge-goal");
+            badge.innerHTML =
+              '<span class="dest-icon">🎯</span><span class="dest-label">GOAL</span>';
+            tacticalDesc = `Center goal milestone for piece #${pieceNumber}`;
+          } else if (move.test.targets && move.test.targets.length > 0) {
+            cellEl.classList.add("target-capture");
+            badge.classList.add("badge-capture");
+            const victim = move.test.targets[0].other;
+            const victimAvatar = victim?.avatar ? `${victim.avatar} ` : "";
+            badge.innerHTML = `<span class="dest-icon">⚔️</span><span class="dest-label">${victimAvatar}CAPTURE</span>`;
+            tacticalDesc = `Capture ${victim?.name || "opponent"} with piece #${pieceNumber}`;
+          } else if (move.piece.progress < 0) {
+            cellEl.classList.add("target-normal");
+            badge.classList.add("badge-normal");
+            badge.innerHTML =
+              '<span class="dest-icon">✨</span><span class="dest-label">ENTER</span>';
+            tacticalDesc = `Enter piece #${pieceNumber} onto starting square ${destSq}`;
+          } else if (SAFE.has(destSq)) {
+            cellEl.classList.add("target-sanctuary");
+            badge.classList.add("badge-sanctuary");
+            badge.innerHTML =
+              '<span class="dest-icon">🛡️</span><span class="dest-label">SAFE</span>';
+            tacticalDesc = `Safe sanctuary for piece #${pieceNumber}`;
+          } else {
+            cellEl.classList.add("target-normal");
+            badge.classList.add("badge-normal");
+            const sumVal = move.values.reduce((sum, v) => sum + v, 0);
+            badge.innerHTML = `<span class="dest-icon">➔</span><span class="dest-label">+${sumVal}</span>`;
+            tacticalDesc = `Advance piece #${pieceNumber} ${sumVal} squares to ${destSq}`;
+          }
+
+          cellEl.appendChild(badge);
+          cellEl.setAttribute(
+            "aria-label",
+            `${cellEl._origAriaLabel}, move destination: ${tacticalDesc}`,
+          );
+        }
+      }
+      window.updateMovePreviews = updateMovePreviews;
 
       /**
        * Celebratory goal splash when a coin reaches the sacred center (D4 / Goal).

@@ -131,16 +131,29 @@
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
         version: "0.4.0",
-        build: 1,
-        timestamp: "2026-11-03 18:30 UTC",
-        releaseName: "Reconnect Grace Period & Rate Limiting",
+        build: 2,
+        timestamp: "2026-11-04 20:45 UTC",
+        releaseName: "Interactive Move Destination Preview & Tactical Highlights",
       };
        // Global player-count limits — update here, never hardcode elsewhere
        const MIN_PLAYERS = 2;
        const MAX_PLAYERS = 32;
 
       if (typeof window !== "undefined") {
+        window.SEATS = SEATS;
+        window.START = START;
+        window.SAFE = SAFE;
+        window.ROUTES = ROUTES;
         window.BUILD_INFO = BUILD_INFO;
+      }
+      if (typeof globalThis !== "undefined") {
+        globalThis.SEATS = SEATS;
+        globalThis.START = START;
+        globalThis.SAFE = SAFE;
+        globalThis.ROUTES = ROUTES;
+        globalThis.BUILD_INFO = BUILD_INFO;
+      }
+      if (typeof window !== "undefined") {
         // Dynamically populate the build badge and timestamp so they always
         // reflect the authoritative BUILD_INFO rather than a hardcoded string.
         const _badgeEl = document.getElementById("buildNumberBadge");

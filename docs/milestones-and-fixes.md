@@ -55,14 +55,27 @@ A succinct, one-page executive summary documenting how Dhayam was conceived, eng
 * **What was built**:
   1. **Coin Enters Board Bonus**: When a player moves a piece from reserve onto the board, they are awarded +1 bonus point (`player.bonusPoints`), logged in Flight Recorder, and celebrated via toast and floating star emote.
   2. **Center Goal Congratulations & Bonus**: When a coin reaches the sacred center (progress 43 / `D4`), an animated celebration splash (`.goal-splash`) congratulates the player, awards +1 bonus point, triggers multi-emoji fireworks (`🎯`, `🏆`, `🎉`), and announces the milestone via commentary.
-  3. **Build Provenance**: Added authoritative build metadata (`BUILD_INFO` v0.2.0, Build #43) displayed at the bottom of the page footer (`#buildNumberBadge` and `#buildUpdatedTimestamp`) with ISO timestamp.
+  3. **Build Provenance**: Added authoritative build metadata (`BUILD_INFO` v0.4.0, Build #2) displayed at the bottom of the page footer (`#buildNumberBadge` and `#buildUpdatedTimestamp`) with ISO timestamp.
+
+### Milestone 9: Interactive Move Destination Preview & Tactical Highlights
+* **What was built**:
+  1. **Dynamic Destination Previews**: During the `move` phase, hovering over or selecting a movable piece on the board, hovering over the reserve player card, or hovering over dice pool chips actively illuminates prospective landing squares on the board (`.cell.target-destination`).
+  2. **Origin & Destination Spatial Relationship**: The origin square of the moving piece is marked with a distinctive dashed amber halo (`.source-selected`), providing an unmistakable "From Here ➔ To There" visual trajectory.
+  3. **Tactical Badges & Visual Classification**: Each landing square displays real-time tactical indicators:
+     - 🎯 **Goal Milestone**: `.target-goal` with radiant golden glow and `🎯 GOAL` badge when landing on center `D4`.
+     - ⚔️ **Capture Threat**: `.target-capture` with pulsing crimson halo, `⚔️ CAPTURE` badge, and victim player avatar preview.
+     - 🛡️ **Sanctuary Haven**: `.target-sanctuary` with emerald border and `🛡️ SAFE` badge on traditional sanctuary squares.
+     - ✨ **Board Entry**: `.target-normal` with `✨ ENTER` badge on starting squares when entering pieces from reserve.
+     - ➔ **Standard Advance**: Clear step distance badge (e.g. `➔ +5`) showing projected displacement.
+  4. **Direct Cell Execution**: Players can click directly on any highlighted destination square (in addition to the piece itself) to execute the move (`destination-cell-click`), improving ergonomics across mobile touchscreens and desktop mice.
+  5. **Accessibility & Reduced Motion**: Dynamic `aria-label` updates on target cells communicate tactical landing details to screen readers, while `@media (prefers-reduced-motion: reduce)` automatically suppresses infinite animations in favor of high-contrast solid borders.
 
 ---
 
 ## 3. Verification & CI/CD Pipeline
 | Gate | Mechanism | Purpose |
 | :--- | :--- | :--- |
-| **Unit & Rules Tests** | `npm test` (66 tests) | Verifies immutable rules authority, MCP endpoints, bonus scoring, and regression guards |
+| **Unit & Rules Tests** | `npm test` (89 tests) | Verifies immutable rules authority, MCP endpoints, bonus scoring, move destination previews, and regression guards |
 | **Deployment Gate** | `npx wrangler deploy --env staging` | Compiles Worker and deploys static assets with zero secret leakage |
 | **Automated E2E Gate** | `node scripts/e2e-live-check.js` | Headless Chrome verifies 49 cells, 8 players, Quantum 32×, 128× speed slider, Game Timer, Build badge, and live dice click |
 
