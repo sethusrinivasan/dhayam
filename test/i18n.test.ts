@@ -249,3 +249,82 @@ test("announceRollAndGuidance provides friendly human guidance without 'legal mo
   assert.ok(blockedGuidance.text.includes("path is blocked"), "Must provide friendly blocked guidance");
 });
 
+test("action_roll_bonus is translated in English and Tamil without raw translation key leak", () => {
+  const i18nCode = fs.readFileSync(path.join(JS_DIR, "i18n.js"), "utf-8");
+  const sandbox: any = {
+    window: {},
+    console,
+    $: () => null,
+    document: {
+      addEventListener: () => {},
+      getElementById: () => null,
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      documentElement: { lang: "en" },
+    },
+    localStorage: { getItem: () => null, setItem: () => null },
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(i18nCode, sandbox);
+
+  sandbox.setLanguage("en");
+  const enBonus = sandbox.t("action_roll_bonus");
+  assert.notEqual(enBonus, "action_roll_bonus", "Must not leak raw key in English");
+  assert.ok(enBonus.toLowerCase().includes("bonus"), "English bonus button must include bonus indication");
+
+  sandbox.setLanguage("ta");
+  const taBonus = sandbox.t("action_roll_bonus");
+  assert.notEqual(taBonus, "action_roll_bonus", "Must not leak raw key in Tamil");
+  assert.ok(taBonus.length > 5, "Tamil bonus button must contain valid translated string");
+});
+
+test("voiceForPlayer selects English voice for English players and avoids foreign non-matching voices", () => {
+  const configCode = fs.readFileSync(path.join(JS_DIR, "config.js"), "utf-8");
+  const stateCode = fs.readFileSync(path.join(JS_DIR, "state.js"), "utf-8");
+  const i18nCode = fs.readFileSync(path.join(JS_DIR, "i18n.js"), "utf-8");
+  const audioCode = fs.readFileSync(path.join(JS_DIR, "audio.js"), "utf-8");
+
+  const mockVoices = [
+    { name: "Arabic Female", lang: "ar-SA" },
+    { name: "Google Deutsch", lang: "de-DE" },
+    { name: "Google US English", lang: "en-US" },
+    { name: "Samantha", lang: "en-US" },
+  ];
+
+  const sandbox: any = {
+    window: {},
+    console,
+    $: () => null,
+    document: {
+      addEventListener: () => {},
+      getElementById: () => null,
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      documentElement: { lang: "en" },
+    },
+    localStorage: { getItem: () => null, setItem: () => null },
+    availableVoices: mockVoices,
+    speechSynthesis: {
+      getVoices: () => mockVoices,
+      addEventListener: () => {},
+    },
+    game: {
+      players: [{ name: "Maya", avatar: "\ud83e\ude94" }, { name: "Noah", avatar: "\ud83d\udc51" }],
+    },
+    active: () => ({ name: "Maya", avatar: "\ud83e\ude94" }),
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext([configCode, stateCode, i18nCode, audioCode].join("\n;\n"), sandbox);
+
+  sandbox.game = {
+    players: [{ name: "Maya", avatar: "\ud83e\ude94" }, { name: "Noah", avatar: "\ud83d\udc51" }],
+  };
+  sandbox.setLanguage("en");
+  const voice = sandbox.voiceForPlayer(sandbox.game.players[0]);
+  assert.ok(voice, "Must return an active voice");
+  assert.ok(voice.lang.startsWith("en"), "Voice for English mode must be English, not Arabic or German");
+  assert.equal(voice.name, "Samantha", "Should pick feminine English voice Samantha for Player 0");
+});
+

@@ -75,9 +75,19 @@
           "mark",
           "male",
         ];
+      try {
+        const savedAudio = typeof localStorage !== "undefined" ? localStorage.getItem("dhayam_audio") : null;
+        if (savedAudio !== null) {
+          audioEnabled = savedAudio === "true";
+        }
+      } catch (_) {}
+
       function refreshVoices() {
         if ("speechSynthesis" in window)
-          availableVoices = speechSynthesis.getVoices();
+          availableVoices = speechSynthesis.getVoices() || [];
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        speechSynthesis.addEventListener("voiceschanged", refreshVoices);
       }
 
       function hasTamilVoice() {
@@ -94,7 +104,12 @@
       window.hasTamilVoice = hasTamilVoice;
 
       function voiceForPlayer(player) {
-        if (!player || !availableVoices.length) return null;
+        if (!player) return null;
+        if ((!availableVoices || !availableVoices.length) && typeof speechSynthesis !== "undefined") {
+          availableVoices = speechSynthesis.getVoices() || [];
+        }
+        if (!availableVoices || !availableVoices.length) return null;
+
         if (typeof getLanguage === "function" && getLanguage() === "ta") {
           const tamilVoice = availableVoices.find((voice) => {
             const langCode = (voice.lang || "").toLowerCase();
@@ -102,21 +117,35 @@
             return langCode.startsWith("ta") || voiceName.includes("tamil");
           });
           if (tamilVoice) return tamilVoice;
-          // Never assign an English voice to speak Tamil Unicode script.
+          // Never assign a non-Tamil voice to speak Tamil Unicode script.
           // Returning null allows browser's speech.lang = "ta-IN" default or cloud voice to engage.
           return null;
         }
-        const playerIndex = game.players.indexOf(player),
-          hints =
-            playerIndex % 2 === 0
-              ? FEMININE_VOICE_HINTS
-              : MASCULINE_VOICE_HINTS,
-          preferred = availableVoices.find((voice) =>
-            hints.some((hint) => voice.name.toLowerCase().includes(hint)),
-          );
-        return (
-          preferred || availableVoices[playerIndex % availableVoices.length]
+
+        // For English (or any default non-Tamil locale):
+        const englishVoices = availableVoices.filter((voice) => {
+          const langCode = (voice.lang || "").toLowerCase();
+          return langCode.startsWith("en");
+        });
+        const pool = englishVoices.length ? englishVoices : availableVoices;
+        const playerIndex = Math.max(
+          0,
+          typeof game !== "undefined" && game && game.players
+            ? game.players.indexOf(player)
+            : 0
         );
+        const hints =
+          playerIndex % 2 === 0
+            ? FEMININE_VOICE_HINTS
+            : MASCULINE_VOICE_HINTS;
+        const preferred = pool.find((voice) =>
+          hints.some((hint) => (voice.name || "").toLowerCase().includes(hint))
+        );
+        if (preferred) return preferred;
+        if (englishVoices.length) {
+          return englishVoices[playerIndex % englishVoices.length];
+        }
+        return pool[playerIndex % pool.length] || null;
       }
 
       let currentUtterance = null;
@@ -174,7 +203,9 @@
           }
         }
 
-        speechSynthesis.cancel();
+        if (speechSynthesis.speaking || speechSynthesis.pending) {
+          speechSynthesis.cancel();
+        }
         const words = spokenText.trim().split(/\s+/).length,
           duration = Math.max(2200, Math.round((words / 2.1) * 1000) + 750),
           speech = new SpeechSynthesisUtterance(spokenText);
@@ -183,7 +214,7 @@
         currentUtterance = speech;
         speechStartTime = Date.now();
 
-        const activeVoice = voiceForPlayer(active());
+        const activeVoice = voiceForPlayer((options && options.player) || active());
         if (activeVoice) {
           speech.voice = activeVoice;
         }
@@ -191,7 +222,7 @@
         if (isTamil) {
           speech.lang = hasTamilVoice() ? "ta-IN" : (activeVoice ? activeVoice.lang : "ta-IN");
         } else {
-          speech.lang = "en-US";
+          speech.lang = activeVoice && activeVoice.lang ? activeVoice.lang : "en-US";
         }
         speech.rate = 0.88;
         speech.pitch = 1;
@@ -371,6 +402,11 @@
       function toggleAudio() {
         if (demo && (superSpeed || quantumMode || demoSpeed >= 32)) return;
         audioEnabled = !audioEnabled;
+        try {
+          if (typeof localStorage !== "undefined") {
+            localStorage.setItem("dhayam_audio", String(audioEnabled));
+          }
+        } catch (_) {}
         commentaryUntil = 0;
         if (demoSpeechTimer) clearTimeout(demoSpeechTimer);
         demoSpeechTimer = null;

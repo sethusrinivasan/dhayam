@@ -140,13 +140,13 @@
       }
       window.announceRollAndGuidance = announceRollAndGuidance;
 
-      function speakGuidance(guidance) {
+      function speakGuidance(guidance, player) {
         if (!guidance || typeof speakGame !== "function") return;
         const isTamil = typeof getLanguage === "function" && getLanguage() === "ta";
         if (isTamil) {
-          speakGame(guidance.ta, { tanglish: guidance.tanglish });
+          speakGame(guidance.ta, { tanglish: guidance.tanglish, player });
         } else {
-          speakGame(guidance.text);
+          speakGame(guidance.text, { player });
         }
       }
       window.speakGuidance = speakGuidance;
@@ -196,13 +196,13 @@
         if (!bonus) {
           if (!legalMoveCount) {
             game.pool = [];
-            speakGuidance(guidance);
+            speakGuidance(guidance, player);
             recordAudit("PASS", { reason: "NO_LEGAL_MOVE" });
             nextTurn(typeof t === "function" ? t("no_legal_moves_passed") : "No moves available — turn passed.");
             return;
           }
         }
-        speakGuidance(guidance);
+        speakGuidance(guidance, player);
         if (multiplayer.active && multiplayer.isHost) {
           broadcastState();
         }
@@ -448,7 +448,7 @@
         }
         moving = true;
         movingPieceId = piece.id;
-        speakGame(commentary, { tanglish: tanglishCommentary });
+        speakGame(commentary, { tanglish: tanglishCommentary, player });
 
         try {
           if (multiplayer.active && multiplayer.isHost && multiplayer.transport !== "cf_ws") {
@@ -746,7 +746,7 @@
 
             const pName = activeP ? activeP.name : "Player";
             const guidance = announceRollAndGuidance(activeP || { name: pName }, val, isBonus, isBonus ? [] : options());
-            speakGuidance(guidance);
+            speakGuidance(guidance, activeP);
 
             if (typeof checkPendingRemoteState === "function" && checkPendingRemoteState()) {
               // Applied pending remote state
