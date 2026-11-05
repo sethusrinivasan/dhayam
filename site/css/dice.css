@@ -9,7 +9,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: clamp(10px, 1.5vh, 18px);
+  gap: clamp(24px, 3vh, 34px);
   margin: clamp(4px, 0.8vh, 12px) 0 clamp(6px, 1.2vh, 14px);
   padding: clamp(4px, 0.6vh, 8px) 5px;
   perspective: 1000px;

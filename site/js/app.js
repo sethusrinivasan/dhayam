@@ -155,7 +155,7 @@
                 computer: p.computer,
                 seat: p.seat,
               })),
-              theme: document.body ? document.body.getAttribute("data-theme") || "wood" : "wood",
+              theme: document.body ? document.body.getAttribute("data-theme") || "diwali" : "diwali",
               rulesVariant: "Dhayam 7x7 house variant; first-round entry allowances",
             });
           } else {
@@ -189,33 +189,27 @@
         const shareUrl = window.location.href.split("#")[0];
         const currentGame = typeof game !== "undefined" ? game : null;
         const activePlayer = currentGame?.players?.[currentGame.current];
-        const playerNames = currentGame?.players?.map((player) => player.name).join(", ");
-        const shareTitle = "🎲 Dhayam — Roll, Capture, Celebrate";
+        const shareTitle = "🪔 Dhayam — Ancient Tamil Board Game";
         const shareCaption = [
-          "🎲 Discover Dhayam, a traditional board game of Tamil Nadu!",
-          "Roll the dice, outmaneuver your opponents, capture pieces, and race to the center.",
-          "Play solo, pass-and-play, or invite friends to join online.",
-          activePlayer && playerNames
-            ? `We're playing now — ${activePlayer.name}'s turn in a match with ${playerNames}.`
-            : "Ready for a friendly match?",
+          "🪔 Dhayam — an ancient Tamil race-and-capture game.",
+          "Roll. Capture. Reach the center.",
+          activePlayer ? `🎲 ${activePlayer.name}'s turn — can you take the lead?` : "Play solo or challenge your friends.",
         ].join("\n");
-        const shareText = `${shareCaption}\nJoin the game:\n${shareUrl}`;
+        const shareText = `${shareCaption}\nPlay now: ${shareUrl}`;
         const shareMessage = shareText;
         const encodedText = encodeURIComponent(shareCaption);
         const encodedMessage = encodeURIComponent(shareMessage);
         const encodedUrl = encodeURIComponent(shareUrl);
-        const preview = escapeHtml(`${shareTitle}\n\n${shareText}\n\n${shareUrl}`);
+        const preview = escapeHtml(`${shareTitle}\n\n${shareText}`);
 
         showModal(
           "Share Dhayam",
           '<div class="share-modal-content">' +
             '<p class="share-intro">Preview the message and choose where to share it.</p>' +
             '<div class="share-preview" aria-label="Share preview">' +
+              '<img class="share-preview-image" src="assets/preview.png" alt="Dhayam ancient Tamil board game" />' +
               '<strong>' + escapeHtml(shareTitle) + '</strong>' +
               '<p>' + escapeHtml(shareText).replace(/\n/g, "<br>") + '</p>' +
-              '<a href="' + escapeHtml(shareUrl) + '" target="_blank" rel="noopener noreferrer">' +
-                escapeHtml(shareUrl) +
-              '</a>' +
             '</div>' +
             '<div class="share-actions" aria-label="Social sharing options">' +
               '<button type="button" class="btn share-action share-whatsapp" data-share-url="https://wa.me/?text=' + encodedMessage + '">💬 WhatsApp</button>' +
@@ -284,28 +278,34 @@
       }
       function openSettingsModal() {
         const themeOptions = [
+          { id: "diwali", name: "🪔 Diwali", desc: "Festival lights, marigold gold & rangoli color" },
           { id: "halloween", name: "🎃 Halloween", desc: "Spooky pumpkin night & haunted board" },
+          { id: "christmas", name: "🎄 Christmas", desc: "Evergreen, winter lights & festive red" },
+          { id: "hanukkah", name: "🕎 Hanukkah", desc: "Blue, silver & menorah candlelight" },
           { id: "wood", name: "🪵 Heritage Wood", desc: "Warm teak wood & temple gold" },
           { id: "bronze", name: "🏛️ Royal Bronze", desc: "Ancient stone courtyard & polished copper" },
           { id: "nebula", name: "🌌 Midnight Nebula", desc: "Deep cosmic indigo & starlight" },
+          { id: "newyear", name: "🎆 New Year", desc: "Midnight fireworks, neon & celebration" },
+          { id: "pongal", name: "🌾 Pongal", desc: "Harvest sun, sugarcane & Tamil kolam color" },
+          { id: "dasara", name: "🏵️ Dasara", desc: "Mysuru gold, marigolds & victory colors" },
+          { id: "holi", name: "🎨 Holi", desc: "Spring colors, joy & playful powder" },
+          { id: "eid", name: "🌙 Eid", desc: "Crescent moon, emerald & lantern light" },
+          { id: "wallstreet", name: "📈 Wall Street", desc: "Ticker green, market gold & trading floor energy" },
+          { id: "elections", name: "🗳️ US Elections", desc: "Civic blue, campaign red & ballot-day gold" },
         ];
 
-        const themeButtons = themeOptions
+        const themeChoices = themeOptions
           .map(
             (t) =>
-              '<button type="button" class="btn secondary theme-choice-btn" data-theme-id="' +
+              '<option value="' +
               t.id +
-              '" style="width:100%;text-align:left;margin-bottom:6px;padding:8px 12px;' +
-              (currentTheme === t.id ? "border-color:#f59e0b;background:#f59e0b2a;box-shadow:0 0 8px #f59e0b44;" : "") +
-              '">' +
-              '<div style="font-weight:700;font-size:0.88rem;color:#fff1db;">' +
+              '"' +
+              (currentTheme === t.id ? " selected" : "") +
+              ">" +
               t.name +
-              (currentTheme === t.id ? " ✓ Active" : "") +
-              "</div>" +
-              '<div style="font-size:0.75rem;color:#cdbda8;">' +
+              " — " +
               t.desc +
-              "</div>" +
-              "</button>",
+              "</option>",
           )
           .join("");
 
@@ -340,9 +340,18 @@
           '<div class="settings-modal-content">' +
           '<section class="settings-section">' +
           '<h3 class="settings-heading">🎨 Board theme</h3>' +
-          '<div class="settings-theme-grid">' +
-          themeButtons +
-          '</div>' +
+          '<label class="settings-theme-label" for="settingsTheme">Choose a board theme</label>' +
+          '<select id="settingsTheme" class="settings-theme-select">' +
+          themeChoices +
+          '</select>' +
+          '</section>' +
+          '<section class="settings-section">' +
+          '<h3 class="settings-heading">🔐 Roll secret</h3>' +
+          '<p class="settings-help">Optional, hidden from the audit, and mixed into cryptographic randomness without changing dice odds.</p>' +
+          '<label class="settings-theme-label" for="rollSecret">Secret text (up to 8 characters)</label>' +
+          '<input id="rollSecret" type="password" maxlength="8" autocomplete="off" value="' +
+          escapeHtml(typeof rollSecret === "string" ? rollSecret : "") +
+          '" />' +
           '</section>' +
           '<section class="settings-section">' +
           '<h3 class="settings-heading">👥 Player names</h3>' +
@@ -371,6 +380,10 @@
           '</section>';
 
         showModal("⚙️ Match Settings", content, "Save Settings", () => {
+          const secretInput = $("rollSecret");
+          if (secretInput && typeof setRollSecret === "function") {
+            setRollSecret(secretInput.value);
+          }
           game.players.forEach((player, index) => {
             const input = $("playerName" + index);
             if (input) {
@@ -387,29 +400,14 @@
         });
 
         setTimeout(() => {
-          const themeBtns = document.querySelectorAll(".theme-choice-btn");
-          themeBtns.forEach((btn) => {
-            btn.onclick = () => {
-              const tid = btn.getAttribute("data-theme-id");
-              if (tid && typeof applyTheme === "function") {
-                applyTheme(tid);
-                themeBtns.forEach((b) => {
-                  const bId = b.getAttribute("data-theme-id");
-                  const isActive = bId === tid;
-                  b.style.borderColor = isActive ? "#f59e0b" : "";
-                  b.style.background = isActive ? "#f59e0b2a" : "";
-                  b.style.boxShadow = isActive ? "0 0 8px #f59e0b44" : "";
-                  const titleDiv = b.querySelector("div:first-child");
-                  if (titleDiv) {
-                    const opt = themeOptions.find((o) => o.id === bId);
-                    if (opt) {
-                      titleDiv.textContent = opt.name + (isActive ? " ✓ Active" : "");
-                    }
-                  }
-                });
+          const themeSelect = $("settingsTheme");
+          if (themeSelect) {
+            themeSelect.onchange = () => {
+              if (typeof applyTheme === "function") {
+                applyTheme(themeSelect.value);
               }
             };
-          });
+          }
           const flightBtn = $("settingsFlightRecorderBtn");
           const flightFeedback = $("settingsFlightFeedback");
           if (flightBtn && typeof FlightRecorder !== "undefined") {

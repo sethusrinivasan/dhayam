@@ -145,14 +145,25 @@ class DhayamEngine {
     return { specialRoll, bonusDepth, bonusChance, bonusDraw, bonus };
   }
 
-  rollDice() {
+  rollDice(secret = "") {
     if (this.phase !== "roll") {
       return { error: "Cannot roll dice during move phase. Please choose a piece move first." };
     }
 
-    const randomBytes = new Uint8Array(1);
+    const cleanSecret = typeof secret === "string" ? secret.slice(0, 8) : "";
+    let secretHash = 0;
+    if (cleanSecret) {
+      secretHash = 2166136261;
+      for (let index = 0; index < cleanSecret.length; index++) {
+        secretHash ^= cleanSecret.charCodeAt(index);
+        secretHash = Math.imul(secretHash, 16777619);
+      }
+      secretHash >>>= 0;
+    }
+    const randomBytes = new Uint32Array(1);
     crypto.getRandomValues(randomBytes);
-    const outcome = DICE_OUTCOMES[randomBytes[0] % DICE_OUTCOMES.length];
+    const randomValue = (randomBytes[0] ^ secretHash) >>> 0;
+    const outcome = DICE_OUTCOMES[randomValue % DICE_OUTCOMES.length];
     const bonusResult = this.bonusDecision(outcome.val);
     const isBonus = bonusResult.bonus;
 
@@ -164,7 +175,8 @@ class DhayamEngine {
       value: outcome.val,
       val: outcome.val,
       bonus: isBonus,
-      specialRoll: bonusResult.specialRoll
+      specialRoll: bonusResult.specialRoll,
+      secretUsed: cleanSecret.length > 0
     };
 
     this.audit.push({
@@ -173,6 +185,7 @@ class DhayamEngine {
       dice: { a: outcome.a, b: outcome.b },
       value: outcome.val,
       bonus: isBonus,
+      secretHash: cleanSecret ? secretHash : null,
       specialRoll: bonusResult.specialRoll,
       pool: [...this.pool]
     });
@@ -760,8 +773,14 @@ const MCP_TOOLS = [
   },
   {
     name: "dhayam_roll_dice",
-    description: "Roll the traditional Dayakattai dice (1, 2, 3, 4, 5, 6, 12). If 1, 5, 6, or 12 is rolled, grants a bonus throw.",
-    inputSchema: { type: "object", properties: { state: { type: "object" } } }
+    description: "Roll the traditional Dayakattai dice with cryptographic randomness. An optional secret (up to 8 characters) is mixed into the entropy without changing probabilities; the secret is never returned.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        secret: { type: "string", maxLength: 8, description: "Optional hidden match secret. Do not expect it in the response." },
+        state: { type: "object" }
+      }
+    }
   },
   {
     name: "dhayam_get_legal_moves",
@@ -919,7 +938,7 @@ async function handleMcpToolCall(name, args = {}, env = null) {
   } else if (name === "dhayam_get_state") {
     result = { summary: engine.getSummary(), state: engine.serialize() };
   } else if (name === "dhayam_roll_dice") {
-    const outcome = engine.rollDice();
+    const outcome = engine.rollDice(args.secret);
     result = { ...outcome, state: engine.serialize() };
   } else if (name === "dhayam_get_legal_moves") {
     result = {
@@ -1346,7 +1365,7 @@ export class DhayamRoom extends DurableObject {
           return;
         }
 
-        const res = this.engine.rollDice();
+        const res = this.engine.rollDice(data.secret);
         if (res.error) {
           ws.send(JSON.stringify({ type: "ERROR", message: res.error }));
           this.broadcast({

@@ -481,6 +481,20 @@
   pointer-events: none;
 }
 
+.token.destination-reached {
+  animation: destinationReached 0.45s ease-in-out 2;
+}
+
+@keyframes destinationReached {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px #fff8ba);
+  }
+  50% {
+    filter: drop-shadow(0 0 20px #fff8ba) drop-shadow(0 0 30px #ffd45a);
+  }
+}
+
 @keyframes pulseMoving {
   from {
     box-shadow:

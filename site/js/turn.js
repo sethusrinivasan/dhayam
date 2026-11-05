@@ -97,7 +97,7 @@
           if (!isMyTurn()) return;
           if (multiplayer.transport === "cf_ws") {
             if (typeof sendWsMessage === "function") {
-              sendWsMessage({ type: "ROLL" });
+              sendWsMessage({ type: "ROLL", secret: rollSecret || "" });
             }
             return;
           }

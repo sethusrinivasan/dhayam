@@ -176,11 +176,15 @@
                 }
                 t.appendChild(ids);
                 if (pieces.some((piece) => piece.id === movingPieceId)) {
-                  const countdown = document.createElement("span");
-                  countdown.className = "move-countdown";
-                  countdown.textContent = String(Math.max(1, movingStepRemaining));
-                  countdown.setAttribute("aria-label", "Steps remaining: " + movingStepRemaining);
-                  t.appendChild(countdown);
+                  if (movingStepRemaining > 0) {
+                    const countdown = document.createElement("span");
+                    countdown.className = "move-countdown";
+                    countdown.textContent = String(movingStepRemaining);
+                    countdown.setAttribute("aria-label", "Steps remaining: " + movingStepRemaining);
+                    t.appendChild(countdown);
+                  } else {
+                    t.classList.add("destination-reached");
+                  }
                 }
 
                 if (pieceMoves.length > 1 && isCurrentPlayer && game.phase === "move") {

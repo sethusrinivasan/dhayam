@@ -1,15 +1,28 @@
 /**
- * themes.js - Board Theme Management & Halloween Default Configuration
+ * themes.js - Board theme management and Diwali default configuration
  *
- * Persists theme preference in localStorage, defaults to 'wood' on launch,
+ * Persists theme preference in localStorage, defaults to 'diwali' on launch,
  * and updates DOM attributes and board symbols dynamically.
  */
 "use strict";
 
 const THEME_DEFINITIONS = {
+  diwali: {
+    id: "diwali",
+    name: "🪔 Diwali",
+    description: "Festival lights, marigold gold & rangoli color",
+    goalMotif: "🪔",
+    safeMotif: "✿",
+    players: [
+      { name: "Maya", avatar: "🪔", color: "#f97316" },
+      { name: "Ashwin", avatar: "🌺", color: "#0f766e" },
+      { name: "Deepa", avatar: "✨", color: "#ca8a04" },
+      { name: "Vikram", avatar: "🌟", color: "#be123c" },
+    ],
+  },
   halloween: {
     id: "halloween",
-    name: "🎃 Halloween (Default)",
+    name: "🎃 Halloween",
     description: "Spooky pumpkin night, glowing lanterns & haunted board",
     goalMotif: "🎃",
     safeMotif: "🕸️",
@@ -18,6 +31,32 @@ const THEME_DEFINITIONS = {
       { name: "Ashwin", avatar: "👻", color: "#2dd4bf" },
       { name: "Deepa", avatar: "🧙", color: "#c084fc" },
       { name: "Vikram", avatar: "🧛", color: "#f43f5e" },
+    ],
+  },
+  christmas: {
+    id: "christmas",
+    name: "🎄 Christmas",
+    description: "Evergreen, winter lights & festive red",
+    goalMotif: "🎁",
+    safeMotif: "❄️",
+    players: [
+      { name: "Maya", avatar: "🎄", color: "#dc2626" },
+      { name: "Ashwin", avatar: "🎅", color: "#16a34a" },
+      { name: "Deepa", avatar: "❄️", color: "#38bdf8" },
+      { name: "Vikram", avatar: "🎁", color: "#facc15" },
+    ],
+  },
+  hanukkah: {
+    id: "hanukkah",
+    name: "🕎 Hanukkah",
+    description: "Blue, silver & menorah candlelight",
+    goalMotif: "🕎",
+    safeMotif: "✦",
+    players: [
+      { name: "Maya", avatar: "🕎", color: "#2563eb" },
+      { name: "Ashwin", avatar: "🔹", color: "#38bdf8" },
+      { name: "Deepa", avatar: "✨", color: "#e5e7eb" },
+      { name: "Vikram", avatar: "🔷", color: "#60a5fa" },
     ],
   },
   wood: {
@@ -59,12 +98,103 @@ const THEME_DEFINITIONS = {
       { name: "Vikram", avatar: "☄️", color: "#ec4899" },
     ],
   },
+  newyear: {
+    id: "newyear",
+    name: "🎆 New Year",
+    description: "Midnight fireworks, neon & celebration",
+    goalMotif: "🎆",
+    safeMotif: "✨",
+    players: [
+      { name: "Maya", avatar: "🎆", color: "#f0abfc" },
+      { name: "Ashwin", avatar: "🎇", color: "#22d3ee" },
+      { name: "Deepa", avatar: "✨", color: "#facc15" },
+      { name: "Vikram", avatar: "🥂", color: "#fb7185" },
+    ],
+  },
+  pongal: {
+    id: "pongal",
+    name: "🌾 Pongal",
+    description: "Harvest sun, sugarcane & Tamil kolam color",
+    goalMotif: "☀️",
+    safeMotif: "🌾",
+    players: [
+      { name: "Maya", avatar: "🌾", color: "#ea580c" },
+      { name: "Ashwin", avatar: "🐂", color: "#15803d" },
+      { name: "Deepa", avatar: "☀️", color: "#ca8a04" },
+      { name: "Vikram", avatar: "🥣", color: "#b91c1c" },
+    ],
+  },
+  dasara: {
+    id: "dasara",
+    name: "🏵️ Dasara",
+    description: "Mysuru gold, marigolds & victory colors",
+    goalMotif: "🏵️",
+    safeMotif: "✦",
+    players: [
+      { name: "Maya", avatar: "🏵️", color: "#f59e0b" },
+      { name: "Ashwin", avatar: "🐘", color: "#7c3aed" },
+      { name: "Deepa", avatar: "🪷", color: "#db2777" },
+      { name: "Vikram", avatar: "⚔️", color: "#b45309" },
+    ],
+  },
+  holi: {
+    id: "holi",
+    name: "🎨 Holi",
+    description: "Spring colors, joy & playful powder",
+    goalMotif: "🎨",
+    safeMotif: "🌈",
+    players: [
+      { name: "Maya", avatar: "🩷", color: "#ec4899" },
+      { name: "Ashwin", avatar: "💙", color: "#2563eb" },
+      { name: "Deepa", avatar: "💛", color: "#eab308" },
+      { name: "Vikram", avatar: "💚", color: "#16a34a" },
+    ],
+  },
+  eid: {
+    id: "eid",
+    name: "🌙 Eid",
+    description: "Crescent moon, emerald & lantern light",
+    goalMotif: "🌙",
+    safeMotif: "✦",
+    players: [
+      { name: "Maya", avatar: "🌙", color: "#059669" },
+      { name: "Ashwin", avatar: "🕌", color: "#0f766e" },
+      { name: "Deepa", avatar: "🪔", color: "#f59e0b" },
+      { name: "Vikram", avatar: "⭐", color: "#eab308" },
+    ],
+  },
+  wallstreet: {
+    id: "wallstreet",
+    name: "📈 Wall Street",
+    description: "Ticker green, market gold & trading floor energy",
+    goalMotif: "📈",
+    safeMotif: "💵",
+    players: [
+      { name: "Maya", avatar: "🐂", color: "#16a34a" },
+      { name: "Ashwin", avatar: "📊", color: "#2563eb" },
+      { name: "Deepa", avatar: "💰", color: "#ca8a04" },
+      { name: "Vikram", avatar: "🔔", color: "#dc2626" },
+    ],
+  },
+  elections: {
+    id: "elections",
+    name: "🗳️ US Elections",
+    description: "Civic blue, campaign red & ballot-day gold",
+    goalMotif: "🗳️",
+    safeMotif: "⭐",
+    players: [
+      { name: "Maya", avatar: "🔵", color: "#2563eb" },
+      { name: "Ashwin", avatar: "🔴", color: "#dc2626" },
+      { name: "Deepa", avatar: "⭐", color: "#f59e0b" },
+      { name: "Vikram", avatar: "🏛️", color: "#64748b" },
+    ],
+  },
 };
 
-let currentTheme = localStorage.getItem("dhayam_theme") || "wood";
+let currentTheme = localStorage.getItem("dhayam_theme") || "diwali";
 
 function applyTheme(themeId) {
-  if (!THEME_DEFINITIONS[themeId]) themeId = "wood";
+  if (!THEME_DEFINITIONS[themeId]) themeId = "diwali";
   currentTheme = themeId;
   localStorage.setItem("dhayam_theme", themeId);
   if (document.documentElement) {

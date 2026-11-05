@@ -94,6 +94,9 @@ jobs:
 
       - name: Run unit + integrity tests (JS syntax, headless Chrome, rules engine)
         run: npm test
+        env:
+          DHAYAM_MCP_URL: "https://dhayam-staging.cancun.workers.dev/mcp"
+          DHAYAM_HEALTH_URL: "https://dhayam-staging.cancun.workers.dev/health"
 
       - name: "🧪 E2E liveness + game interaction against STAGING"
         id: e2e

@@ -27,5 +27,11 @@ jobs:
         run: npm ci
       - name: Run rules-engine tests
         run: npm test
+        env:
+          DHAYAM_MCP_URL: "https://dhayam-staging.cancun.workers.dev/mcp"
+          DHAYAM_HEALTH_URL: "https://dhayam-staging.cancun.workers.dev/health"
       - name: Report test coverage
         run: npm run test:coverage
+        env:
+          DHAYAM_MCP_URL: "https://dhayam-staging.cancun.workers.dev/mcp"
+          DHAYAM_HEALTH_URL: "https://dhayam-staging.cancun.workers.dev/health"

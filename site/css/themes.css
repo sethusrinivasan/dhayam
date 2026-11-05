@@ -1,15 +1,46 @@
 /**
- * themes.css - Dynamic Board Themes & Halloween Default Aesthetics
+ * themes.css - Dynamic Board Themes & Diwali Default Aesthetics
  *
  * Implements theme color tokens for:
- * 1. Halloween (Default on launch): Spooky pumpkin night, glowing lanterns & haunted board
+ * 1. Diwali (Default on launch): Festival lights, marigold gold & rangoli color
  * 2. Heritage Wood: Traditional warm teak wood, brass inlays & temple gold
  * 3. Royal Bronze: Ancient stone courtyard, royal ivory & polished copper
  * 4. Midnight Nebula: Deep cosmic indigo, glowing violet & starlight
  */
 
 /* ==========================================================================
-   1. Halloween Theme (Default on launch)
+   1. Diwali Theme (Default on launch)
+   ========================================================================== */
+body[data-theme="diwali"] {
+  background: radial-gradient(ellipse at 50% 0%, #7c2d12 0%, #431407 52%, #1c0804 100%);
+}
+
+body[data-theme="diwali"] .boardcard {
+  background: linear-gradient(140deg, #7c2d12 0%, #9a3412 35%, #4a1608 100%);
+  border-color: #f59e0b;
+  box-shadow: 0 16px 50px #f9731644, inset 0 0 0 2px #fbbf2455;
+}
+
+body[data-theme="diwali"] .cell {
+  background: #f59e0b22;
+  border-color: #f59e0b99;
+  color: #fff7ed;
+}
+
+body[data-theme="diwali"] .cell.safe {
+  background: #fbbf2438;
+  border-color: #fbbf24;
+  box-shadow: inset 0 0 10px #f59e0b55;
+}
+
+body[data-theme="diwali"] .cell.goal {
+  background: radial-gradient(circle, #f97316 0%, #be123c 100%);
+  border-color: #fbbf24;
+  box-shadow: inset 0 0 14px #fbbf2488, 0 0 12px #f9731666;
+}
+
+/* ==========================================================================
+   2. Halloween Theme
    ========================================================================== */
 body[data-theme="halloween"] {
   background: radial-gradient(
@@ -574,6 +605,139 @@ body[data-theme="pongal"] .cell.goal {
   background: radial-gradient(circle, #ff6600 0%, #ff4400 100%);
   border-color: #ff6600;
   box-shadow: inset 0 0 14px #ff660088, 0 0 10px #ff660044;
+}
+
+/* ==========================================================================
+   9. Additional Cultural, Civic & Market Themes
+   ========================================================================== */
+body[data-theme="hanukkah"] {
+  background: radial-gradient(ellipse at 50% 0%, #172554 0%, #0f172a 55%, #020617 100%);
+}
+
+body[data-theme="hanukkah"] .boardcard,
+body[data-theme="elections"] .boardcard {
+  background: linear-gradient(140deg, #1e3a8a, #172554 55%, #991b1b);
+  border-color: #93c5fd;
+  box-shadow: 0 16px 50px #020617cc, inset 0 0 0 2px #bfdbfe55;
+}
+
+body[data-theme="hanukkah"] .cell,
+body[data-theme="elections"] .cell {
+  background: #172554cc;
+  border-color: #60a5fa99;
+  color: #eff6ff;
+}
+
+body[data-theme="hanukkah"] .cell.safe,
+body[data-theme="elections"] .cell.safe {
+  background: #1d4ed866;
+  border-color: #facc15;
+}
+
+body[data-theme="hanukkah"] .cell.goal,
+body[data-theme="elections"] .cell.goal {
+  background: radial-gradient(circle, #1d4ed8, #7f1d1d);
+  border-color: #facc15;
+  box-shadow: inset 0 0 14px #facc1588, 0 0 10px #60a5fa55;
+}
+
+body[data-theme="dasara"] {
+  background: radial-gradient(ellipse at 50% 0%, #78350f 0%, #451a03 55%, #1c0a02 100%);
+}
+
+body[data-theme="dasara"] .boardcard,
+body[data-theme="wallstreet"] .boardcard {
+  background: linear-gradient(140deg, #92400e, #422006 55%, #14532d);
+  border-color: #fbbf24;
+  box-shadow: 0 16px 50px #1c0a02cc, inset 0 0 0 2px #fbbf2455;
+}
+
+body[data-theme="dasara"] .cell,
+body[data-theme="wallstreet"] .cell {
+  background: #422006cc;
+  border-color: #d97706;
+  color: #fff7ed;
+}
+
+body[data-theme="dasara"] .cell.safe,
+body[data-theme="wallstreet"] .cell.safe {
+  background: #166534aa;
+  border-color: #facc15;
+}
+
+body[data-theme="dasara"] .cell.goal,
+body[data-theme="wallstreet"] .cell.goal {
+  background: radial-gradient(circle, #b45309, #14532d);
+  border-color: #facc15;
+  box-shadow: inset 0 0 14px #facc1588, 0 0 10px #22c55e55;
+}
+
+body[data-theme="holi"] {
+  background: linear-gradient(135deg, #701a75, #1d4ed8 48%, #15803d);
+}
+
+body[data-theme="holi"] .boardcard {
+  background: linear-gradient(140deg, #be185d, #7e22ce 45%, #0369a1 75%, #15803d);
+  border-color: #facc15;
+  box-shadow: 0 16px 50px #4c1d95aa, inset 0 0 0 2px #fef08a66;
+}
+
+body[data-theme="holi"] .cell {
+  background: #581c87aa;
+  border-color: #f0abfc;
+  color: #fff7ed;
+}
+
+body[data-theme="holi"] .cell.safe,
+body[data-theme="holi"] .cell.goal {
+  border-color: #fde047;
+  box-shadow: inset 0 0 14px #facc1588, 0 0 10px #f472b655;
+}
+
+body[data-theme="eid"] {
+  background: radial-gradient(ellipse at 50% 0%, #065f46 0%, #064e3b 52%, #022c22 100%);
+}
+
+body[data-theme="eid"] .boardcard {
+  background: linear-gradient(140deg, #047857, #064e3b 55%, #92400e);
+  border-color: #facc15;
+  box-shadow: 0 16px 50px #022c22cc, inset 0 0 0 2px #facc1555;
+}
+
+body[data-theme="eid"] .cell {
+  background: #064e3bcc;
+  border-color: #34d399;
+  color: #ecfdf5;
+}
+
+body[data-theme="eid"] .cell.safe,
+body[data-theme="eid"] .cell.goal {
+  border-color: #facc15;
+  box-shadow: inset 0 0 14px #facc1588;
+}
+
+body[data-theme="wallstreet"] {
+  background: radial-gradient(ellipse at 50% 0%, #14532d 0%, #052e16 52%, #020617 100%);
+}
+
+body[data-theme="elections"] {
+  background: linear-gradient(135deg, #172554 0%, #0f172a 52%, #7f1d1d 100%);
+}
+
+body[data-theme="newyear"] .dieface,
+body[data-theme="hanukkah"] .dieface,
+body[data-theme="elections"] .dieface {
+  background: linear-gradient(145deg, #fef08a, #60a5fa 52%, #1e3a8a);
+}
+
+body[data-theme="holi"] .dieface {
+  background: linear-gradient(145deg, #f9a8d4, #a78bfa 52%, #22d3ee);
+}
+
+body[data-theme="eid"] .dieface,
+body[data-theme="wallstreet"] .dieface,
+body[data-theme="dasara"] .dieface {
+  background: linear-gradient(145deg, #fde68a, #d97706 52%, #166534);
 }
 
 /* Preserve existing Halloween styles after new sections */

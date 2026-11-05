@@ -246,6 +246,10 @@
       }
       function demoRollAction() {
         const player = active();
+        if (typeof setRollSecret === "function") {
+          const randomSecret = crypto.randomUUID().replaceAll("-", "").slice(0, 8);
+          setRollSecret(randomSecret);
+        }
         if (!demoRollQueue.length) {
           const piece = player.pieces.find((item) => item.progress < 43);
           demoRollQueue = planDemoTurn(piece);
@@ -518,7 +522,7 @@
                 seat: p.seat,
                 computer: false,
               })),
-              theme: document.body ? document.body.getAttribute("data-theme") || "wood" : "wood",
+              theme: document.body ? document.body.getAttribute("data-theme") || "diwali" : "diwali",
               rulesVariant: "Dhayam 7x7 scripted demo",
             });
           }
@@ -581,7 +585,7 @@
                 seat: SEATS[i % 4],
                 computer: false,
               })),
-              theme: document.body ? document.body.getAttribute("data-theme") || "wood" : "wood",
+              theme: document.body ? document.body.getAttribute("data-theme") || "diwali" : "diwali",
               rulesVariant: "Dhayam 7x7 live Cloudflare Durable Objects multiplayer demo",
             });
           }

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-const MCP_URL = process.env.DHAYAM_MCP_URL || "https://dhayam.cancun.workers.dev/mcp";
-const HEALTH_URL = process.env.DHAYAM_HEALTH_URL || "https://dhayam.cancun.workers.dev/health";
+const MCP_URL = process.env.DHAYAM_MCP_URL || "https://dhayam-staging.cancun.workers.dev/mcp";
+const HEALTH_URL = process.env.DHAYAM_HEALTH_URL || "https://dhayam-staging.cancun.workers.dev/health";
 
 test("MCP Server on Cloudflare: GET /health healthcheck", async () => {
   const res = await fetch(HEALTH_URL);

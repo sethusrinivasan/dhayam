@@ -6,14 +6,33 @@
  */
 "use strict";
 
+      let rollSecret = "";
+
+      function setRollSecret(secret) {
+        rollSecret = typeof secret === "string" ? secret.slice(0, 8) : "";
+      }
+
+      function secretHash(secret) {
+        if (!secret) return 0;
+        let hash = 2166136261;
+        for (let index = 0; index < secret.length; index++) {
+          hash ^= secret.charCodeAt(index);
+          hash = Math.imul(hash, 16777619);
+        }
+        return hash >>> 0;
+      }
+
       function rand4() {
         const v = new Uint32Array(1);
         crypto.getRandomValues(v);
         return v[0] % 4;
       } // Exact: the 2^32 possible values divide evenly into four faces.
       function rollDice() {
-        const a = rand4(),
-          b = rand4();
+        const secret = secretHash(rollSecret),
+          random = new Uint32Array(2);
+        crypto.getRandomValues(random);
+        const a = ((random[0] ^ secret) >>> 0) % 4,
+          b = ((random[1] ^ Math.imul(secret, 2654435761)) >>> 0) % 4;
         return { a, b, value: a === 0 && b === 0 ? 12 : a + b };
       }
       function randomUnit() {

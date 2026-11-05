@@ -96,26 +96,19 @@
   font-size: 0.8rem;
 }
 
-.settings-theme-grid,
 .settings-player-grid,
 .settings-tool-grid {
   display: grid;
   gap: 7px;
 }
 
-.settings-theme-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.settings-theme-select {
+  display: block;
+  margin-top: 8px;
 }
 
 .settings-player-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.settings-theme-grid .theme-choice-btn {
-  min-height: 58px;
-  margin: 0 !important;
-  padding: 8px 10px !important;
-  text-align: left;
 }
 
 .settings-player {
@@ -191,10 +184,19 @@
 }
 
 .share-preview {
+  display: grid;
+  gap: 8px;
   padding: 13px;
   border: 1px solid #f0b96455;
   border-radius: 12px;
   background: #201710;
+}
+
+.share-preview-image {
+  width: 100%;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .share-preview strong {

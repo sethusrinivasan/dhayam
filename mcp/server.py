@@ -102,12 +102,21 @@ class DhayamGame:
             return None
         return ROUTES[player["seat"]][piece["progress"]]
 
-    def roll_dice(self) -> Dict[str, Any]:
+    def roll_dice(self, secret: str = "") -> Dict[str, Any]:
         if self.phase != "roll":
             return {"error": "Cannot roll dice during move phase. Move a piece first."}
 
-        # Secure random roll
-        idx = secrets.randbelow(len(DICE_OUTCOMES))
+        clean_secret = secret[:8] if isinstance(secret, str) else ""
+        secret_hash = 0
+        if clean_secret:
+            secret_hash = 2166136261
+            for character in clean_secret:
+                secret_hash ^= ord(character)
+                secret_hash = (secret_hash * 16777619) & 0xFFFFFFFF
+        # Mix the optional secret into cryptographic entropy without changing
+        # the uniform distribution of the outcome list.
+        random_value = (secrets.randbits(32) ^ secret_hash) & 0xFFFFFFFF
+        idx = random_value % len(DICE_OUTCOMES)
         a, b, val = DICE_OUTCOMES[idx]
         is_bonus = val in BONUS_VALUES
 
@@ -117,7 +126,8 @@ class DhayamGame:
             "a": a,
             "b": b,
             "value": val,
-            "bonus": is_bonus
+            "bonus": is_bonus,
+            "secret_used": bool(clean_secret)
         }
 
         self.audit.append({
@@ -126,6 +136,7 @@ class DhayamGame:
             "dice": {"a": a, "b": b},
             "value": val,
             "bonus": is_bonus,
+            "secret_hash": secret_hash if clean_secret else None,
             "pool": list(self.pool)
         })
 
@@ -646,8 +657,13 @@ TOOLS = [
     },
     {
         "name": "dhayam_roll_dice",
-        "description": "Roll the traditional Dayakattai dice (outcomes: 1, 2, 3, 4, 5, 6, 12). If 1, 5, 6, or 12 is rolled, grants a bonus throw.",
-        "inputSchema": {"type": "object", "properties": {}}
+        "description": "Roll the traditional Dayakattai dice with cryptographic randomness. An optional secret (up to 8 characters) is mixed into entropy without changing probabilities and is never returned.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "secret": {"type": "string", "maxLength": 8, "description": "Optional hidden roll secret."}
+            }
+        }
     },
     {
         "name": "dhayam_get_legal_moves",
@@ -777,7 +793,7 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Any:
         return CURRENT_GAME.get_summary()
 
     if name == "dhayam_roll_dice":
-        return CURRENT_GAME.roll_dice()
+        return CURRENT_GAME.roll_dice(args.get("secret", ""))
 
     if name == "dhayam_get_legal_moves":
         return {

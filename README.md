@@ -14,15 +14,19 @@ The browser client is a static, zero-runtime-dependency application. The authori
 - 7×7 board, 44-position rotational routes, six pieces per player
 - Traditional dice values, bonus rolls, captures, safe squares, inner track, and exact-finish winning
 - Solo, pass-and-play, and synchronized online matches for **2–32 players**
+- 14 dynamic themes with festival aesthetics, custom tokens, and motifs (Diwali, Pongal, Dasara, Holi, Eid, Christmas, Hanukkah, Halloween, Heritage Wood, Royal Bronze, Midnight Nebula, Wall Street, and US Elections)
+- Cryptographic dice randomness with optional user-supplied roll secret salt
+- White-label single-script embed integration (`/embed/v1/embed.js`) for partner sites
 - Reconnection grace period, automatic retry, turn auto-pass, and WebSocket join rate limiting
-- Accessible responsive UI, animated dice and pieces, voice commentary, scoring, and ordered audit events
-- MCP endpoints for legal moves, state, audit logs, AI turns, and match simulation
+- Accessible responsive UI, animated 3D brass dice, piece destination highlights, voice commentary, scoring, and ordered audit events
+- Full MCP catalog for legal moves, summaries, audit logs, tactical evaluation, AI turns, and headless simulations
 
 ## Run locally
 
 ```sh
 npm install
 npm test
+npm run test:coverage
 python3 -m http.server 8000 --directory site
 ```
 
