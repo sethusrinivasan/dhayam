@@ -183,6 +183,66 @@ button:disabled {
   text-overflow: ellipsis;
 }
 
+.voice-toggle {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.voice-toggle.listening {
+  border-color: #10b981;
+  background: #10b98126;
+  color: #6ee7b7;
+  box-shadow: 0 0 10px #10b98144;
+  animation: voicePulse 1.6s infinite ease-in-out;
+}
+
+@keyframes voicePulse {
+  0%, 100% {
+    box-shadow: 0 0 4px #10b98144;
+  }
+  50% {
+    box-shadow: 0 0 14px #10b981aa;
+  }
+}
+
+.voice-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: #19120de8;
+  backdrop-filter: blur(8px);
+  border: 1px solid #f59e0baa;
+  color: #fffbeb;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px #000c;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease-out, transform 0.22s ease-out;
+}
+
+.voice-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.shortcuts-table strong {
+  display: inline-block;
+  padding: 2px 7px;
+  background: #ffffff18;
+  border: 1px solid #ffffff33;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #fff2db;
+}
+
 .pill {
   border: 1px solid #ffffff24;
   background: #ffffff0b;

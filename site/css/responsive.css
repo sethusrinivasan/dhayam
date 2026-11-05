@@ -50,13 +50,15 @@
   .menu-trigger span {
     display: none;
   }
-  .audio-toggle {
+  .audio-toggle,
+  .voice-toggle {
     max-width: 42px;
     padding-left: 7px;
     padding-right: 7px;
     font-size: 0;
   }
-  .audio-toggle::first-letter {
+  .audio-toggle::first-letter,
+  .voice-toggle::first-letter {
     font-size: 13px;
   }
   .layout {
@@ -168,13 +170,15 @@
   .menu-trigger span {
     display: none;
   }
-  .audio-toggle {
+  .audio-toggle,
+  .voice-toggle {
     max-width: 36px;
     padding-left: 5px;
     padding-right: 5px;
     font-size: 0;
   }
-  .audio-toggle::first-letter {
+  .audio-toggle::first-letter,
+  .voice-toggle::first-letter {
     font-size: 12px;
   }
   .layout {

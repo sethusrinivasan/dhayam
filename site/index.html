@@ -53,10 +53,12 @@
               <button class="menu-item" id="copyGameSummaryBtn" role="menuitem">📌 Copy game summary</button>
               <button class="menu-item" id="copyTurnDetailsBtn" role="menuitem">🧾 Copy turn-by-turn details</button>
               <button type="button" class="menu-item" id="shareBtn" role="menuitem" aria-label="Share Dhayam on social media" title="Share Dhayam on social media">📢 Share</button>
+              <button class="menu-item" id="keyboardHelpBtn" role="menuitem">⌨️ Keyboard & Voice shortcuts</button>
               <button class="menu-item" id="flightRecorderTopBtn" role="menuitem" aria-label="Copy Flight Recorder diagnostic data" title="Copy Flight Recorder data">🛫 Copy diagnostics</button>
             </div>
           </details>
           <button class="pill audio-toggle" id="audioToggle" aria-label="Toggle voice commentary" title="Toggle voice commentary">🔇 Voice commentary: Off</button>
+          <button class="pill voice-toggle" id="voiceToggle" aria-label="Toggle voice control" aria-pressed="false" title="Optional voice commands: Roll, Move, New game, Exit">🎤 Voice: Off</button>
           <span class="pill timer-pill" id="gameTimer" role="timer" aria-label="Game liveliness timer" title="Page liveliness: updates every 30s with second-level accuracy">⏱️ 00:00</span>
         </nav>
       </header>
@@ -305,6 +307,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/peerjs.min.js"></script>
     <script src="js/multiplayer.js"></script>
+    <script src="js/voice.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

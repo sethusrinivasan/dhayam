@@ -2,7 +2,7 @@
 
 [![Play live](https://img.shields.io/badge/Play%20live-Cloudflare-f38020?logo=cloudflare&logoColor=white)](https://dhayam.cancun.workers.dev)
 [![GitHub Pages mirror](https://img.shields.io/badge/GitHub%20Pages-mirror-d88a3e?logo=githubpages&logoColor=white)](https://sethusrinivasan.github.io/dhayam/)
-[![Tests](https://img.shields.io/badge/tests-72%20passing-brightgreen.svg)](https://github.com/sethusrinivasan/dhayam/actions)
+[![Tests](https://img.shields.io/badge/tests-82%20passing-brightgreen.svg)](https://github.com/sethusrinivasan/dhayam/actions)
 [![License](https://img.shields.io/badge/license-MIT-8a2be2)](LICENSE)
 
 An open-source web version of **Dhayam**, a Tamil race-and-capture board game. Play locally, against the computer, or online through Cloudflare Durable Objects and WebSockets.
@@ -18,7 +18,7 @@ The browser client is a static, zero-runtime-dependency application. The authori
 - Cryptographic dice randomness with optional user-supplied roll secret salt
 - White-label single-script embed integration (`/embed/v1/embed.js`) for partner sites
 - Reconnection grace period, automatic retry, turn auto-pass, and WebSocket join rate limiting
-- Accessible responsive UI, animated 3D brass dice, piece destination highlights, voice commentary, scoring, and ordered audit events
+- Accessible responsive UI, full keyboard controls (Space/R to roll, M/Enter to move, 1–6 for piece selection, N for solo match, Esc/X to exit), optional hands-free voice command recognition, animated 3D brass dice, piece destination highlights, voice commentary, scoring, and ordered audit events
 - Full MCP catalog for legal moves, summaries, audit logs, tactical evaluation, AI turns, and headless simulations
 
 ## Run locally

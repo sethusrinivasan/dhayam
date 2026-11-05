@@ -604,16 +604,19 @@
         if (actionBtn) {
           if (game.phase === "done") {
             actionBtn.textContent = "🏆 New match";
+            actionBtn.title = "Start a new match (Shortcut: Space, R, or N)";
             actionBtn.disabled = false;
             actionBtn.classList.remove("disabled");
             actionBtn.onclick = () => newGame(game.players.length, game.computerCount);
           } else if (demo) {
             actionBtn.textContent = "Demo playing…";
+            actionBtn.title = "Demo playing";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
             actionBtn.onclick = null;
           } else if (multiplayer.active && !isMyTurn()) {
             actionBtn.textContent = "Waiting for " + p.name + "…";
+            actionBtn.title = "Waiting for remote player";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
             actionBtn.onclick = null;
@@ -623,16 +626,19 @@
               : moving
                 ? p.name + " moving…"
                 : p.name + " is thinking…";
+            actionBtn.title = p.name + " turn";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
             actionBtn.onclick = null;
           } else if (rolling) {
             actionBtn.textContent = "🎲 Rolling…";
+            actionBtn.title = "Rolling dice…";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
             actionBtn.onclick = null;
           } else if (moving) {
             actionBtn.textContent = "Moving…";
+            actionBtn.title = "Moving piece…";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
             actionBtn.onclick = null;
@@ -641,6 +647,7 @@
               actionBtn.textContent = targetMove.piece.progress < 0
                 ? "✨ Enter Piece"
                 : "👉 Move Selected Piece";
+              actionBtn.title = "Move piece (Shortcut: Enter or M, or press 1-6)";
               actionBtn.disabled = false;
               actionBtn.classList.remove("disabled");
               actionBtn.onclick = () => {
@@ -650,11 +657,13 @@
               };
             } else if (opts.length === 0) {
               actionBtn.textContent = "Pass turn";
+              actionBtn.title = "Pass turn (Shortcut: Space or Enter)";
               actionBtn.disabled = false;
               actionBtn.classList.remove("disabled");
               actionBtn.onclick = () => passRemainingRolls();
             } else {
               actionBtn.textContent = "👉 Move Piece";
+              actionBtn.title = "Move piece (Shortcut: Enter or M, or press 1-6)";
               actionBtn.disabled = false;
               actionBtn.classList.remove("disabled");
               actionBtn.onclick = () => {
@@ -666,6 +675,7 @@
             actionBtn.textContent = game.history.length > 0
               ? "🎲 Roll Dice (Bonus throw!)"
               : "🎲 Roll Dice";
+            actionBtn.title = "Roll the dice (Shortcut: Space or R)";
             actionBtn.disabled = false;
             actionBtn.classList.remove("disabled");
             actionBtn.onclick = () => {
@@ -673,6 +683,7 @@
             };
           } else {
             actionBtn.textContent = "🎲 Roll Dice";
+            actionBtn.title = "Roll dice";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
             actionBtn.onclick = null;

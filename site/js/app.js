@@ -480,6 +480,12 @@
       };
       if ($("demoAudioToggle")) $("demoAudioToggle").onclick = toggleAudio;
       if ($("audioToggle")) $("audioToggle").onclick = toggleAudio;
+      if ($("voiceToggle") && typeof toggleVoiceCommands === "function") {
+        $("voiceToggle").onclick = toggleVoiceCommands;
+      }
+      if ($("keyboardHelpBtn") && typeof showKeyboardHelpModal === "function") {
+        $("keyboardHelpBtn").onclick = showKeyboardHelpModal;
+      }
       if ($("flightRecorderTopBtn") && typeof FlightRecorder !== "undefined") {
         $("flightRecorderTopBtn").onclick = () => FlightRecorder.copy();
       }
@@ -939,4 +945,7 @@
       }
       if (typeof initMultiplayerFromUrl === "function") {
         initMultiplayerFromUrl();
+      }
+      if (typeof setupKeyboardNavigation === "function") {
+        setupKeyboardNavigation();
       }
