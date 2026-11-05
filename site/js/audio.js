@@ -81,6 +81,14 @@
       }
       function voiceForPlayer(player) {
         if (!player || !availableVoices.length) return null;
+        if (typeof getLanguage === "function" && getLanguage() === "ta") {
+          const tamilVoice = availableVoices.find((voice) => {
+            const langCode = (voice.lang || "").toLowerCase();
+            const voiceName = (voice.name || "").toLowerCase();
+            return langCode.startsWith("ta") || voiceName.includes("tamil");
+          });
+          if (tamilVoice) return tamilVoice;
+        }
         const playerIndex = game.players.indexOf(player),
           hints =
             playerIndex % 2 === 0
@@ -135,6 +143,11 @@
         speechStartTime = Date.now();
 
         speech.voice = voiceForPlayer(active());
+        if (typeof getLanguage === "function" && getLanguage() === "ta") {
+          speech.lang = "ta-IN";
+        } else {
+          speech.lang = "en-US";
+        }
         speech.rate = 0.86;
         speech.pitch = 1;
         speech.volume = 1;
@@ -286,10 +299,12 @@
       function updateAudioToggle() {
         const available = "speechSynthesis" in window;
         if (!$("audioToggle")) return;
+        const textOn = typeof t === "function" ? t("voice_commentary_on") : "🔊 Voice commentary: On";
+        const textOff = typeof t === "function" ? t("voice_commentary_off") : "🔇 Voice commentary: Off";
         $("audioToggle").textContent = available
           ? audioEnabled
-            ? "🔊 Voice commentary: On"
-            : "🔇 Voice commentary: Off"
+            ? textOn
+            : textOff
           : "🔇 Voice commentary unavailable";
         $("audioToggle").setAttribute(
           "aria-label",
@@ -318,7 +333,7 @@
         demoWaitingForSpeech = false;
         if ("speechSynthesis" in window) speechSynthesis.cancel();
         if (audioEnabled && demo) speakDemo($("statusText").textContent);
-        else if (audioEnabled && !demo) speakGame("Audio commentary is on.");
+        else if (audioEnabled && !demo) speakGame(typeof t === "function" ? t("speech_audio_on") : "Audio commentary is on.");
         else if (demo && !demoPaused) scheduleDemo(demoNextDelay);
         updateAudioToggle();
         updateDemoControls();

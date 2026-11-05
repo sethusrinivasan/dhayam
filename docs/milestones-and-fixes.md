@@ -70,12 +70,25 @@ A succinct, one-page executive summary documenting how Dhayam was conceived, eng
   4. **Direct Cell Execution**: Players can click directly on any highlighted destination square (in addition to the piece itself) to execute the move (`destination-cell-click`), improving ergonomics across mobile touchscreens and desktop mice.
   5. **Accessibility & Reduced Motion**: Dynamic `aria-label` updates on target cells communicate tactical landing details to screen readers, while `@media (prefers-reduced-motion: reduce)` automatically suppresses infinite animations in favor of high-contrast solid borders.
 
+### Milestone 10: Authentic Bilingual Tamil & English Localization (i18n)
+* **What was built**:
+  1. **Default English Experience**: Game cleanly initializes in English by default across fresh browser sessions, retaining familiar terminology and navigation without unexpected language shifts.
+  2. **Dedicated User Toggle (`#langToggle`)**: Top navigation provides an accessible, high-contrast language toggle button (`🌐 தமிழ்` / `🌐 English`) with keyboard navigation (`tabindex="0"`) and title tooltips. Preference is persisted to `localStorage["dhayam_lang"]` and recorded in Flight Recorder (`LANGUAGE_CHANGED`).
+  3. **Authentic Cultural Vocabulary (Tamil)**:
+     - Tactical Badges: `🎯 பரமபதம்` (Goal), `⚔️ வெட்டு` (Capture), `🛡️ மலை` (Sanctuary Haven), `✨ களம் புகு` (Board Entry).
+     - Action Controls: `🎲 தாயக்கட்டையை உருட்டு` (Roll Dice), `👉 காயை நகர்த்து` (Move Selected Piece), `✨ களம் புகு` (Enter Piece), `முறையை விடு` (Pass Turn), `🏆 புதிய ஆட்டம்` (New Match).
+     - Live Match Status: `Alex-ன் முறை` (Player's turn), `கடைசி உருட்டல்` (Last Roll), `தாயக்கட்டை` (Dhayam), `கூடுதல் வாய்ப்பு` (Bonus throw), `காத்திருப்பவை` (Waiting pieces), `களத்தில்` (On board), `பரமபதத்தில்` (Home).
+  4. **Tamil Voice Synthesis & Speech Commentary**:
+     - Speech engine automatically sets `speech.lang = "ta-IN"` when Tamil is active and searches available browser voices for native Tamil TTS engines (`ta-IN`, `ta`, or containing "tamil").
+     - Fully localized spoken announcements for rolls, bonus chains, piece entries, tactical captures, goal milestones, and match victory.
+  5. **Zero Disk Unescaped Character Integrity**: All Tamil strings within `site/js/` are cleanly encoded using standard Unicode escape sequences (`\u0Bxx`), strictly adhering to codebase static integrity tests and preventing charset corruption across diverse host platforms.
+
 ---
 
 ## 3. Verification & CI/CD Pipeline
 | Gate | Mechanism | Purpose |
 | :--- | :--- | :--- |
-| **Unit & Rules Tests** | `npm test` (89 tests) | Verifies immutable rules authority, MCP endpoints, bonus scoring, move destination previews, and regression guards |
+| **Unit & Rules Tests** | `npm test` (95 tests) | Verifies immutable rules authority, MCP endpoints, bonus scoring, move destination previews, bilingual i18n switching, and regression guards |
 | **Deployment Gate** | `npx wrangler deploy --env staging` | Compiles Worker and deploys static assets with zero secret leakage |
 | **Automated E2E Gate** | `node scripts/e2e-live-check.js` | Headless Chrome verifies 49 cells, 8 players, Quantum 32×, 128× speed slider, Game Timer, Build badge, and live dice click |
 

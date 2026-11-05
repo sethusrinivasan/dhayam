@@ -479,6 +479,9 @@
         }
       };
       if ($("demoAudioToggle")) $("demoAudioToggle").onclick = toggleAudio;
+      if ($("langToggle") && typeof toggleLanguage === "function") {
+        $("langToggle").onclick = toggleLanguage;
+      }
       if ($("audioToggle")) $("audioToggle").onclick = toggleAudio;
       if ($("voiceToggle") && typeof toggleVoiceCommands === "function") {
         $("voiceToggle").onclick = toggleVoiceCommands;

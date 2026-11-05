@@ -126,6 +126,7 @@ function setupMockEnvironment() {
       return [];
     },
     body: createMockElement("BODY"),
+    documentElement: createMockElement("HTML"),
   };
 
   const storage = new Map<string, string>();
@@ -148,14 +149,15 @@ function setupMockEnvironment() {
   };
   sandbox.window = sandbox;
 
-  // Load config, state, and themes first
+  // Load config, i18n, state, and themes first
   const configCode = fs.readFileSync(path.join(JS_DIR, "config.js"), "utf-8");
+  const i18nCode = fs.readFileSync(path.join(JS_DIR, "i18n.js"), "utf-8");
   const stateCode = fs.readFileSync(path.join(JS_DIR, "state.js"), "utf-8");
   const themesCode = fs.readFileSync(path.join(JS_DIR, "themes.js"), "utf-8");
   const uiCode = fs.readFileSync(path.join(JS_DIR, "ui.js"), "utf-8");
 
   vm.createContext(sandbox);
-  const fullCode = [configCode, stateCode, themesCode, uiCode].join("\n;\n");
+  const fullCode = [configCode, i18nCode, stateCode, themesCode, uiCode].join("\n;\n");
   vm.runInContext(fullCode, sandbox);
 
   return sandbox;
@@ -460,4 +462,42 @@ test("clicking on a highlighted destination cell applies the move with inputSour
   // We can attach the cell click handler or verify destCell._previewMove is stored and ready for apply.
   assert.equal(destCell._previewMove.piece.id, "p0_q0");
   assert.equal(destCell._previewMove.test.progress, 4);
+});
+
+test("updateMovePreviews renders authentic Tamil tactical badges when language is switched to Tamil", () => {
+  const env = setupMockEnvironment();
+  env.setLanguage("ta");
+
+  const player = {
+    id: "p0",
+    name: "Alex",
+    seat: "N",
+    pieces: [{ id: "p0_q0", progress: 42 }],
+  };
+  const goalMove = {
+    piece: player.pieces[0],
+    indices: [0],
+    values: [1],
+    test: {
+      progress: 43,
+      targets: [],
+      destination: "D4",
+    },
+  };
+  env.game = {
+    phase: "move",
+    current: 0,
+    players: [player],
+    pool: [1],
+  };
+  env.selectedRoll = 0;
+  env.selectedPieceId = "p0_q0";
+  env.options = () => [goalMove];
+
+  env.updateMovePreviews("p0_q0", 0);
+
+  const goalCell = env.cellMap.get("D4");
+  const badge = goalCell.querySelector(".destination-badge");
+  assert.ok(badge, "Must have destination badge");
+  assert.ok(badge.innerHTML.includes("\u0baa\u0bb0\u0bae\u0baa\u0ba4\u0bae\u0bcd"), "Badge must declare Paramapadam (Goal) in authentic Tamil");
 });

@@ -51,30 +51,42 @@
           if (!legalMoveCount) {
             game.pool = [];
             speakGame(
-              player.name +
-                " rolled " +
-                val +
-                " but has no legal move. The turn passes.",
+              typeof getLanguage === "function" && getLanguage() === "ta"
+                ? t("speech_roll_pass", { name: player.name, val })
+                : (player.name +
+                    " rolled " +
+                    val +
+                    " but has no legal move. The turn passes.")
             );
             recordAudit("PASS", { reason: "NO_LEGAL_MOVE" });
-            nextTurn("No legal moves — turn passed.");
+            nextTurn(typeof t === "function" ? t("no_legal_moves_passed") : "No legal moves — turn passed.");
             return;
           }
         }
-        speakGame(
-          player.name +
-            " rolled " +
-            val +
-            "." +
-            (d.pacingAssist
-              ? " The pacing assist selected a playable outcome."
-              : "") +
-            (bonus
-              ? " That earns another roll."
-              : specialRoll
-                ? " Its reduced bonus chance did not extend this turn, so now choose a legal move."
-                : " Now choose a legal move."),
-        );
+        if (typeof getLanguage === "function" && getLanguage() === "ta") {
+          speakGame(
+            val === 1
+              ? t("speech_roll_dhayam", { name: player.name, val })
+              : bonus
+                ? t("speech_roll_bonus", { name: player.name, val })
+                : t("speech_roll_normal", { name: player.name, val })
+          );
+        } else {
+          speakGame(
+            player.name +
+              " rolled " +
+              val +
+              "." +
+              (d.pacingAssist
+                ? " The pacing assist selected a playable outcome."
+                : "") +
+              (bonus
+                ? " That earns another roll."
+                : specialRoll
+                  ? " Its reduced bonus chance did not extend this turn, so now choose a legal move."
+                  : " Now choose a legal move."),
+          );
+        }
         if (multiplayer.active && multiplayer.isHost) {
           broadcastState();
         }
@@ -275,31 +287,50 @@
           typeof getPlayerAvatarSpeechName === "function"
             ? getPlayerAvatarSpeechName(player)
             : "piece";
-        let commentary =
-          player.name +
-          (wasReserve
-            ? opt.test.openingEntry
-              ? " uses the opening entry allowance to enter a " + avName + " onto the board (+1 bonus point) and"
-              : " enters a " + avName + " onto the board (+1 bonus point) and"
-            : " moves a " + avName) +
-          " uses " +
-          opt.values.join(" plus ") +
-          ".";
-        if (captureCount) {
-          const victimDesc = capturedPieces
-            .map((cp) => {
-              const victimPlayer = game.players.find((p) => p.id === cp.playerId);
-              const victimAv =
-                typeof getPlayerAvatarSpeechName === "function"
-                  ? getPlayerAvatarSpeechName(victimPlayer)
-                  : "piece";
-              return cp.playerName + "’s " + victimAv;
-            })
-            .join(" and ");
-          commentary += " " + victimDesc + " is captured and returns to reserve!";
-        }
-        if (willFinish) {
-          commentary += " 🎉 Congratulations " + player.name + "! The " + avName + " reaches the center goal (+1 bonus point)!";
+        let commentary = "";
+        if (typeof getLanguage === "function" && getLanguage() === "ta") {
+          const joinedVals = opt.values.join(" + ");
+          if (wasReserve) {
+            commentary = opt.test.openingEntry
+              ? t("speech_move_opening_enter", { name: player.name, values: joinedVals })
+              : t("speech_move_enter", { name: player.name, values: joinedVals });
+          } else {
+            commentary = t("speech_move_advance", { name: player.name, values: joinedVals });
+          }
+          if (captureCount) {
+            const victimDesc = capturedPieces.map((cp) => cp.playerName).join(", ");
+            commentary += " " + t("speech_move_capture", { victim: victimDesc });
+          }
+          if (willFinish) {
+            commentary += " " + t("speech_move_goal", { name: player.name });
+          }
+        } else {
+          commentary =
+            player.name +
+            (wasReserve
+              ? opt.test.openingEntry
+                ? " uses the opening entry allowance to enter a " + avName + " onto the board (+1 bonus point) and"
+                : " enters a " + avName + " onto the board (+1 bonus point) and"
+              : " moves a " + avName) +
+            " uses " +
+            opt.values.join(" plus ") +
+            ".";
+          if (captureCount) {
+            const victimDesc = capturedPieces
+              .map((cp) => {
+                const victimPlayer = game.players.find((p) => p.id === cp.playerId);
+                const victimAv =
+                  typeof getPlayerAvatarSpeechName === "function"
+                    ? getPlayerAvatarSpeechName(victimPlayer)
+                    : "piece";
+                return cp.playerName + "’s " + victimAv;
+              })
+              .join(" and ");
+            commentary += " " + victimDesc + " is captured and returns to reserve!";
+          }
+          if (willFinish) {
+            commentary += " 🎉 Congratulations " + player.name + "! The " + avName + " reaches the center goal (+1 bonus point)!";
+          }
         }
         moving = true;
         movingPieceId = piece.id;
@@ -446,8 +477,12 @@
             playerId: player.id,
             rank: 1,
           });
-          commentary +=
-            " " + player.name + " finishes all six pieces and wins the game!";
+          if (typeof getLanguage === "function" && getLanguage() === "ta") {
+            commentary += " " + (typeof t === "function" ? t("speech_winner", { name: player.name }) : player.name + " \u0bb5\u0bc6\u0bb1\u0bcd\u0bb1\u0bbf \u0baa\u0bc6\u0bb1\u0bcd\u0bb1\u0bbe\u0bb0\u0bcd!");
+          } else {
+            commentary +=
+              " " + player.name + " finishes all six pieces and wins the game!";
+          }
           recordAudit("GAME_END", {
             winner: {
               playerId: player.id,
@@ -608,20 +643,25 @@
             const pName = activeP ? activeP.name : "Player";
             if (!isBonus && game.phase === "roll") {
               speakGame(
-                pName +
-                  " rolled " +
-                  val +
-                  " but has no legal move. The turn passes.",
+                typeof getLanguage === "function" && getLanguage() === "ta"
+                  ? t("speech_roll_pass", { name: pName, val })
+                  : pName + " rolled " + val + " but has no legal move. The turn passes."
               );
             } else {
               speakGame(
-                pName +
-                  " rolled " +
-                  val +
-                  "." +
-                  (isBonus
-                    ? " That earns another roll."
-                    : " Now choose a legal move."),
+                typeof getLanguage === "function" && getLanguage() === "ta"
+                  ? (val === 1
+                      ? t("speech_roll_dhayam", { name: pName, val })
+                      : isBonus
+                        ? t("speech_roll_bonus", { name: pName, val })
+                        : t("speech_roll_normal", { name: pName, val }))
+                  : pName +
+                      " rolled " +
+                      val +
+                      "." +
+                      (isBonus
+                        ? " That earns another roll."
+                        : " Now choose a legal move.")
               );
             }
 

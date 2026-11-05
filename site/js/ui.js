@@ -457,17 +457,23 @@
               ';"></div></div><div class="pmeta">' +
               finishedCount +
               "/6 home · " +
-              (p.captured ? "⚔️ Capture earned (+50)" : "Capture needed") +
-              (p.bonusPoints ? " · ⭐ " + p.bonusPoints + " bonus" : "") +
-              '</div><div class="piecestatus"><span><b>Waiting:</b> ' +
+              (p.captured ? (typeof t === "function" ? t("capture_earned") : "⚔️ Capture earned (+50)") : (typeof t === "function" ? t("capture_needed") : "Capture needed")) +
+              (p.bonusPoints ? " · ⭐ " + p.bonusPoints + " " + (typeof t === "function" ? t("bonus_unit") : "bonus") : "") +
+              '</div><div class="piecestatus"><span><b>' +
+              (typeof t === "function" ? t("waiting") : "Waiting") +
+              ':</b> ' +
               waiting +
-              "</span><span><b>On board:</b> " +
+              "</span><span><b>" +
+              (typeof t === "function" ? t("on_board") : "On board") +
+              ':</b> ' +
               onBoard +
-              "</span><span><b>Home:</b> " +
+              "</span><span><b>" +
+              (typeof t === "function" ? t("home") : "Home") +
+              ':</b> ' +
               home +
               "</span></div></div>" +
               (active() === p && game.phase !== "done"
-                ? '<div class="turn">● Turn</div>'
+                ? '<div class="turn">● ' + (typeof t === "function" ? t("turn_badge") : "Turn") + '</div>'
                 : "") +
               "</div>"
             );
@@ -541,8 +547,8 @@
             const enter = document.createElement("button");
             enter.className = "chip selected";
             enter.textContent = entry.test.openingEntry
-              ? "＋ Opening entry allowance"
-              : "＋ Enter a piece";
+              ? (typeof t === "function" ? t("action_opening_entry") : "＋ Opening entry allowance")
+              : (typeof t === "function" ? t("action_enter_roll_chip") : "＋ Enter a piece");
             enter.onclick = () => apply(entry, "entry-button");
             enter.addEventListener("mouseenter", () => {
               if (game && game.phase === "move") updateMovePreviews(entry.piece.id);
@@ -644,13 +650,13 @@
         if (moveBtn) {
           moveBtn.hidden = false;
           if (moving) {
-            moveBtn.textContent = "Moving…";
+            moveBtn.textContent = typeof t === "function" ? t("action_moving") : "Moving…";
             moveBtn.disabled = true;
             moveBtn.onclick = null;
           } else if (canMove && targetMove) {
             moveBtn.textContent = targetMove.piece.progress < 0
-              ? "✨ Enter Piece"
-              : "Move selected piece";
+              ? (typeof t === "function" ? t("action_enter_piece") : "✨ Enter Piece")
+              : (typeof t === "function" ? t("action_move_selected") : "Move selected piece");
             moveBtn.disabled = false;
             moveBtn.onclick = () => {
               if (canMove && targetMove && !moving) {
@@ -658,7 +664,7 @@
               }
             };
           } else {
-            moveBtn.textContent = "Move selected piece";
+            moveBtn.textContent = typeof t === "function" ? t("action_move_selected") : "Move selected piece";
             moveBtn.disabled = true;
             moveBtn.onclick = null;
           }
@@ -668,7 +674,7 @@
         const actionBtn = $("actionBtn");
         if (actionBtn) {
           if (game.phase === "done") {
-            actionBtn.textContent = "🏆 New match";
+            actionBtn.textContent = typeof t === "function" ? t("action_new_match") : "🏆 New match";
             actionBtn.title = "Start a new match (Shortcut: Space, R, or N)";
             actionBtn.disabled = false;
             actionBtn.classList.remove("disabled");
@@ -680,29 +686,29 @@
             actionBtn.classList.add("disabled");
             actionBtn.onclick = null;
           } else if (multiplayer.active && !isMyTurn()) {
-            actionBtn.textContent = "Waiting for " + p.name + "…";
+            actionBtn.textContent = typeof t === "function" ? t("action_waiting_for", { name: p.name }) : "Waiting for " + p.name + "…";
             actionBtn.title = "Waiting for remote player";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
             actionBtn.onclick = null;
           } else if (p.computer) {
             actionBtn.textContent = rolling
-              ? p.name + " rolling…"
+              ? (typeof t === "function" ? t("action_rolling") : p.name + " rolling…")
               : moving
-                ? p.name + " moving…"
-                : p.name + " is thinking…";
+                ? (typeof t === "function" ? t("action_moving") : p.name + " moving…")
+                : (typeof t === "function" ? t("action_thinking", { name: p.name }) : p.name + " is thinking…");
             actionBtn.title = p.name + " turn";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
             actionBtn.onclick = null;
           } else if (rolling) {
-            actionBtn.textContent = "🎲 Rolling…";
+            actionBtn.textContent = typeof t === "function" ? t("action_rolling") : "🎲 Rolling…";
             actionBtn.title = "Rolling dice…";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
             actionBtn.onclick = null;
           } else if (moving) {
-            actionBtn.textContent = "Moving…";
+            actionBtn.textContent = typeof t === "function" ? t("action_moving") : "Moving…";
             actionBtn.title = "Moving piece…";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
@@ -710,8 +716,8 @@
           } else if (game.phase === "move") {
             if (targetMove) {
               actionBtn.textContent = targetMove.piece.progress < 0
-                ? "✨ Enter Piece"
-                : "👉 Move Selected Piece";
+                ? (typeof t === "function" ? t("action_enter_piece") : "✨ Enter Piece")
+                : (typeof t === "function" ? t("action_move_selected") : "👉 Move Selected Piece");
               actionBtn.title = "Move piece (Shortcut: Enter or M, or press 1-6)";
               actionBtn.disabled = false;
               actionBtn.classList.remove("disabled");
@@ -721,13 +727,13 @@
                 }
               };
             } else if (opts.length === 0) {
-              actionBtn.textContent = "Pass turn";
+              actionBtn.textContent = typeof t === "function" ? t("action_pass_turn") : "Pass turn";
               actionBtn.title = "Pass turn (Shortcut: Space or Enter)";
               actionBtn.disabled = false;
               actionBtn.classList.remove("disabled");
               actionBtn.onclick = () => passRemainingRolls();
             } else {
-              actionBtn.textContent = "👉 Move Piece";
+              actionBtn.textContent = typeof t === "function" ? t("action_move_selected") : "👉 Move Piece";
               actionBtn.title = "Move piece (Shortcut: Enter or M, or press 1-6)";
               actionBtn.disabled = false;
               actionBtn.classList.remove("disabled");
@@ -737,9 +743,9 @@
               };
             }
           } else if (game.phase === "roll") {
-            actionBtn.textContent = game.history.length > 0
-              ? "🎲 Roll Dice (Bonus throw!)"
-              : "🎲 Roll Dice";
+            actionBtn.textContent = typeof t === "function"
+              ? (game.history.length > 0 ? t("action_roll_bonus") : t("action_roll_dice"))
+              : (game.history.length > 0 ? "🎲 Roll Dice (Bonus throw!)" : "🎲 Roll Dice");
             actionBtn.title = "Roll the dice (Shortcut: Space or R)";
             actionBtn.disabled = false;
             actionBtn.classList.remove("disabled");
@@ -747,7 +753,7 @@
               if (canRoll) roll();
             };
           } else {
-            actionBtn.textContent = "🎲 Roll Dice";
+            actionBtn.textContent = typeof t === "function" ? t("action_roll_dice") : "🎲 Roll Dice";
             actionBtn.title = "Roll dice";
             actionBtn.disabled = true;
             actionBtn.classList.add("disabled");
@@ -765,6 +771,7 @@
           const canPass = game.phase === "move" && isHumanTurn && !openingEntryRequired && !moving && !rolling;
           passBtn.hidden = game.phase !== "move" || !isHumanTurn || openingEntryRequired;
           passBtn.disabled = !canPass;
+          passBtn.textContent = typeof t === "function" ? t("action_pass") : "Pass";
           passBtn.onclick = () => {
             if (canPass) passRemainingRolls();
           };
@@ -772,29 +779,43 @@
 
         $("statusTitle").textContent =
           game.phase === "done"
-            ? "🏆 " + winner.name + " wins!"
-            : p.avatar + " " + p.name + "’s turn";
+            ? "🏆 " + (typeof t === "function" ? t("winner_title", { name: winner.name }) : winner.name + " wins!")
+            : p.avatar + " " + (typeof t === "function" ? t("turn_title", { name: p.name }) : p.name + "’s turn");
         if ($("statusText")) {
           const isWaitingPeer = multiplayer.active && !isHumanTurn;
           $("statusText").textContent =
             game.phase === "done"
-              ? winner.name + " brought all six pieces to the center. The game is complete."
+              ? (typeof t === "function"
+                  ? t("status_winner_detail", { name: winner.name })
+                  : winner.name + " brought all six pieces to the center. The game is complete.")
               : isWaitingPeer
-                ? "Waiting for " + p.name + " to " + (game.phase === "roll" ? "roll dice" : "make a move") + "…"
+                ? (typeof t === "function"
+                    ? t("status_waiting_peer", { name: p.name, action: game.phase === "roll" ? t("status_roll_dice") : t("status_make_move") })
+                    : "Waiting for " + p.name + " to " + (game.phase === "roll" ? "roll dice" : "make a move") + "…")
                 : game.phase === "roll"
-                  ? "Roll the Dayakattai dice" +
-                    (game.history.length
-                      ? " · bonus throw! Follow the glowing route around the board."
-                      : " · Follow the glowing route around the board.")
+                  ? (typeof t === "function"
+                      ? (game.history.length ? t("status_roll_prompt_bonus") : t("status_roll_prompt_normal"))
+                      : "Roll the Dayakattai dice" +
+                        (game.history.length
+                          ? " · bonus throw! Follow the glowing route around the board."
+                          : " · Follow the glowing route around the board."))
                   : openingEntryRequired
-                    ? "Use this player’s first-round entry allowance to put a piece on the board."
-                    : "Choose a roll, then tap a gold-outlined " +
-                      p.avatar +
-                      " piece. " +
-                      chosen.length +
-                      " move" +
-                      (chosen.length === 1 ? " is" : "s are") +
-                      " available.";
+                    ? (typeof t === "function"
+                        ? t("status_opening_entry")
+                        : "Use this player’s first-round entry allowance to put a piece on the board.")
+                    : (typeof t === "function"
+                        ? t("status_choose_roll", {
+                            avatar: p.avatar,
+                            count: chosen.length,
+                            plural: chosen.length === 1 ? " is" : "s are",
+                          })
+                        : "Choose a roll, then tap a gold-outlined " +
+                          p.avatar +
+                          " piece. " +
+                          chosen.length +
+                          " move" +
+                          (chosen.length === 1 ? " is" : "s are") +
+                          " available.");
         }
         const diceHintEl = $("diceHint");
         if (diceHintEl) {
@@ -805,25 +826,25 @@
             const isChainEnded = Boolean(game.last.specialRoll && !game.last.bonus);
             const badgeClass = isBonus ? "lastroll-status bonus" : "lastroll-status";
             const badgeText = isDhayam
-              ? "✨ Dhayam! · Bonus throw"
+              ? (typeof t === "function" ? t("dhayam_bonus_badge") : "✨ Dhayam! · Bonus throw")
               : isBonus
-                ? "✨ Bonus throw (" + val + ")"
+                ? (typeof t === "function" ? t("bonus_throw", { val }) : "✨ Bonus throw (" + val + ")")
                 : isChainEnded
-                  ? "Bonus chain complete"
-                  : "Normal roll";
+                  ? (typeof t === "function" ? t("bonus_chain_complete") : "Bonus chain complete")
+                  : (typeof t === "function" ? t("normal_roll") : "Normal roll");
 
             diceHintEl.className = "lastroll-container";
             diceHintEl.innerHTML =
-              '<div class="lastroll-header">Last Roll</div>' +
+              '<div class="lastroll-header">' + (typeof t === "function" ? t("last_roll") : "Last Roll") + '</div>' +
               '<div class="lastroll-main">' +
               '<span class="lastroll-number">' + val + "</span>" +
-              (isDhayam ? '<span class="lastroll-name">Dhayam</span>' : "") +
+              (isDhayam ? '<span class="lastroll-name">' + (typeof t === "function" ? t("dhayam") : "Dhayam") + '</span>' : "") +
               "</div>" +
               '<div class="' + badgeClass + '">' + badgeText + "</div>";
           } else {
             diceHintEl.className = "lastroll-container";
             diceHintEl.innerHTML =
-              '<div class="lastroll-helper-init">Two traditional dice · Click dice to roll.<br>Roll 1, 5, 6, or 12 for a bonus throw.</div>';
+              '<div class="lastroll-helper-init">' + (typeof t === "function" ? t("dice_helper_init") : "Two traditional dice · Click dice to roll.<br>Roll 1, 5, 6, or 12 for a bonus throw.") + '</div>';
           }
         }
         const canRollDice = canRoll;
@@ -832,10 +853,10 @@
           diceEl.classList.toggle("rollable", canRollDice);
           diceEl.setAttribute("aria-label", canRollDice ? "Dice — Click to roll" : "Dice");
           if (canRollDice) {
-            diceEl.title = "Click to roll dice";
+            diceEl.title = typeof t === "function" ? t("dice_click_to_roll") : "Click to roll dice";
             diceEl.setAttribute("tabindex", "0");
           } else if (game.phase === "move") {
-            diceEl.title = "Dice already rolled — Select a piece to move";
+            diceEl.title = typeof t === "function" ? t("dice_already_rolled_title") : "Dice already rolled — Select a piece to move";
             diceEl.setAttribute("tabindex", "0");
           } else {
             diceEl.removeAttribute("title");
@@ -990,27 +1011,31 @@
           if (move.test.progress === 43 || destSq === "D4") {
             cellEl.classList.add("target-goal");
             badge.classList.add("badge-goal");
+            const label = typeof t === "function" ? t("badge_goal") : "GOAL";
             badge.innerHTML =
-              '<span class="dest-icon">🎯</span><span class="dest-label">GOAL</span>';
+              '<span class="dest-icon">🎯</span><span class="dest-label">' + label + '</span>';
             tacticalDesc = `Center goal milestone for piece #${pieceNumber}`;
           } else if (move.test.targets && move.test.targets.length > 0) {
             cellEl.classList.add("target-capture");
             badge.classList.add("badge-capture");
             const victim = move.test.targets[0].other;
             const victimAvatar = victim?.avatar ? `${victim.avatar} ` : "";
-            badge.innerHTML = `<span class="dest-icon">⚔️</span><span class="dest-label">${victimAvatar}CAPTURE</span>`;
+            const label = typeof t === "function" ? t("badge_capture") : "CAPTURE";
+            badge.innerHTML = `<span class="dest-icon">⚔️</span><span class="dest-label">${victimAvatar}${label}</span>`;
             tacticalDesc = `Capture ${victim?.name || "opponent"} with piece #${pieceNumber}`;
           } else if (move.piece.progress < 0) {
             cellEl.classList.add("target-normal");
             badge.classList.add("badge-normal");
+            const label = typeof t === "function" ? t("badge_enter") : "ENTER";
             badge.innerHTML =
-              '<span class="dest-icon">✨</span><span class="dest-label">ENTER</span>';
+              '<span class="dest-icon">✨</span><span class="dest-label">' + label + '</span>';
             tacticalDesc = `Enter piece #${pieceNumber} onto starting square ${destSq}`;
           } else if (SAFE.has(destSq)) {
             cellEl.classList.add("target-sanctuary");
             badge.classList.add("badge-sanctuary");
+            const label = typeof t === "function" ? t("badge_sanctuary") : "SAFE";
             badge.innerHTML =
-              '<span class="dest-icon">🛡️</span><span class="dest-label">SAFE</span>';
+              '<span class="dest-icon">🛡️</span><span class="dest-label">' + label + '</span>';
             tacticalDesc = `Safe sanctuary for piece #${pieceNumber}`;
           } else {
             cellEl.classList.add("target-normal");
@@ -1199,7 +1224,7 @@
           banner.className = "dice-warn-banner";
           diceEl.appendChild(banner);
         }
-        banner.textContent = "👉 Dice rolled! Pick a piece to move.";
+        banner.textContent = typeof t === "function" ? t("toast_dice_rolled") : "👉 Dice rolled! Pick a piece to move.";
         banner.classList.add("visible");
         if (banner._warnTimer) clearTimeout(banner._warnTimer);
         banner._warnTimer = setTimeout(() => banner.classList.remove("visible"), 2600);
@@ -1207,8 +1232,9 @@
         // 5. Explicit status prompt
         const statusEl = document.getElementById("statusText");
         if (statusEl) {
-          statusEl.innerHTML =
-            '<strong style="color:#ffa94d;">⚠️ Dice already rolled!</strong> Tap a piece on the board or click "Move selected piece".';
+          statusEl.innerHTML = typeof t === "function"
+            ? t("warn_already_rolled_html")
+            : '<strong style="color:#ffa94d;">⚠️ Dice already rolled!</strong> Tap a piece on the board or click "Move selected piece".';
         }
 
         // 6. Audio cue if enabled

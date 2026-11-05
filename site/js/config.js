@@ -131,9 +131,9 @@
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
         version: "0.4.0",
-        build: 2,
-        timestamp: "2026-11-04 20:45 UTC",
-        releaseName: "Interactive Move Destination Preview & Tactical Highlights",
+        build: 3,
+        timestamp: "2026-11-04 22:25 UTC",
+        releaseName: "Authentic Bilingual Tamil & English Localization (i18n)",
       };
        // Global player-count limits — update here, never hardcode elsewhere
        const MIN_PLAYERS = 2;
