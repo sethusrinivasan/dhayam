@@ -179,6 +179,7 @@ def save_history(history):
         "Detailed execution lineage tracking every attempt to push `refs/heads/main` to `sethusrinivasan/dhayam` (Repo ID: `1440183363`).",
         "",
         "## Summary Metrics",
+        "- **Official GitHub Support Ticket**: [#4953641](https://help.github.com/ticket/personal/0/4953641)",
         f"- **Total Recorded Attempts**: {total}",
         f"- **Failed Attempts**: {failed} (100% server-side reference transaction failures)",
         f"- **Successful Attempts**: {succeeded}",

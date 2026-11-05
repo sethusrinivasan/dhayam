@@ -1,6 +1,7 @@
 # GitHub Service Incident Report: Server-Side 500 Internal Server Error on Git Reference Updates (`commit_refs`)
 
 **Ticket Category**: Git Infrastructure / Core Services / Reference Transaction Engine  
+**Official GitHub Support Ticket**: [#4953641](https://help.github.com/ticket/personal/0/4953641)  
 **Severity**: High (Blocking all code pushes & branch ref updates to repository)  
 **Date & Time**: 2026-11-05 00:25:32 UTC (Local: 2026-11-04 16:25:32 PDT)  
 **Repository**: `sethusrinivasan/dhayam`  
@@ -27,6 +28,8 @@ The issue reproduces across multiple GitHub edge regions. Here are exact trace h
 
 | Timestamp (UTC) | GitHub Edge Region | HTTP Status | GitHub Request ID (`X-GitHub-Request-Id`) | Operation |
 |---|---|---|---|---|
+| `2026-11-05 02:31:22 GMT` | `sea` | `500 Internal Server Error` | `8D78:3BDCA5:80DB8B:BBECD5:6AEBEA7B` | `POST /git-receive-pack (commit_refs)` |
+| `2026-11-05 02:28:21 GMT` | `westus2` | `500 Internal Server Error` | `8DC2:3E414E:153F4C:306569:6AEBE9C5` | `POST /git-receive-pack (commit_refs)` |
 | `2026-11-05 02:19:43 GMT` | `sea` | `500 Internal Server Error` | `806A:1666:903155:D1F691:6AEBE7BF` | `POST /git-receive-pack (commit_refs)` |
 | `2026-11-05 01:49:43 GMT` | `westus2` | `500 Internal Server Error` | `E092:A8DA9:142FF7:2DFB09:6AEBE0B6` | `POST /git-receive-pack (commit_refs)` |
 | `2026-11-05 01:28:51 GMT` | `westus2` | `500 Internal Server Error` | `D8A6:10F28:137FA8:2C5D05:6AEBDBD2` | `POST /git-receive-pack (commit_refs)` |

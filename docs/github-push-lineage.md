@@ -3,10 +3,10 @@
 Detailed execution lineage tracking every attempt to push `refs/heads/main` to `sethusrinivasan/dhayam` (Repo ID: `1440183363`).
 
 ## Summary Metrics
-- **Total Recorded Attempts**: 9
-- **Failed Attempts**: 9 (100% server-side reference transaction failures)
+- **Total Recorded Attempts**: 11
+- **Failed Attempts**: 11 (100% server-side reference transaction failures)
 - **Successful Attempts**: 0
-- **Last Updated**: `2026-11-05 02:27:24 UTC`
+- **Last Updated**: `2026-11-05 02:31:26 UTC`
 - **Active Status**: `BLOCKING` (Server-side lock on `refs/heads/main` active)
 
 ---
@@ -15,6 +15,8 @@ Detailed execution lineage tracking every attempt to push `refs/heads/main` to `
 
 | # | Timestamp (UTC) | Edge Region | Server IP | HTTP | Request ID | Objects / Deltas | Result | Failure Diagnosis |
 |---|---|---|---|---|---|---|---|---|
+| 11 | `2026-11-05T02:31:22Z` | `sea` | `140.82.116.3` | `200` | `8D78:3BDCA5:80DB8B:BBECD5:6AEBEA7B` | 0 / 0 | ❌ FAILED | Server-side ref transaction aborted on sea (Spokes lock contention) |
+| 10 | `2026-11-05T02:28:21Z` | `westus2` | `20.29.134.23` | `200` | `8DC2:3E414E:153F4C:306569:6AEBE9C5` | 0 / 0 | ❌ FAILED | Server-side ref transaction aborted on westus2 (Spokes lock contention) |
 | 9 | `2026-11-05T02:27:21Z` | `westus2` | `20.29.134.23` | `200` | `C998:3223AB:156FE6:30DF2D:6AEBE989` | 0 / 0 | ❌ FAILED | Server-side ref transaction aborted on westus2 (Spokes lock contention) |
 | 8 | `2026-11-05T02:19:43Z` | `sea` | `140.82.116.3` | `500` | `806A:1666:903155:D1F691:6AEBE7BF` | 62 / 54 | ❌ FAILED | Scheduled 30m iteration 4: sea edge confirmed replica lock |
 | 7 | `2026-11-05T01:49:43Z` | `westus2` | `20.29.134.23` | `500` | `E092:A8DA9:142FF7:2DFB09:6AEBE0B6` | 62 / 51 | ❌ FAILED | Scheduled 30m iteration 3: fatal error in commit_refs |
