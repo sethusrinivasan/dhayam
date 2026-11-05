@@ -3,10 +3,11 @@
 Detailed execution lineage tracking every attempt to push `refs/heads/main` to `sethusrinivasan/dhayam` (Repo ID: `1440183363`).
 
 ## Summary Metrics
-- **Total Recorded Attempts**: 11
-- **Failed Attempts**: 11 (100% server-side reference transaction failures)
+- **Official GitHub Support Ticket**: [#4953641](https://help.github.com/ticket/personal/0/4953641)
+- **Total Recorded Attempts**: 14
+- **Failed Attempts**: 14 (100% server-side reference transaction failures)
 - **Successful Attempts**: 0
-- **Last Updated**: `2026-11-05 02:31:26 UTC`
+- **Last Updated**: `2026-11-05 02:40:24 UTC`
 - **Active Status**: `BLOCKING` (Server-side lock on `refs/heads/main` active)
 
 ---
@@ -15,6 +16,9 @@ Detailed execution lineage tracking every attempt to push `refs/heads/main` to `
 
 | # | Timestamp (UTC) | Edge Region | Server IP | HTTP | Request ID | Objects / Deltas | Result | Failure Diagnosis |
 |---|---|---|---|---|---|---|---|---|
+| 14 | `2026-11-05T02:40:21Z` | `sea` | `140.82.116.4` | `200` | `DD76:1BEF3D:1626912:2027242:6AEBEC95` | 0 / 0 | ❌ FAILED | Server-side ref transaction aborted on sea (Spokes lock contention) |
+| 13 | `2026-11-05T02:37:21Z` | `westus2` | `20.29.134.23` | `200` | `BBB2:27EABE:154BCA:30DA7F:6AEBEBE1` | 0 / 0 | ❌ FAILED | Server-side ref transaction aborted on westus2 (Spokes lock contention) |
+| 12 | `2026-11-05T02:34:20Z` | `westus2` | `20.29.134.23` | `200` | `CE74:2E0540:155807:30AFFA:6AEBEB2C` | 0 / 0 | ❌ FAILED | Server-side ref transaction aborted on westus2 (Spokes lock contention) |
 | 11 | `2026-11-05T02:31:22Z` | `sea` | `140.82.116.3` | `200` | `8D78:3BDCA5:80DB8B:BBECD5:6AEBEA7B` | 0 / 0 | ❌ FAILED | Server-side ref transaction aborted on sea (Spokes lock contention) |
 | 10 | `2026-11-05T02:28:21Z` | `westus2` | `20.29.134.23` | `200` | `8DC2:3E414E:153F4C:306569:6AEBE9C5` | 0 / 0 | ❌ FAILED | Server-side ref transaction aborted on westus2 (Spokes lock contention) |
 | 9 | `2026-11-05T02:27:21Z` | `westus2` | `20.29.134.23` | `200` | `C998:3223AB:156FE6:30DF2D:6AEBE989` | 0 / 0 | ❌ FAILED | Server-side ref transaction aborted on westus2 (Spokes lock contention) |

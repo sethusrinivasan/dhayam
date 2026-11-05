@@ -174,5 +174,53 @@
     "deltas_resolved": 0,
     "status": "FAILED",
     "diagnosis": "Server-side ref transaction aborted on sea (Spokes lock contention)"
+  },
+  {
+    "attempt_index": 12,
+    "timestamp_utc": "2026-11-05T02:34:20Z",
+    "method": "git-push",
+    "command": "git push origin main",
+    "exit_code": 1,
+    "http_status": 200,
+    "request_id": "CE74:2E0540:155807:30AFFA:6AEBEB2C",
+    "edge_region": "westus2",
+    "server_ip": "20.29.134.23",
+    "error_message": "remote: fatal error in commit_refs",
+    "objects_transferred": 0,
+    "deltas_resolved": 0,
+    "status": "FAILED",
+    "diagnosis": "Server-side ref transaction aborted on westus2 (Spokes lock contention)"
+  },
+  {
+    "attempt_index": 13,
+    "timestamp_utc": "2026-11-05T02:37:21Z",
+    "method": "git-push",
+    "command": "git push origin main",
+    "exit_code": 1,
+    "http_status": 200,
+    "request_id": "BBB2:27EABE:154BCA:30DA7F:6AEBEBE1",
+    "edge_region": "westus2",
+    "server_ip": "20.29.134.23",
+    "error_message": "remote: fatal error in commit_refs",
+    "objects_transferred": 0,
+    "deltas_resolved": 0,
+    "status": "FAILED",
+    "diagnosis": "Server-side ref transaction aborted on westus2 (Spokes lock contention)"
+  },
+  {
+    "attempt_index": 14,
+    "timestamp_utc": "2026-11-05T02:40:21Z",
+    "method": "git-push",
+    "command": "git push origin main",
+    "exit_code": 1,
+    "http_status": 200,
+    "request_id": "DD76:1BEF3D:1626912:2027242:6AEBEC95",
+    "edge_region": "sea",
+    "server_ip": "140.82.116.4",
+    "error_message": "remote: fatal error in commit_refs",
+    "objects_transferred": 0,
+    "deltas_resolved": 0,
+    "status": "FAILED",
+    "diagnosis": "Server-side ref transaction aborted on sea (Spokes lock contention)"
   }
 ]
