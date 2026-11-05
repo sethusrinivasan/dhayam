@@ -27,6 +27,7 @@ The issue reproduces across multiple GitHub edge regions. Here are exact trace h
 
 | Timestamp (UTC) | GitHub Edge Region | HTTP Status | GitHub Request ID (`X-GitHub-Request-Id`) | Operation |
 |---|---|---|---|---|
+| `2026-11-05 02:19:43 GMT` | `sea` | `500 Internal Server Error` | `806A:1666:903155:D1F691:6AEBE7BF` | `POST /git-receive-pack (commit_refs)` |
 | `2026-11-05 01:49:43 GMT` | `westus2` | `500 Internal Server Error` | `E092:A8DA9:142FF7:2DFB09:6AEBE0B6` | `POST /git-receive-pack (commit_refs)` |
 | `2026-11-05 01:28:51 GMT` | `westus2` | `500 Internal Server Error` | `D8A6:10F28:137FA8:2C5D05:6AEBDBD2` | `POST /git-receive-pack (commit_refs)` |
 | `2026-11-05 00:25:32 GMT` | `westus2` | `500 Internal Server Error` | `D05E:DE9E7:1A8C37:2D3D4E:6AEBCCFA` | `PATCH /git/refs/heads/main` |
