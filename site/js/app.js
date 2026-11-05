@@ -697,8 +697,42 @@
       }
       $("guideBtn").onclick = () =>
         showModal(
-          "How to play",
-          "<p><strong>1.</strong> Roll two traditional dice. Rolls of 1, 5, 6, or 12 grant another throw.</p><p><strong>2.</strong> Roll a 1 to enter a piece from reserve. During the first round, every player may use any one roll to enter a piece, so the board becomes active immediately.</p><p><strong>3.</strong> The game uses its live audit to keep rounds active. If a whole round would have no move, its final roll is selected from playable outcomes and marked in the audit.</p><p><strong>4.</strong> Land on an unprotected opponent to capture. Floral squares are safe.</p><p><strong>5.</strong> Capture at least once to enter the inward track. Finish all six pieces by exact count.</p>",
+          "How to Play Dhayam",
+          '<div style="text-align:left;display:flex;flex-direction:column;gap:14px;">' +
+            '<section style="border-bottom:1px solid #ffffff1a;padding-bottom:12px;">' +
+              '<h4 style="margin:0 0 6px;color:#fcd34d;font-size:0.95rem;">📜 Game Rules</h4>' +
+              '<p style="margin:4px 0;font-size:0.84rem;color:#f3dfc6;line-height:1.45;"><strong>1.</strong> Roll two traditional brass dice. Rolls of <strong>1</strong>, <strong>5</strong>, <strong>6</strong>, or <strong>12</strong> grant another throw.</p>' +
+              '<p style="margin:4px 0;font-size:0.84rem;color:#f3dfc6;line-height:1.45;"><strong>2.</strong> Roll a <strong>1</strong> to enter a piece from reserve. On the first round, all players have an entry allowance to enter on any roll.</p>' +
+              '<p style="margin:4px 0;font-size:0.84rem;color:#f3dfc6;line-height:1.45;"><strong>3.</strong> Land on an unprotected opponent to <strong>capture</strong> them back to reserve. Floral squares are <strong>safe</strong>.</p>' +
+              '<p style="margin:4px 0;font-size:0.84rem;color:#f3dfc6;line-height:1.45;"><strong>4.</strong> Capture at least once to unlock entry into the inward circuit.</p>' +
+              '<p style="margin:4px 0;font-size:0.84rem;color:#f3dfc6;line-height:1.45;"><strong>5.</strong> Guide all 6 pieces into the central destination by exact roll to win!</p>' +
+            '</section>' +
+            '<section style="border-bottom:1px solid #ffffff1a;padding-bottom:12px;">' +
+              '<h4 style="margin:0 0 6px;color:#fcd34d;font-size:0.95rem;">⌨️ Keyboard Controls (Play Without Mouse)</h4>' +
+              '<p style="margin:0 0 8px;font-size:0.82rem;color:#d8c4ab;">You can play entire matches without touching the mouse:</p>' +
+              '<table class="shortcuts-table" style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
+                '<tbody>' +
+                  '<tr><td style="padding:4px 0;width:40%;"><strong>Space</strong> or <strong>R</strong></td><td style="color:#ffe0a3;">Roll Dice / Primary Action</td></tr>' +
+                  '<tr><td style="padding:4px 0;"><strong>M</strong> or <strong>Enter</strong></td><td style="color:#ffe0a3;">Move / Enter Piece</td></tr>' +
+                  '<tr><td style="padding:4px 0;"><strong>1</strong> – <strong>6</strong></td><td style="color:#ffe0a3;">Move Specific Piece Number</td></tr>' +
+                  '<tr><td style="padding:4px 0;"><strong>N</strong></td><td style="color:#ffe0a3;">Start New Solo Game vs Computer</td></tr>' +
+                  '<tr><td style="padding:4px 0;"><strong>Esc</strong> or <strong>X</strong></td><td style="color:#ffe0a3;">Exit Match / Dismiss Dialog</td></tr>' +
+                  '<tr><td style="padding:4px 0;"><strong>V</strong></td><td style="color:#ffe0a3;">Toggle Voice Commands</td></tr>' +
+                '</tbody>' +
+              '</table>' +
+            '</section>' +
+            '<section>' +
+              '<h4 style="margin:0 0 6px;color:#fcd34d;font-size:0.95rem;">🎤 Optional Voice Commands (Hands-Free)</h4>' +
+              '<p style="margin:0 0 8px;font-size:0.82rem;color:#d8c4ab;">Click <strong>🎤 Voice: Off</strong> in the header or press <kbd>V</kbd> to enable microphone listening. Speak commands clearly:</p>' +
+              '<ul style="margin:4px 0 0 18px;font-size:0.82rem;color:#ffe0a3;line-height:1.5;">' +
+                '<li><em>"Roll"</em> or <em>"Roll dice"</em> — Rolls the Dayakattai dice</li>' +
+                '<li><em>"Move"</em> or <em>"Move piece [1-6]"</em> — Moves active or specific piece</li>' +
+                '<li><em>"New game"</em> or <em>"Solo game"</em> — Starts new match vs computer</li>' +
+                '<li><em>"Pass"</em> — Passes turn when no moves are possible</li>' +
+                '<li><em>"Exit"</em> or <em>"Quit"</em> — Exits match or dialog</li>' +
+              '</ul>' +
+            '</section>' +
+          '</div>',
           "Got it",
           () => {},
         );

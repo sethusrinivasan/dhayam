@@ -13,3 +13,4 @@
 | **Local Match Player Customization** | Organizers can rename players and choose avatars without requiring accounts or logins. |
 | **Tamper-Evident Flight Recorder** | In-memory and exportable event audit captures all rolls, moves, captures, and audio lifecycle events for diagnostics. |
 | **White-Label Embed Boundary** | The v1 third-party integration uses a versioned script loader and isolated iframe, keeping partner branding separate from Dhayam UI and rules. Tracked in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10). |
+| **Multi-Modal Controls (Keyboard & Voice)** | Allows complete hands-free and keyboard-only accessibility (Space/R, M/Enter, 1–6, N, Esc/X, Web Speech recognition) without forcing mouse usage or adding external SDKs. Microphone access is strictly opt-in. |

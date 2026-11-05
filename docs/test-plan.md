@@ -35,6 +35,15 @@ The GitHub Actions workflow runs the test suite on every push, pull request, and
    - Full tool execution loop (`dhayam_new_game`, `dhayam_roll_dice`, `dhayam_get_state`, `dhayam_get_legal_moves`, `dhayam_get_audit_log`, `dhayam_get_share_url`).
    - JSON-RPC error handling for method not found (`-32601`) and parse error (`-32700`).
 
+4. **`test/voice_keyboard.test.ts` (10 tests)**:
+   - Keyboard roll dispatch via Space and R during roll phase.
+   - Fallback and direct execution of roll() when action button is busy or absent.
+   - First-move execution and 1-based piece targeting (`1`–`6`) via M, Enter, and digit keys.
+   - Turn auto-pass when 0 legal options exist.
+   - Solo game initialization via N key.
+   - Modal and match exit dispatch via Escape and X keys.
+   - Global input isolation ensuring keydown events inside text input/textarea/select are not intercepted.
+
 ## Browser acceptance pass
 
 1. Roll and move a legal piece; confirm every square is visibly traversed.
@@ -46,3 +55,5 @@ The GitHub Actions workflow runs the test suite on every push, pull request, and
 7. Rename a player; confirm the family table, color legend, commentary, and audit use the updated name.
 8. Clear the `dhayam_intro_seen` cookie and confirm the splash returns; select its opt-out checkbox and confirm it stays hidden after reload.
 9. Check 1440px, 1024px, 768px, and 390px widths for visible dice, usable controls, and no horizontal page overflow.
+10. Test keyboard-only navigation: Press <kbd>Space</kbd> to roll dice, <kbd>M</kbd> or <kbd>1</kbd>–<kbd>6</kbd> to move, <kbd>N</kbd> to start a new solo match vs computer, and <kbd>Esc</kbd> to open the exit match modal.
+11. Test voice commands: Toggle **🎤 Voice: Off** to verify browser microphone permission prompt appears, confirm audio toast feedback on saying "Roll", "Move", "New game", and confirm echo rejection during computer narration.

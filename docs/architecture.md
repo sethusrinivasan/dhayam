@@ -73,14 +73,16 @@ dhayam/
 │       ├── qrcode.min.js          # Standalone SVG QR code generator
 │       ├── peerjs.min.js          # WebRTC P2P fallback library
 │       ├── multiplayer.js         # Cloudflare DO WebSocket client + P2P fallback engine
-│       └── app.js                 # Modal managers, player editor, keyboard nav, bootstrap
+│       ├── voice.js               # Keyboard navigation engine & optional Web Speech API voice control
+│       └── app.js                 # Modal managers, player editor, settings, and bootstrap
 ├── mcp/
 │   └── server.py                  # Zero-dependency Python 3 standard library stdio MCP server
 ├── src/
 │   └── game.ts                    # Immutable TypeScript rules engine (for headless verification)
 ├── test/
 │   ├── game.test.ts               # Unit test suite for game rules and invariants
-│   ├── multiplayer_regression.test.ts # Regression tests (48 tests passing)
+│   ├── multiplayer_regression.test.ts # Multiplayer & worker regression suite
+│   ├── voice_keyboard.test.ts     # Keyboard navigation & speech command recognition tests
 │   └── mcp_server.test.ts         # Live Cloudflare-hosted MCP server JSON-RPC test suite
 └── wrangler.toml                  # Cloudflare Workers + Static Assets + Durable Objects configuration
 ```
@@ -111,4 +113,20 @@ When a room is created (e.g. `CF88`):
 1. **Seat Allocation (`CLAIM_SEAT`)**: Players select open seats (N, E, S, W). A random cryptographic session token is issued and stored in browser `sessionStorage`.
 2. **Synchronized Rolls (`ROLL_START`)**: When the active player rolls, the server generates the dice outcome, broadcasts `ROLL_START`, and all connected clients trigger 3D tumbling animations in unison.
 3. **Synchronized Pawn Movement (`MOVE_START`)**: Pawns advance square-by-square with visual capture badge and animated flight to the family table.
+
+---
+
+## 4. Multi-Modal Input Architecture
+
+Dhayam provides three interchangeable input channels handled by `site/js/voice.js` and `site/js/turn.js`:
+
+1. **Mouse & Touch Input**: Direct clicks on board pawns, dice tray, and `#actionBtn`.
+2. **Keyboard-Only Engine**:
+   - Intercepts globally on `document.addEventListener("keydown")` while actively yielding when user focus resides inside `INPUT`, `TEXTAREA`, or `SELECT` fields.
+   - Maps <kbd>Space</kbd>/<kbd>R</kbd> to `handleKeyboardRoll()`, <kbd>M</kbd>/<kbd>Enter</kbd> to `handleKeyboardMove()`, digits <kbd>1</kbd>–<kbd>6</kbd> to piece-specific move dispatch, <kbd>N</kbd> to `handleKeyboardNewGame()`, and <kbd>Esc</kbd>/<kbd>X</kbd> to `handleKeyboardExit()`.
+3. **Optional Web Speech API Voice Engine**:
+   - Strictly opt-in: Prompts for microphone access through `navigator.mediaDevices.getUserMedia({ audio: true })` only when the user explicitly clicks the voice toggle or presses <kbd>V</kbd>.
+   - Continuous speech recognition instance (`SpeechRecognition` / `webkitSpeechRecognition`) feeds spoken phrases to `processVoiceTranscript()`.
+   - Protects against acoustic feedback loops: Automatically ignores voice input while `window.speechSynthesis` is actively speaking game commentary.
+   - Dispatches visual confirmation via floating `#voiceToast` HUD element.
 4. **Authoritative State Sync (`SYNC_STATE`)**: The authoritative SQLite state guarantees no desynchronization across clients.

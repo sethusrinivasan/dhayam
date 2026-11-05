@@ -21,6 +21,48 @@ The browser client is a static, zero-runtime-dependency application. The authori
 - Accessible responsive UI, full keyboard controls (Space/R to roll, M/Enter to move, 1–6 for piece selection, N for solo match, Esc/X to exit), optional hands-free voice command recognition, animated 3D brass dice, piece destination highlights, voice commentary, scoring, and ordered audit events
 - Full MCP catalog for legal moves, summaries, audit logs, tactical evaluation, AI turns, and headless simulations
 
+## How to Play & Controls
+
+Dhayam supports three interchangeable ways to play: **Mouse/Touch**, **Keyboard-Only**, and **Hands-Free Voice Commands**.
+
+### Game Rules
+1. **Roll Dice**: Roll two brass Dayakattai dice. Rolls of **1, 5, 6, or 12** yield bonus throws.
+2. **Enter Pieces**: Roll a **1** to enter a pawn from reserve onto your home entrance square (first round features an entry allowance on any roll).
+3. **Capture**: Land on an opponent's lone piece on an unsafe square to capture it back to reserve. Squares marked with floral motifs are **safe squares** where pieces cannot be captured.
+4. **Inner Circuit**: A player must complete at least one capture before entering the inner circuit toward the center goal.
+5. **Exact Finish**: Guide all six pieces into the central destination by exact roll count to win.
+
+### Alternate Ways to Play
+
+#### ⌨️ Keyboard-Only Navigation
+Play the entire game without touching a mouse:
+
+| Key | Action | Description |
+|---|---|---|
+| <kbd>Space</kbd> or <kbd>R</kbd> | **Roll Dice** | Primary action during roll phase |
+| <kbd>M</kbd> or <kbd>Enter</kbd> | **Move Piece** | Moves active piece or enters board during move phase |
+| <kbd>1</kbd> – <kbd>6</kbd> | **Move Specific Piece** | Directly moves piece number 1 through 6 |
+| <kbd>N</kbd> | **New Solo Game** | Starts a new match vs computer (`2 players, 1 AI`) |
+| <kbd>Esc</kbd> or <kbd>X</kbd> | **Exit Game / Dismiss** | Closes active modal, exits demo, or prompts to exit match |
+| <kbd>V</kbd> | **Toggle Voice Commands** | Turns voice recognition on or off |
+| <kbd>?</kbd> or <kbd>H</kbd> | **Shortcuts Help** | Opens controls and shortcuts reference dialog |
+
+*Note: Keyboard shortcuts automatically yield when typing inside text inputs, textareas, or select dropdowns.*
+
+#### 🎤 Optional Hands-Free Voice Commands
+Control matches entirely with your voice via the Web Speech API:
+1. Click the **🎤 Voice: Off** button in the header or press <kbd>V</kbd>.
+2. Your browser prompts for **microphone permission** (strictly opt-in; no audio is captured when disabled).
+3. Speak commands clearly into your microphone:
+   - **"Roll"** / **"Roll dice"** / **"Throw dice"** — Rolls the Dayakattai dice
+   - **"Move"** / **"Enter piece"** — Steps the highest-priority piece or enters the board
+   - **"Move piece [1-6]"** (e.g. *"Move piece 2"*) — Directly steps the numbered piece
+   - **"New game"** / **"Solo game"** / **"Play computer"** — Starts a new solo match vs computer
+   - **"Pass"** / **"Skip"** — Passes turn when no legal moves remain
+   - **"Exit"** / **"Quit"** — Exits current match or closes dialogs
+   - **"Help"** / **"Shortcuts"** — Opens the controls modal
+4. A floating HUD toast confirms recognized commands on screen. Echo cancellation ensures computer voice commentary never triggers self-commands.
+
 ## Run locally
 
 ```sh
