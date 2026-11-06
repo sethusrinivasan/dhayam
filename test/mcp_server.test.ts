@@ -1,11 +1,29 @@
 import assert from "node:assert/strict";
+import dns from "node:dns";
 import test from "node:test";
+
+dns.setDefaultResultOrder("ipv4first");
 
 const MCP_URL = process.env.DHAYAM_MCP_URL || "https://dhayam-staging.cancun.workers.dev/mcp";
 const HEALTH_URL = process.env.DHAYAM_HEALTH_URL || "https://dhayam-staging.cancun.workers.dev/health";
 
+async function fetchWithRetry(url: string, init?: RequestInit, maxAttempts = 5): Promise<Response> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fetch(url, init);
+    } catch (err) {
+      lastErr = err;
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 test("MCP Server on Cloudflare: GET /health healthcheck", async () => {
-  const res = await fetch(HEALTH_URL);
+  const res = await fetchWithRetry(HEALTH_URL);
   assert.equal(res.status, 200);
   const data = await res.json();
   assert.equal(data.status, "healthy");
@@ -14,7 +32,7 @@ test("MCP Server on Cloudflare: GET /health healthcheck", async () => {
 });
 
 test("MCP Server on Cloudflare: GET /mcp service discovery", async () => {
-  const res = await fetch(MCP_URL);
+  const res = await fetchWithRetry(MCP_URL);
   assert.equal(res.status, 200);
   assert.equal(res.headers.get("access-control-allow-origin"), "*");
 
@@ -28,7 +46,7 @@ test("MCP Server on Cloudflare: GET /mcp service discovery", async () => {
 });
 
 test("MCP Server on Cloudflare: OPTIONS /mcp CORS preflight", async () => {
-  const res = await fetch(MCP_URL, { method: "OPTIONS" });
+  const res = await fetchWithRetry(MCP_URL, { method: "OPTIONS" });
   assert.ok(res.status === 200 || res.status === 204);
   assert.equal(res.headers.get("access-control-allow-origin"), "*");
   assert.ok(res.headers.get("access-control-allow-methods")?.includes("POST"));
@@ -46,7 +64,7 @@ test("MCP Server on Cloudflare: POST initialize handshake", async () => {
     }
   };
 
-  const res = await fetch(MCP_URL, {
+  const res = await fetchWithRetry(MCP_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -69,7 +87,7 @@ test("MCP Server on Cloudflare: POST notifications/initialized", async () => {
     params: {}
   };
 
-  const res = await fetch(MCP_URL, {
+  const res = await fetchWithRetry(MCP_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -85,7 +103,7 @@ test("MCP Server on Cloudflare: POST tools/list returns complete catalog", async
     method: "tools/list"
   };
 
-  const res = await fetch(MCP_URL, {
+  const res = await fetchWithRetry(MCP_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -131,7 +149,7 @@ test("MCP Server on Cloudflare: POST resources/list returns documentation resour
     method: "resources/list"
   };
 
-  const res = await fetch(MCP_URL, {
+  const res = await fetchWithRetry(MCP_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -148,7 +166,7 @@ test("MCP Server on Cloudflare: POST resources/list returns documentation resour
 test("MCP Server on Cloudflare: tools/call full gameplay loop (new game, roll, state, moves, pass)", async () => {
   // Helper to call tools
   async function callTool(name: string, args: Record<string, any> = {}) {
-    const res = await fetch(MCP_URL, {
+    const res = await fetchWithRetry(MCP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -214,7 +232,7 @@ test("MCP Server on Cloudflare: tools/call full gameplay loop (new game, roll, s
 
 test("MCP Server on Cloudflare: tools/call AI-to-AI simulation and automated turn", async () => {
   async function callTool(name: string, args: Record<string, any> = {}) {
-    const res = await fetch(MCP_URL, {
+    const res = await fetchWithRetry(MCP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -258,7 +276,7 @@ test("MCP Server on Cloudflare: tools/call AI-to-AI simulation and automated tur
 
 test("MCP Server on Cloudflare: JSON-RPC error handling", async () => {
   // 1. Unknown method (-32601)
-  const unknownRes = await fetch(MCP_URL, {
+  const unknownRes = await fetchWithRetry(MCP_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 999, method: "non_existent_method" })
@@ -269,7 +287,7 @@ test("MCP Server on Cloudflare: JSON-RPC error handling", async () => {
   assert.equal(unknownJson.error.message, "Method not found");
 
   // 2. Malformed JSON (-32700)
-  const malformedRes = await fetch(MCP_URL, {
+  const malformedRes = await fetchWithRetry(MCP_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: "{ this is not valid json }"

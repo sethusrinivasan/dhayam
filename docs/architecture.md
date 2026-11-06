@@ -1,6 +1,14 @@
 # Dhayam Architecture & Technical Design
 
 > **White-label integration:** The shipped v1 script-tag and iframe integration for third-party portals is tracked in [issue #10](https://github.com/sethusrinivasan/dhayam/issues/10). See the [white-label embed design](white-label-embed.md) and [Puter sample](examples/puter-dhayam-embed.html).
+>
+> **Offline PWA & Background Sync:** The offline-first design with automatic online refresh is tracked in [issue #12](https://github.com/sethusrinivasan/dhayam/issues/12). See the [offline PWA design](offline-pwa-design.md).
+>
+> **Hand Gesture Recognition:** Camera-based touchless gesture navigation is tracked in [issue #13](https://github.com/sethusrinivasan/dhayam/issues/13). See the [gesture controls design](gesture-controls-design.md).
+>
+> **Dynamic Personas & Celebrations:** Localized names, dynamic opponents, gendered voice, and win celebration are tracked in [issue #14](https://github.com/sethusrinivasan/dhayam/issues/14). See the [personas & celebration design](dynamic-personas-celebration-design.md).
+>
+> **Multi-Device UX Audit:** Layout and responsiveness verification for solo mode is tracked in [issue #15](https://github.com/sethusrinivasan/dhayam/issues/15). See the [UX audit matrix](responsive-device-ux-audit-matrix.md).
 
 An authentic, zero-dependency, modular web architecture designed for lifelong longevity, instant load times (<30KB gzipped), and $0 hosting cost.
 
