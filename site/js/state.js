@@ -42,6 +42,9 @@
         commentaryUntil = 0,
         audit = null,
         availableVoices = [],
+        // Turn Thinking Timer: tracks thinking duration for human player turns
+        turnThinkingStartTime = Date.now(),
+        turnThinkingInterval = null,
         // Game Liveliness Timer: tracks session/match uptime updated every 30s
         gameStartTime = Date.now(),
         gameTimerInterval = null,
@@ -54,6 +57,9 @@
         QUANTUM_DEMO_SPEED = 32,
         MAX_DEMO_SPEED = 128,
         MIN_SUPER_MOVE_DELAY = 10,
+        // Thinking timer thresholds: warn after 10s, auto-pass after 60s
+        THINKING_WARNING_THRESHOLD_SEC = 10,
+        THINKING_MAX_TIMEOUT_SEC = 60,
         // Page liveliness heartbeat cadence: updates every 30 seconds
         GAME_TIMER_INTERVAL_MS = 30000;
 
@@ -111,7 +117,19 @@
           set: (v) => { game = v; },
           configurable: true,
         });
+        Object.defineProperty(window, "audit", {
+          get: () => audit,
+          set: (v) => { audit = v; },
+          configurable: true,
+        });
+        Object.defineProperty(window, "turnThinkingStartTime", {
+          get: () => turnThinkingStartTime,
+          set: (v) => { turnThinkingStartTime = v; },
+          configurable: true,
+        });
         window.active = active;
         window.node = node;
         window.isMyTurn = isMyTurn;
+        window.THINKING_WARNING_THRESHOLD_SEC = THINKING_WARNING_THRESHOLD_SEC;
+        window.THINKING_MAX_TIMEOUT_SEC = THINKING_MAX_TIMEOUT_SEC;
       }

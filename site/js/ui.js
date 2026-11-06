@@ -883,6 +883,9 @@
         updateAudioToggle();
         scheduleComputerIfNeeded();
         updateMovePreviews();
+        if (typeof updateTurnThinkingTimer === "function") {
+          updateTurnThinkingTimer();
+        }
       }
 
       function calculatePlayerScore(p) {

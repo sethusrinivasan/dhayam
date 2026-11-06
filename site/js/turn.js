@@ -151,6 +151,121 @@
       }
       window.speakGuidance = speakGuidance;
 
+      function hideThinkingTimerPill() {
+        const pill = typeof $ === "function" ? $("thinkingTimerPill") : null;
+        if (pill) {
+          pill.hidden = true;
+          pill.classList.remove("urgent");
+          pill.textContent = "";
+        }
+      }
+
+      function startTurnThinkingTimer() {
+        if (!turnThinkingInterval && typeof setInterval !== "undefined") {
+          turnThinkingInterval = setInterval(updateTurnThinkingTimer, 1000);
+        }
+      }
+
+      function resetTurnThinkingTimer() {
+        turnThinkingStartTime = Date.now();
+        hideThinkingTimerPill();
+        startTurnThinkingTimer();
+      }
+
+      function updateTurnThinkingTimer() {
+        const pill = typeof $ === "function" ? $("thinkingTimerPill") : null;
+        if (!pill) return;
+
+        // Inactive if game is not active, finished, demo running, or actions in flight
+        if (
+          !game ||
+          game.phase === "done" ||
+          demo ||
+          rolling ||
+          moving ||
+          (typeof game.paused !== "undefined" && game.paused)
+        ) {
+          hideThinkingTimerPill();
+          return;
+        }
+
+        // Active player must be human
+        const player = typeof active === "function" ? active() : null;
+        if (!player || player.computer) {
+          hideThinkingTimerPill();
+          return;
+        }
+
+        // In multiplayer, only countdown for my own turn
+        if (typeof multiplayer !== "undefined" && multiplayer.active && typeof isMyTurn === "function" && !isMyTurn()) {
+          hideThinkingTimerPill();
+          return;
+        }
+
+        const elapsedMs = Date.now() - (turnThinkingStartTime || Date.now());
+        const elapsedSec = Math.floor(elapsedMs / 1000);
+        const maxSec = typeof THINKING_MAX_TIMEOUT_SEC !== "undefined" ? THINKING_MAX_TIMEOUT_SEC : 60;
+        const warnSec = typeof THINKING_WARNING_THRESHOLD_SEC !== "undefined" ? THINKING_WARNING_THRESHOLD_SEC : 10;
+        const remainingSec = Math.max(0, maxSec - elapsedSec);
+
+        // Under 10 seconds: keep pill hidden
+        if (elapsedSec < warnSec) {
+          hideThinkingTimerPill();
+          return;
+        }
+
+        // Between 10 and 60 seconds: show warning countdown pill
+        if (elapsedSec < maxSec) {
+          pill.hidden = false;
+          if (remainingSec <= 15) {
+            pill.classList.add("urgent");
+            pill.textContent = typeof t === "function"
+              ? t("thinking_urgent", { elapsed: elapsedSec, remaining: remainingSec })
+              : "\u26a0\ufe0f Act now! Turn passes in " + remainingSec + "s (thinking: " + elapsedSec + "s)";
+          } else {
+            pill.classList.remove("urgent");
+            pill.textContent = typeof t === "function"
+              ? t("thinking_warning", { elapsed: elapsedSec, remaining: remainingSec })
+              : "\u23f3 Thinking: " + elapsedSec + "s \u00b7 " + remainingSec + "s left before turn passes";
+          }
+          return;
+        }
+
+        // Timeout reached (>= 60 seconds): forfeit/pass the turn
+        hideThinkingTimerPill();
+        resetTurnThinkingTimer();
+
+        if (typeof recordAudit === "function") {
+          recordAudit("PASS", { reason: "THINKING_TIMEOUT", elapsedSec });
+        }
+
+        const timeoutMsg = typeof t === "function"
+          ? t("thinking_timeout_passed")
+          : "Turn timed out \u2014 60s thinking limit exceeded.";
+
+        if (typeof showToast === "function") {
+          showToast(timeoutMsg, 3500);
+        }
+
+        if (typeof FlightRecorder !== "undefined") {
+          FlightRecorder.record("TURN_THINKING_TIMEOUT", {
+            player: player.name,
+            seat: player.seat,
+            elapsedSec,
+          });
+        }
+
+        if (typeof multiplayer !== "undefined" && multiplayer.active) {
+          if (typeof passRemainingRolls === "function") {
+            passRemainingRolls();
+          } else {
+            nextTurn(timeoutMsg);
+          }
+        } else {
+          nextTurn(timeoutMsg);
+        }
+      }
+
       function finishRoll(d) {
         const player = active();
         const val = typeof d.value === "number" ? d.value : (typeof d.val === "number" ? d.val : (d.a + d.b === 0 ? 12 : d.a + d.b));
@@ -211,9 +326,11 @@
         } else {
           render();
         }
+        resetTurnThinkingTimer();
       }
       function roll() {
         if (!game || game.phase !== "roll" || rolling || demo) return;
+        resetTurnThinkingTimer();
         if (typeof FlightRecorder !== "undefined") {
           FlightRecorder.record("ROLL_INITIATED", {
             player: active().name,
@@ -272,6 +389,7 @@
 
       function nextTurn(message = "") {
         if (!game) return;
+        resetTurnThinkingTimer();
         recordAudit("TURN_END", { message: message || null });
         game.pool = [];
         game.history = [];
@@ -354,6 +472,7 @@
       }
       async function apply(opt, inputSource = "board") {
         if (!opt || game.phase !== "move" || moving) return;
+        resetTurnThinkingTimer();
         if (typeof FlightRecorder !== "undefined") {
           FlightRecorder.record("MOVE_APPLIED", {
             pieceId: opt.piece.id,
@@ -613,6 +732,7 @@
           return;
         }
         selectedRoll = 0;
+        resetTurnThinkingTimer();
         if (multiplayer.active && multiplayer.isHost) broadcastState();
         render();
       }
@@ -894,3 +1014,11 @@
 
       window.handleSynchronizedRollStart = handleSynchronizedRollStart;
       window.handleSynchronizedMoveStart = handleSynchronizedMoveStart;
+      window.hideThinkingTimerPill = hideThinkingTimerPill;
+      window.startTurnThinkingTimer = startTurnThinkingTimer;
+      window.resetTurnThinkingTimer = resetTurnThinkingTimer;
+      window.updateTurnThinkingTimer = updateTurnThinkingTimer;
+      window.roll = roll;
+      window.finishRoll = finishRoll;
+      window.apply = apply;
+      window.nextTurn = nextTurn;

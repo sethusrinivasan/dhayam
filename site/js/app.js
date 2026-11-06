@@ -88,6 +88,7 @@
         movingPieceId = null;
         capturedPieceIds = [];
         capturedPlayerIds = [];
+        if (typeof resetTurnThinkingTimer === "function") resetTurnThinkingTimer();
         const _maxP = typeof MAX_PLAYERS !== "undefined" ? MAX_PLAYERS : 32;
         const _minP = typeof MIN_PLAYERS !== "undefined" ? MIN_PLAYERS : 2;
         if (count < _minP || count > _maxP)

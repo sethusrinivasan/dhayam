@@ -213,3 +213,63 @@
 .demospeed input {
   width: 60px;
 }
+
+/* Turn Thinking Timer Pill */
+.thinking-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 3px 8px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 9999px;
+  color: #fbbf24;
+  font-size: clamp(10px, 1.25vh, 12px);
+  font-weight: 600;
+  line-height: 1.2;
+  width: fit-content;
+  max-width: 100%;
+  animation: pulseAmber 2s ease-in-out infinite;
+}
+
+.thinking-timer-pill[hidden] {
+  display: none !important;
+}
+
+.thinking-timer-pill.urgent {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #fca5a5;
+  animation: pulseRed 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes pulseAmber {
+  0%, 100% {
+    opacity: 0.92;
+    border-color: rgba(245, 158, 11, 0.45);
+  }
+  50% {
+    opacity: 1;
+    border-color: rgba(245, 158, 11, 0.85);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
+  }
+}
+
+@keyframes pulseRed {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.3);
+  }
+  100% {
+    transform: scale(1.02);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking-timer-pill,
+  .thinking-timer-pill.urgent {
+    animation: none !important;
+  }
+}
