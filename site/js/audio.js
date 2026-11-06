@@ -134,10 +134,9 @@
             ? game.players.indexOf(player)
             : 0
         );
-        const hints =
-          playerIndex % 2 === 0
-            ? FEMININE_VOICE_HINTS
-            : MASCULINE_VOICE_HINTS;
+        const personaGender = (player && player.persona && player.persona.gender) || null;
+        const isFeminine = personaGender === "female" || (!personaGender && playerIndex % 2 === 0);
+        const hints = isFeminine ? FEMININE_VOICE_HINTS : MASCULINE_VOICE_HINTS;
         const preferred = pool.find((voice) =>
           hints.some((hint) => (voice.name || "").toLowerCase().includes(hint))
         );
@@ -214,7 +213,8 @@
         currentUtterance = speech;
         speechStartTime = Date.now();
 
-        const activeVoice = voiceForPlayer((options && options.player) || active());
+        const speaker = (options && options.player) || (typeof active === "function" ? active() : null);
+        const activeVoice = voiceForPlayer(speaker);
         if (activeVoice) {
           speech.voice = activeVoice;
         }
@@ -224,8 +224,8 @@
         } else {
           speech.lang = activeVoice && activeVoice.lang ? activeVoice.lang : "en-US";
         }
-        speech.rate = 0.88;
-        speech.pitch = 1;
+        speech.rate = speaker && speaker.persona && typeof speaker.persona.voiceRate === "number" ? speaker.persona.voiceRate : 0.88;
+        speech.pitch = speaker && speaker.persona && typeof speaker.persona.voicePitch === "number" ? speaker.persona.voicePitch : 1;
         speech.volume = 1;
 
         speech.onstart = () => {
@@ -440,4 +440,70 @@
           osc.stop(audioCtx.currentTime + duration);
         } catch (_) {}
       }
+
+      /**
+       * Synthesize a traditional Indian Conch Shell (Shankha) resonance
+       * followed by triumphant brass fanfare chords for game victory celebration.
+       */
+      function playVictoryFanfare() {
+        if (!audioEnabled) return;
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return;
+          if (!audioCtx) audioCtx = new AudioContextClass();
+          if (audioCtx.state === "suspended") audioCtx.resume();
+
+          const now = audioCtx.currentTime;
+
+          // 1. Traditional Conch Shell (Shankha) upward sweep
+          const conchOsc = audioCtx.createOscillator();
+          const conchGain = audioCtx.createGain();
+          const conchFilter = audioCtx.createBiquadFilter();
+
+          conchOsc.type = "sawtooth";
+          conchFilter.type = "bandpass";
+          conchFilter.frequency.setValueAtTime(320, now);
+          conchFilter.Q.setValueAtTime(4.0, now);
+
+          // Upward pitch bend characteristic of conch blowing
+          conchOsc.frequency.setValueAtTime(240, now);
+          conchOsc.frequency.linearRampToValueAtTime(380, now + 0.4);
+          conchOsc.frequency.linearRampToValueAtTime(440, now + 1.1);
+
+          conchGain.gain.setValueAtTime(0.001, now);
+          conchGain.gain.linearRampToValueAtTime(0.12, now + 0.3);
+          conchGain.gain.linearRampToValueAtTime(0.15, now + 0.8);
+          conchGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+          conchOsc.connect(conchFilter);
+          conchFilter.connect(conchGain);
+          conchGain.connect(audioCtx.destination);
+
+          conchOsc.start(now);
+          conchOsc.stop(now + 1.5);
+
+          // 2. Triumphant fanfare arpeggio (C4, E4, G4, C5)
+          const notes = [
+            { f: 261.63, t: 1.2, d: 0.22 }, // C4
+            { f: 329.63, t: 1.4, d: 0.22 }, // E4
+            { f: 392.00, t: 1.6, d: 0.25 }, // G4
+            { f: 523.25, t: 1.85, d: 0.75 } // C5 (Sustained celebration)
+          ];
+
+          notes.forEach(({ f, t, d }) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(f, now + t);
+            gain.gain.setValueAtTime(0.14, now + t);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + t + d);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + t);
+            osc.stop(now + t + d);
+          });
+        } catch (_) {}
+      }
+
       window.playTone = playTone;
+      window.playVictoryFanfare = playVictoryFanfare;

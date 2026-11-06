@@ -99,15 +99,35 @@
             : count === 3
               ? ["N", "E", "S"]
               : Array.from({ length: count }, (_, i) => BASE_SEATS[i % BASE_SEATS.length]);
+        const chosenPersonaNames = [];
         game = {
           players: seats.map((seat, i) => {
             const theme = THEMES[i % THEMES.length];
+            const isComputer = i > 0 && i <= computerCount;
+            let persona = null;
+            let pName = theme.name;
+            let pAvatar = theme.avatar;
+            let pColor = theme.color;
+
+            if (isComputer && typeof getRandomComputerPersona === "function") {
+              persona = getRandomComputerPersona(chosenPersonaNames);
+              if (persona) {
+                pName = persona.name;
+                pAvatar = persona.avatar;
+                pColor = persona.color;
+                chosenPersonaNames.push(persona.name);
+              }
+            } else if (i === 0 && computerCount) {
+              pName = "You";
+            }
+
             return {
               id: "P" + i,
-              name: computerCount ? (i === 0 ? "You" : theme.name) : theme.name,
-              avatar: theme.avatar,
-              color: theme.color,
-              computer: i > 0 && i <= computerCount,
+              name: pName,
+              avatar: pAvatar,
+              color: pColor,
+              computer: isComputer,
+              persona,
               seat,
               captured: false,
               rank: null,

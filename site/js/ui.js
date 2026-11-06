@@ -442,6 +442,7 @@
               escapeHtml(p.name) +
               (p.rank ? " · #" + p.rank : "") +
               (isLeader ? ' <span class="leader-star" role="img" aria-label="1st place match leader" title="⭐ Match Leader (1st Place)">⭐</span>' : "") +
+              (p.persona ? ' <span class="persona-tag" style="background:' + (p.persona.color || p.color) + '22;border:1px solid ' + (p.persona.color || p.color) + '66;color:' + (p.persona.color || p.color) + ';font-size:0.75rem;padding:2px 6px;border-radius:10px;margin-left:4px;" title="' + escapeHtml(p.persona.bio || '') + '">' + escapeHtml(typeof getLanguage === "function" && getLanguage() === "ta" && p.persona.titleTa ? p.persona.titleTa : p.persona.title) + '</span>' : "") +
               '</span><span class="pscore-badge" title="Player score: ' +
               score +
               ' points based on board advancement, captures (+50), home finishes (+100)' +
@@ -900,6 +901,98 @@
         return score;
       }
       window.calculatePlayerScore = calculatePlayerScore;
+
+      /**
+       * Spectacular Game-Ending Victory Celebration
+       * Launches Web Audio conch fanfare, full-screen canvas confetti & fireworks,
+       * persona-driven gender-aligned voice praise, and glowing golden trophy modal.
+       */
+      function triggerSpectacularVictory(winner) {
+        if (!winner) return;
+
+        // 1. Procedural conch shell (Shankha) & brass fanfare sound
+        if (typeof playVictoryFanfare === "function") {
+          playVictoryFanfare();
+        }
+
+        // 2. Full-screen celebratory canvas confetti & fireworks
+        if (typeof launchConfettiCelebration === "function") {
+          launchConfettiCelebration(7000);
+        }
+
+        // 3. Spoken congratulation
+        const isTamil = typeof getLanguage === "function" && getLanguage() === "ta";
+        const opponent = game && game.players ? game.players.find((p) => p !== winner && p.computer) : null;
+        let speechText = "";
+
+        if (winner.name === "You" && opponent && opponent.persona) {
+          speechText = isTamil
+            ? "\u0b85\u0bb0\u0bc1\u0bae\u0bc8\u0baf\u0bbe\u0ba9 \u0b86\u0b9f\u0bcd\u0b9f\u0bae\u0bcd! \u0ba8\u0bc0\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0ba4\u0bbe\u0baf\u0bae\u0bcd \u0b86\u0b9f\u0bcd\u0b9f\u0ba4\u0bcd\u0ba4\u0bbf\u0ba9\u0bcd \u0bae\u0bbe\u0baa\u0bc6\u0bb0\u0bc1\u0bae\u0bcd \u0bb5\u0bc6\u0bb1\u0bcd\u0bb1\u0bbf\u0baf\u0bbe\u0bb3\u0bb0\u0bcd!"
+            : "Magnificent game! You outmaneuvered my pieces and mastered the sacred Dayakattai. All hail the champion!";
+          if (typeof speakGame === "function") {
+            speakGame(speechText, { player: opponent });
+          }
+        } else if (winner.persona) {
+          speechText = isTamil
+            ? winner.name + " \u0bb5\u0bc6\u0bb1\u0bcd\u0bb1\u0bbf \u0baa\u0bc6\u0bb1\u0bcd\u0bb1\u0bbe\u0bb0\u0bcd! \u0ba4\u0bbe\u0baf\u0bae\u0bcd \u0b86\u0b9f\u0bcd\u0b9f\u0ba4\u0bcd\u0ba4\u0bbf\u0ba9\u0bcd \u0bae\u0bbe\u0baa\u0bc6\u0bb0\u0bc1\u0bae\u0bcd \u0bb5\u0bc6\u0bb1\u0bcd\u0bb1\u0bbf\u0baf\u0bbe\u0bb3\u0bb0\u0bcd!"
+            : "A glorious victory! The spirits of Dayakattai favored " + winner.name + "'s strategy today!";
+          if (typeof speakGame === "function") {
+            speakGame(speechText, { player: winner });
+          }
+        }
+
+        // 4. Modal presentation with match battle statistics
+        const winnerScore = calculatePlayerScore(winner);
+        const turnsCount = game ? game.turn : 1;
+        const totalBonus = winner.bonusPoints || 0;
+        const safeEscaper = typeof escapeHtml === "function" ? escapeHtml : (s) => String(s);
+
+        const titleText = isTamil
+          ? "👑 " + safeEscaper(winner.name) + " \u0bb5\u0bc6\u0bb1\u0bcd\u0bb1\u0bbf \u0bb5\u0bbe\u0b95\u0bc8 \u0b9a\u0bc2\u0b9f\u0bbf\u0ba9\u0bbe\u0bb0\u0bcd! 👑"
+          : "👑 All Hail " + safeEscaper(winner.name) + " — Champion of Dhayam! 👑";
+
+        const modalHtml =
+          '<div class="victory-celebration-panel" style="text-align:center;padding:12px 6px;">' +
+            '<div class="victory-trophy-glow" style="font-size:3.5rem;animation:pulse 1.8s infinite;margin-bottom:8px;">🪔</div>' +
+            '<div class="avatar victory-champion-avatar" style="width:72px;height:72px;line-height:72px;font-size:2.4rem;margin:0 auto 12px;background:' + (winner.color || "#d97706") + ';box-shadow:0 0 24px ' + (winner.color || "#d97706") + '88;border-radius:50%;">' +
+              winner.avatar +
+            '</div>' +
+            '<p style="font-size:1.05rem;color:#fde68a;font-weight:700;margin:4px 0 16px;">' +
+              (isTamil ? "\u0baa\u0bb0\u0bae\u0baa\u0ba4\u0ba4\u0bcd\u0ba4\u0bbf\u0ba9\u0bcd \u0b86\u0bb1\u0bc1 \u0b95\u0bbe\u0baf\u0bcd\u0b95\u0bb3\u0bc8\u0baf\u0bc1\u0bae\u0bcd \u0ba8\u0bbf\u0bb2\u0bc8\u0ba8\u0bbe\u0b9f\u0bcd\u0b9f\u0bbf\u0baf \u0bb5\u0bc6\u0bb1\u0bcd\u0bb1\u0bbf\u0ba4\u0bcd \u0ba4\u0bbf\u0bb2\u0b95\u0bae\u0bcd!" : "Master of the Sacred 4-Dice Board of Dayakattai") +
+            '</p>' +
+            '<div class="victory-stats-grid" style="display:grid;grid-template-columns:repeat(2, 1fr);gap:10px;max-width:360px;margin:0 auto 16px;text-align:left;">' +
+              '<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px;">' +
+                '<span style="font-size:0.75rem;color:#94a3b8;display:block;">' + (isTamil ? "\u0bae\u0bca\u0ba4\u0bcd\u0ba4 \u0baa\u0bc1\u0bb3\u0bcd\u0bb3\u0bbf\u0b95\u0bb3\u0bcd" : "Final Score") + '</span>' +
+                '<strong style="font-size:1.25rem;color:#f59e0b;">' + winnerScore + ' <span style="font-size:0.8rem;">pts</span></strong>' +
+              '</div>' +
+              '<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px;">' +
+                '<span style="font-size:0.75rem;color:#94a3b8;display:block;">' + (isTamil ? "\u0b86\u0b9f\u0bcd\u0b9f\u0b9a\u0bcd \u0b9a\u0bc1\u0bb1\u0bcd\u0bb1\u0bc1\u0b95\u0bb3\u0bcd" : "Turns Played") + '</span>' +
+                '<strong style="font-size:1.25rem;color:#38bdf8;">' + turnsCount + '</strong>' +
+              '</div>' +
+              '<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px;">' +
+                '<span style="font-size:0.75rem;color:#94a3b8;display:block;">' + (isTamil ? "\u0bb5\u0bc6\u0b9f\u0bcd\u0b9f\u0bc1 \u0ba8\u0bbf\u0bb2\u0bc8" : "Capture Earned") + '</span>' +
+                '<strong style="font-size:1.1rem;color:#4ade80;">' + (winner.captured ? "⚔️ Yes (+50)" : "None") + '</strong>' +
+              '</div>' +
+              '<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px;">' +
+                '<span style="font-size:0.75rem;color:#94a3b8;display:block;">' + (isTamil ? "\u0baa\u0bcb\u0ba9\u0bb8\u0bcd \u0baa\u0bc1\u0bb3\u0bcd\u0bb3\u0bbf\u0b95\u0bb3\u0bcd" : "Bonus Points") + '</span>' +
+                '<strong style="font-size:1.25rem;color:#e879f9;">+' + totalBonus + '</strong>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        if (typeof showModal === "function") {
+          showModal(
+            titleText,
+            modalHtml,
+            isTamil ? "\u0bae\u0bc0\u0ba3\u0bcd\u0b9f\u0bc1\u0bae\u0bcd \u0b86\u0b9f\u0bc1" : "⚔️ Play Rematch",
+            () => {
+              if (typeof stopCelebration === "function") stopCelebration();
+              if (typeof newGame === "function") newGame(game ? game.players.length : 2, game ? game.computerCount : 1);
+            }
+          );
+        }
+      }
+      window.triggerSpectacularVictory = triggerSpectacularVictory;
 
       function updateMovePreviews(overridePieceId, overrideRollIndex) {
         if (typeof document === "undefined" || typeof document.querySelectorAll !== "function") return;

@@ -155,6 +155,11 @@
 
         const startSq = START[p.seat];
         const startCrowd = occupancy.get(startSq) || 0;
+        const persona = p.persona || {};
+        const safetyBias = typeof persona.safetyWeight === "number" ? persona.safetyWeight : 1.0;
+        const aggressionBias = typeof persona.aggressionWeight === "number" ? persona.aggressionWeight : 1.0;
+        const progressBias = typeof persona.progressWeight === "number" ? persona.progressWeight : 1.0;
+        const entryBias = typeof persona.entryWeight === "number" ? persona.entryWeight : 1.0;
 
         return (
           moves.sort((a, b) => {
@@ -164,14 +169,19 @@
               const willFinish = m.test.progress === 43;
               const willCapture = m.test.targets.length > 0;
               const isEntering = m.piece.progress < 0;
+              const toSq = node(p, { progress: m.test.progress });
+              const isSafeDest = Boolean(toSq && SAFE.has(toSq));
 
               let s = 0;
 
               // Priority 1: Finishing a piece in goal (exact count)
               if (willFinish) s += 100000;
 
-              // Priority 2: Capturing opponent piece
-              if (willCapture) s += 50000;
+              // Priority 2: Capturing opponent piece (weighted by persona aggression)
+              if (willCapture) s += 50000 * aggressionBias;
+
+              // Priority 2b: Landing in safe sanctuary square (weighted by persona safety)
+              if (isSafeDest) s += 20000 * safetyBias;
 
               // Priority 3: Relieve overcrowding. If 2 or more pieces are stacked
               // on the same square, heavily prioritize moving a piece OUT of that square.
@@ -179,15 +189,15 @@
                 s += 15000 * crowdingAtOrigin;
               }
 
-              // Priority 4: Reserve Entry vs Circuit Advancement
+              // Priority 4: Reserve Entry vs Circuit Advancement (weighted by persona entry)
               if (isEntering) {
                 // If starting square is already congested, prioritize moving existing pieces off it
-                s += startCrowd >= 2 ? 2500 : 8000;
+                s += (startCrowd >= 2 ? 2500 : 8000) * entryBias;
               } else {
                 // Fair piece progression: ensure all 6 pieces advance as a balanced team
                 // rather than single-piece hyper-focus leaving others stranded behind.
                 // Pieces lagging behind receive a catch-up boost.
-                const lagBoost = Math.max(0, 43 - m.piece.progress) * 20;
+                const lagBoost = Math.max(0, 43 - m.piece.progress) * 20 * progressBias;
                 s += lagBoost;
               }
 
@@ -195,7 +205,7 @@
               if (m.indices.length > 1) s += 1000;
 
               // Tie-breaker: overall destination progress
-              s += m.test.progress;
+              s += m.test.progress * progressBias;
               return s;
             };
             return score(b) - score(a);

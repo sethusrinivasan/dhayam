@@ -367,3 +367,43 @@
   font-size: 11.5px;
   color: #d2bd9d;
 }
+
+/* Full-Screen Celebration Particles Canvas */
+.celebration-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 10000;
+}
+
+/* Victory Trophy Pulse & Diya Glow */
+.victory-trophy-glow {
+  filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.85)) drop-shadow(0 0 32px rgba(234, 88, 12, 0.5));
+  animation: diyaPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes diyaPulse {
+  0% {
+    transform: scale(0.96);
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.7));
+  }
+  100% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 24px rgba(245, 158, 11, 1)) drop-shadow(0 0 40px rgba(234, 88, 12, 0.8));
+  }
+}
+
+.persona-tag {
+  display: inline-block;
+  vertical-align: middle;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+}
+
+.persona-tag:hover {
+  transform: translateY(-1px);
+}

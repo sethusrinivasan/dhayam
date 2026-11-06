@@ -601,6 +601,9 @@
               " " + player.name + " finishes all six pieces and wins the game!";
             speakGame(commentary);
           }
+          if (typeof triggerSpectacularVictory === "function") {
+            setTimeout(() => triggerSpectacularVictory(player), 300);
+          }
           if (multiplayer.active && multiplayer.isHost) broadcastState();
           render();
           return;
