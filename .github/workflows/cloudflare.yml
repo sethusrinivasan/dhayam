@@ -66,6 +66,22 @@ jobs:
             exit 1
           fi
 
+      - name: "🔒 Provision Staging OAuth Secrets to Cloudflare"
+        if: steps.check_secrets.outputs.has_token == 'true'
+        run: |
+          if [ -n "${{ secrets.GOOGLE_CLIENT_SECRET }}" ]; then
+            echo "${{ secrets.GOOGLE_CLIENT_SECRET }}" | npx wrangler secret put GOOGLE_CLIENT_SECRET --env staging
+          fi
+          if [ -n "${{ secrets.GH_CLIENT_SECRET }}" ]; then
+            echo "${{ secrets.GH_CLIENT_SECRET }}" | npx wrangler secret put GITHUB_CLIENT_SECRET --env staging
+          fi
+          if [ -n "${{ secrets.AUTH_JWT_SECRET }}" ]; then
+            echo "${{ secrets.AUTH_JWT_SECRET }}" | npx wrangler secret put AUTH_JWT_SECRET --env staging
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: "🚧 Deploy → dhayam-staging.cancun.workers.dev"
         if: steps.check_secrets.outputs.has_token == 'true'
         uses: cloudflare/wrangler-action@v3
@@ -159,6 +175,22 @@ jobs:
             echo "::error::CLOUDFLARE_API_TOKEN is not configured in GitHub Secrets! Production deploy cannot proceed without credentials."
             exit 1
           fi
+
+      - name: "🔒 Provision Production OAuth Secrets to Cloudflare"
+        if: steps.check_secrets.outputs.has_token == 'true'
+        run: |
+          if [ -n "${{ secrets.GOOGLE_CLIENT_SECRET }}" ]; then
+            echo "${{ secrets.GOOGLE_CLIENT_SECRET }}" | npx wrangler secret put GOOGLE_CLIENT_SECRET
+          fi
+          if [ -n "${{ secrets.GH_CLIENT_SECRET }}" ]; then
+            echo "${{ secrets.GH_CLIENT_SECRET }}" | npx wrangler secret put GITHUB_CLIENT_SECRET
+          fi
+          if [ -n "${{ secrets.AUTH_JWT_SECRET }}" ]; then
+            echo "${{ secrets.AUTH_JWT_SECRET }}" | npx wrangler secret put AUTH_JWT_SECRET
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: "🚀 Deploy → dhayam.cancun.workers.dev (production)"
         if: steps.check_secrets.outputs.has_token == 'true'
