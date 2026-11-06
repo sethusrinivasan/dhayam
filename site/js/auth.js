@@ -40,10 +40,27 @@
       '</div>';
   }
 
+  function getAuthHeaders(extraHeaders = {}) {
+    const headers = { ...extraHeaders };
+    try {
+      const token = typeof localStorage !== "undefined" ? localStorage.getItem("dhayam_auth_token") : null;
+      if (token) {
+        headers["Authorization"] = "Bearer " + token;
+      }
+    } catch {}
+    return headers;
+  }
+
   async function fetchAuthStatus() {
     try {
-      const res = await fetch(API_BASE + "/api/auth/me", { credentials: "include" });
+      const res = await fetch(API_BASE + "/api/auth/me", {
+        headers: getAuthHeaders(),
+        credentials: "include"
+      });
       if (!res.ok) {
+        if (res.status === 401) {
+          try { localStorage.removeItem("dhayam_auth_token"); } catch {}
+        }
         currentUser = null;
         updateAuthPill();
         return;
@@ -104,7 +121,10 @@
     }
 
     try {
-      const res = await fetch(API_BASE + "/api/leaderboard", { credentials: "include" });
+      const res = await fetch(API_BASE + "/api/leaderboard", {
+        headers: getAuthHeaders(),
+        credentials: "include"
+      });
       if (!res.ok) throw new Error("Failed to load rankings");
       const data = await res.json();
       renderLeaderboard(data.top10 || [], data.currentUser || null);
@@ -232,7 +252,7 @@
           '</button>' +
         '</div>' +
         '<div class="auth-note">' +
-          '🔒 Frugal & Private: We only store your alias, avatar, and game scores in Cloudflare D1. We never store passwords or share your data.' +
+          '🔒 Frugal & Private: We only store your alias, avatar, and game scores. We never store passwords or share your data.' +
         '</div>' +
         '<div style="display:flex;justify-content:flex-end;margin-top:14px;">' +
           '<button type="button" class="btn secondary" onclick="DhayamAuth.closeAuthModal()">Close</button>' +
@@ -261,10 +281,19 @@
 
   async function logout() {
     try {
-      await fetch(API_BASE + "/api/auth/logout", { method: "POST", credentials: "include" });
+      await fetch(API_BASE + "/api/auth/logout", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        credentials: "include"
+      });
     } catch {
       // Fallback ignore
     }
+    try {
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem("dhayam_auth_token");
+      }
+    } catch {}
     currentUser = null;
     currentStats = null;
     currentRank = null;
@@ -276,7 +305,7 @@
     try {
       const res = await fetch(API_BASE + "/api/stats/record", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify(matchPayload)
       });
@@ -285,6 +314,10 @@
         if (data.stats) currentStats = data.stats;
         if (data.rank) currentRank = data.rank;
         updateAuthPill();
+        const modalBack = document.getElementById("leaderboardModalBack");
+        if (modalBack && modalBack.classList.contains("open")) {
+          openLeaderboard();
+        }
       }
     } catch {
       // Network error handled gracefully
@@ -308,10 +341,13 @@
   function onGameWin(winner, score, captures) {
     if (!winner) return;
     const matchId = "match_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+    const turnsCount = (typeof game !== "undefined" && game && typeof game.turn === "number")
+      ? game.turn
+      : (typeof currentTurn !== "undefined" ? currentTurn : 30);
     const matchPayload = {
       matchId: matchId,
-      isWinner: winner.name === "You" || !winner.computer,
-      turns: (typeof currentTurn !== "undefined" ? currentTurn : 30),
+      isWinner: !winner.computer,
+      turns: turnsCount,
       captures: captures || (winner.captured ? 1 : 0),
       score: score || 100
     };
@@ -359,10 +395,19 @@
       }
     });
 
-    // Check for auth callback parameter in URL
+    // Check for auth callback parameter or token in URL
     const params = new URLSearchParams(window.location.search);
-    if (params.has("auth_success")) {
-      const cleanUrl = window.location.origin + window.location.pathname;
+    const tokenFromUrl = params.get("auth_token");
+    if (tokenFromUrl) {
+      try {
+        localStorage.setItem("dhayam_auth_token", tokenFromUrl);
+      } catch {}
+    }
+    if (params.has("auth_success") || tokenFromUrl) {
+      params.delete("auth_token");
+      params.delete("auth_success");
+      const cleanSearch = params.toString() ? "?" + params.toString() : "";
+      const cleanUrl = window.location.origin + window.location.pathname + cleanSearch + window.location.hash;
       window.history.replaceState({}, document.title, cleanUrl);
       setTimeout(openLeaderboard, 400);
     }

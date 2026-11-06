@@ -131,9 +131,9 @@
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
         version: "0.4.1",
-        build: 6,
-        timestamp: "2026-11-06 12:45 UTC",
-        releaseName: "Turn Thinking Timer & Auto-Pass Escalation",
+        build: 7,
+        timestamp: "2026-11-06 13:40 UTC",
+        releaseName: "OAuth Resilient Cross-Origin Session & Leaderboard Polish",
       };
        // Global player-count limits — update here, never hardcode elsewhere
        const MIN_PLAYERS = 2;
@@ -143,11 +143,9 @@
        const AUTH_CONFIG = {
          googleClientId: "764310467229-rkh1lrv0tclv07d8q10dj426didl1u8f.apps.googleusercontent.com",
          githubClientId: "Ov23liHwuHgasom2EnpI",
-         apiBase: (typeof window !== "undefined" && window.location && window.location.hostname === "localhost")
+         apiBase: (typeof window !== "undefined" && window.location && window.location.hostname && window.location.hostname.includes("workers.dev"))
            ? ""
-           : (typeof window !== "undefined" && window.location && window.location.hostname && window.location.hostname.includes("workers.dev"))
-             ? ""
-             : "https://dhayam.cancun.workers.dev"
+           : "https://dhayam.cancun.workers.dev"
        };
 
       if (typeof window !== "undefined") {

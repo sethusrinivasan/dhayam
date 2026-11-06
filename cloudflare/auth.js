@@ -119,10 +119,20 @@ export async function verifySessionToken(token, secret) {
   }
 }
 
+export function extractToken(request, cookies = {}) {
+  const authHeader = request && request.headers ? request.headers.get("Authorization") : null;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const bearer = authHeader.slice(7).trim();
+    if (bearer) return bearer;
+  }
+  return cookies.dhayam_session || null;
+}
+
 export async function handleAuthAndLeaderboard(request, env, url) {
   const cors = getAuthCorsHeaders(request);
   const secret = (env && env.AUTH_JWT_SECRET) || "dhayam-dev-fallback-secret-2026";
   const cookies = parseCookies(request.headers.get("Cookie"));
+  const token = extractToken(request, cookies);
 
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors });
@@ -158,7 +168,7 @@ export async function handleAuthAndLeaderboard(request, env, url) {
 
     const headers = new Headers();
     headers.set("Location", authUrl.toString());
-    headers.set("Set-Cookie", `dhayam_oauth_state=${stateToken}; Path=/api/auth; HttpOnly; SameSite=Lax; Secure; Max-Age=600`);
+    headers.set("Set-Cookie", `dhayam_oauth_state=${stateToken}; Path=/api/auth; HttpOnly; SameSite=None; Secure; Max-Age=600`);
     return new Response(null, { status: 302, headers });
   }
 
@@ -230,11 +240,14 @@ export async function handleAuthAndLeaderboard(request, env, url) {
         exp: Math.floor(Date.now() / 1000) + 30 * 24 * 3600
       }, secret);
 
-      const targetUrl = verifiedState.returnTo || `${url.origin}/?auth_success=1`;
+      const targetUrlObj = new URL(verifiedState.returnTo || `${url.origin}/?auth_success=1`);
+      targetUrlObj.searchParams.set("auth_token", sessionToken);
+      targetUrlObj.searchParams.set("auth_success", "1");
+      const targetUrl = targetUrlObj.toString();
       const headers = new Headers();
       headers.set("Location", targetUrl);
-      headers.set("Set-Cookie", `dhayam_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${30 * 24 * 3600}`);
-      headers.append("Set-Cookie", "dhayam_oauth_state=; Path=/api/auth; HttpOnly; SameSite=Lax; Secure; Max-Age=0");
+      headers.set("Set-Cookie", `dhayam_session=${sessionToken}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=${30 * 24 * 3600}`);
+      headers.append("Set-Cookie", "dhayam_oauth_state=; Path=/api/auth; HttpOnly; SameSite=None; Secure; Max-Age=0");
       return new Response(null, { status: 302, headers });
     } catch {
       return Response.redirect(`${url.origin}/?auth_error=internal_error`, 302);
@@ -261,7 +274,7 @@ export async function handleAuthAndLeaderboard(request, env, url) {
 
     const headers = new Headers();
     headers.set("Location", authUrl.toString());
-    headers.set("Set-Cookie", `dhayam_oauth_state=${stateToken}; Path=/api/auth; HttpOnly; SameSite=Lax; Secure; Max-Age=600`);
+    headers.set("Set-Cookie", `dhayam_oauth_state=${stateToken}; Path=/api/auth; HttpOnly; SameSite=None; Secure; Max-Age=600`);
     return new Response(null, { status: 302, headers });
   }
 
@@ -339,11 +352,14 @@ export async function handleAuthAndLeaderboard(request, env, url) {
         exp: Math.floor(Date.now() / 1000) + 30 * 24 * 3600
       }, secret);
 
-      const targetUrl = verifiedState.returnTo || `${url.origin}/?auth_success=1`;
+      const targetUrlObj = new URL(verifiedState.returnTo || `${url.origin}/?auth_success=1`);
+      targetUrlObj.searchParams.set("auth_token", sessionToken);
+      targetUrlObj.searchParams.set("auth_success", "1");
+      const targetUrl = targetUrlObj.toString();
       const headers = new Headers();
       headers.set("Location", targetUrl);
-      headers.set("Set-Cookie", `dhayam_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${30 * 24 * 3600}`);
-      headers.append("Set-Cookie", "dhayam_oauth_state=; Path=/api/auth; HttpOnly; SameSite=Lax; Secure; Max-Age=0");
+      headers.set("Set-Cookie", `dhayam_session=${sessionToken}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=${30 * 24 * 3600}`);
+      headers.append("Set-Cookie", "dhayam_oauth_state=; Path=/api/auth; HttpOnly; SameSite=None; Secure; Max-Age=0");
       return new Response(null, { status: 302, headers });
     } catch {
       return Response.redirect(`${url.origin}/?auth_error=internal_error`, 302);
@@ -352,7 +368,7 @@ export async function handleAuthAndLeaderboard(request, env, url) {
 
   // 6. Current User Me Profile: /api/auth/me
   if (url.pathname === "/api/auth/me") {
-    const session = await verifySessionToken(cookies.dhayam_session, secret);
+    const session = await verifySessionToken(token, secret);
     if (!session || !session.userId) {
       return new Response(JSON.stringify({ user: null }), { headers: cors });
     }
@@ -373,13 +389,13 @@ export async function handleAuthAndLeaderboard(request, env, url) {
   // 7. Logout: /api/auth/logout
   if (url.pathname === "/api/auth/logout") {
     const headers = new Headers(cors);
-    headers.set("Set-Cookie", "dhayam_session=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0");
+    headers.set("Set-Cookie", "dhayam_session=; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=0");
     return new Response(JSON.stringify({ ok: true }), { headers });
   }
 
   // 8. Global Leaderboard: /api/leaderboard
   if (url.pathname === "/api/leaderboard") {
-    const session = await verifySessionToken(cookies.dhayam_session, secret);
+    const session = await verifySessionToken(token, secret);
     const userId = session ? session.userId : null;
 
     const { top10, currentUser } = await getLeaderboard(env, userId);
@@ -391,7 +407,7 @@ export async function handleAuthAndLeaderboard(request, env, url) {
 
   // 9. Match Score Recording: /api/stats/record
   if (url.pathname === "/api/stats/record" && request.method === "POST") {
-    const session = await verifySessionToken(cookies.dhayam_session, secret);
+    const session = await verifySessionToken(token, secret);
     if (!session || !session.userId) {
       return new Response(JSON.stringify({ error: "Unauthorized. Please sign in to record scores." }), {
         status: 401,

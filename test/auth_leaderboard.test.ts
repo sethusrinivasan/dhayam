@@ -7,6 +7,7 @@ import {
   sanitizeAlias,
   parseCookies,
   getAuthCorsHeaders,
+  extractToken,
   IN_MEMORY_DB
 } from "../cloudflare/auth.js";
 
@@ -203,4 +204,56 @@ test("api: full lifecycle - register, record match score, leaderboard ranking, a
   assert.ok(logoutRes);
   const setCookie = logoutRes.headers.get("Set-Cookie");
   assert.ok(setCookie?.includes("Max-Age=0"));
+});
+
+test("auth: extractToken retrieves token from Bearer Authorization header or cookie fallback", () => {
+  const reqWithBearer = new Request("https://dhayam.cancun.workers.dev/api/auth/me", {
+    headers: { Authorization: "Bearer token_from_bearer_123" }
+  });
+  assert.equal(extractToken(reqWithBearer, {}), "token_from_bearer_123");
+
+  const reqWithCookie = new Request("https://dhayam.cancun.workers.dev/api/auth/me");
+  assert.equal(extractToken(reqWithCookie, { dhayam_session: "token_from_cookie_456" }), "token_from_cookie_456");
+
+  // Bearer header takes precedence over cookie
+  const reqWithBoth = new Request("https://dhayam.cancun.workers.dev/api/auth/me", {
+    headers: { Authorization: "Bearer token_bearer_wins" }
+  });
+  assert.equal(extractToken(reqWithBoth, { dhayam_session: "token_cookie_secondary" }), "token_bearer_wins");
+
+  const reqWithNone = new Request("https://dhayam.cancun.workers.dev/api/auth/me");
+  assert.equal(extractToken(reqWithNone, {}), null);
+});
+
+test("api: GET /api/auth/me authenticates via Authorization Bearer token without cookies", async () => {
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+  const userId = "usr_bearer_user_1";
+
+  IN_MEMORY_DB.users.set(userId, {
+    id: userId,
+    oauth_provider: "google",
+    oauth_sub: "998877",
+    alias: "Anand",
+    avatar_url: "",
+    email: "anand@example.com",
+    last_login: Date.now()
+  });
+
+  const sessionToken = await createSessionToken({
+    userId,
+    alias: "Anand",
+    avatarUrl: "",
+    provider: "google",
+    exp: Math.floor(Date.now() / 1000) + 3600
+  }, TEST_SECRET);
+
+  const req = new Request("https://dhayam.cancun.workers.dev/api/auth/me", {
+    headers: { Authorization: `Bearer ${sessionToken}` }
+  });
+  const res = await handleAuthAndLeaderboard(req, env, new URL(req.url));
+  assert.ok(res);
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.ok(data.user);
+  assert.equal(data.user.alias, "Anand");
 });
