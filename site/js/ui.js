@@ -991,6 +991,11 @@
             }
           );
         }
+
+        // Record win in persistent datastore or prompt guest claim
+        if (typeof DhayamAuth !== "undefined" && typeof DhayamAuth.onGameWin === "function") {
+          DhayamAuth.onGameWin(winner, winnerScore, winner.captured ? 1 : 0);
+        }
       }
       window.triggerSpectacularVictory = triggerSpectacularVictory;
 

@@ -14,6 +14,15 @@ bindings = [
   { name = "DHAYAM_ROOM", class_name = "DhayamRoom" }
 ]
 
+[[d1_databases]]
+binding = "DB"
+database_name = "dhayam-db"
+database_id = "local-dhayam-db"
+
+[vars]
+GOOGLE_CLIENT_ID = "764310467229-rkh1lrv0tclv07d8q10dj426didl1u8f.apps.googleusercontent.com"
+GITHUB_CLIENT_ID = "Ov23liHwuHgasom2EnpI"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["DhayamRoom"]
@@ -34,6 +43,15 @@ not_found_handling = "single-page-application"
 bindings = [
   { name = "DHAYAM_ROOM", class_name = "DhayamRoom" }
 ]
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "dhayam-staging-db"
+database_id = "local-dhayam-staging-db"
+
+[env.staging.vars]
+GOOGLE_CLIENT_ID = "764310467229-rkh1lrv0tclv07d8q10dj426didl1u8f.apps.googleusercontent.com"
+GITHUB_CLIENT_ID = "Ov23liHwuHgasom2EnpI"
 
 [[env.staging.migrations]]
 tag = "v1"

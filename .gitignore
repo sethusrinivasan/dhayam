@@ -1,5 +1,12 @@
 node_modules/
 .wrangler/
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+*.secret
+*.pem
+*.key
 dist/
 .DS_Store
 __pycache__/

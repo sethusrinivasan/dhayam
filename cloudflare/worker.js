@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { handleAuthAndLeaderboard } from "./auth.js";
 
 /**
  * Dhayam Cloudflare Worker & Streamable HTTP MCP Server
@@ -1634,7 +1635,16 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
+      if (url.pathname.startsWith("/api/auth") || url.pathname === "/api/leaderboard" || url.pathname === "/api/stats/record") {
+        return handleAuthAndLeaderboard(request, env, url);
+      }
       return new Response(null, { headers: CORS_HEADERS });
+    }
+
+    // 0. Auth & Leaderboard endpoints (/api/auth/*, /api/leaderboard, /api/stats/record)
+    if (url.pathname.startsWith("/api/auth") || url.pathname === "/api/leaderboard" || url.pathname === "/api/stats/record") {
+      const authResponse = await handleAuthAndLeaderboard(request, env, url);
+      if (authResponse) return authResponse;
     }
 
     // 1. Multiplayer WebSocket & Info endpoint: /api/room/:code/...

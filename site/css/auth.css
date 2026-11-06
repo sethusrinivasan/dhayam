@@ -1,0 +1,383 @@
+/**
+ * auth.css - Global Leaderboard Modal, Player Profiles & OAuth Sign-In Controls
+ *
+ * Provides responsive, accessible styling for top 10 rankings, current user rank,
+ * Google/GitHub sign-in buttons, and user profile badges.
+ */
+
+/* Header Topnav Leaderboard & Profile Buttons */
+.topnav .leaderboard-trigger,
+.topnav .auth-pill {
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.topnav .leaderboard-trigger:hover,
+.topnav .auth-pill:hover {
+  transform: translateY(-1px);
+}
+
+.topnav .auth-pill-signed-in {
+  background: #3b281c;
+  border-color: #ffd166;
+  color: #fff2db;
+}
+
+.auth-pill-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #ffd166;
+}
+
+.auth-pill-rank-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  background: #f77f00;
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+/* Modals */
+.modalback.auth-modal-back {
+  z-index: 120;
+}
+
+.leaderboard-modal {
+  max-width: 580px;
+  width: 100%;
+}
+
+.leaderboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #ffffff22;
+  padding-bottom: 10px;
+}
+
+.leaderboard-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #ffd166;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.leaderboard-subtitle {
+  font-size: 12.5px;
+  color: #d8c4ab;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+/* Leaderboard List */
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.leaderboard-item {
+  display: grid;
+  grid-template-columns: 36px 36px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  background: #251a14;
+  border: 1px solid #ffffff1a;
+  border-radius: 12px;
+  padding: 8px 12px;
+  transition: background 0.15s ease;
+}
+
+.leaderboard-item:hover {
+  background: #2f2119;
+}
+
+.leaderboard-item.rank-1 {
+  border-color: #ffd700aa;
+  background: linear-gradient(90deg, #382d11, #251a14);
+}
+
+.leaderboard-item.rank-2 {
+  border-color: #c0c0c0aa;
+  background: linear-gradient(90deg, #2b2b2b, #251a14);
+}
+
+.leaderboard-item.rank-3 {
+  border-color: #cd7f32aa;
+  background: linear-gradient(90deg, #332319, #251a14);
+}
+
+.leaderboard-rank {
+  font-weight: 800;
+  font-size: 14px;
+  text-align: center;
+  color: #d8c4ab;
+}
+
+.leaderboard-item.rank-1 .leaderboard-rank { color: #ffd700; font-size: 16px; }
+.leaderboard-item.rank-2 .leaderboard-rank { color: #e0e0e0; font-size: 15px; }
+.leaderboard-item.rank-3 .leaderboard-rank { color: #cd7f32; font-size: 15px; }
+
+.leaderboard-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #ffffff33;
+  background: #1c130d;
+}
+
+.leaderboard-name-col {
+  min-width: 0;
+}
+
+.leaderboard-alias {
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff2db;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderboard-substats {
+  font-size: 11px;
+  color: #a8947e;
+  margin-top: 2px;
+}
+
+.leaderboard-score-badge {
+  text-align: right;
+}
+
+.leaderboard-score-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffd166;
+}
+
+.leaderboard-score-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #a8947e;
+  letter-spacing: 0.5px;
+}
+
+/* Sticky Personal Rank Card */
+.personal-rank-card {
+  margin-top: 14px;
+  background: #3d2c1d;
+  border: 2px solid #ffd166;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 18px #00000066;
+}
+
+.personal-rank-card-header {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #ffd166;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.personal-rank-body {
+  display: grid;
+  grid-template-columns: 36px 36px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.personal-rank-guest {
+  text-align: center;
+  padding: 6px 0;
+}
+
+.personal-rank-guest p {
+  margin: 0 0 10px;
+  color: #e6d0b3;
+  font-size: 13px;
+}
+
+/* Sign-In Modal Buttons */
+.auth-providers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.btn-oauth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 0.15s ease, filter 0.2s ease;
+}
+
+.btn-oauth:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.btn-oauth-google {
+  background: #ffffff;
+  color: #3c4043;
+  border-color: #dadce0;
+}
+
+.btn-oauth-github {
+  background: #24292e;
+  color: #ffffff;
+  border-color: #444c56;
+}
+
+.btn-oauth svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.auth-note {
+  font-size: 12px;
+  color: #a8947e;
+  line-height: 1.45;
+  margin-top: 10px;
+}
+
+.user-profile-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.user-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #251a14;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.user-profile-avatar-large {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffd166;
+}
+
+.user-profile-details {
+  flex: 1;
+}
+
+.user-profile-alias-input {
+  max-width: 160px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.user-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.user-stat-box {
+  background: #251a14;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  border: 1px solid #ffffff15;
+}
+
+.user-stat-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffd166;
+}
+
+.user-stat-lbl {
+  font-size: 11px;
+  color: #a8947e;
+  margin-top: 2px;
+}
+
+/* Post-Game Retroactive Victory Banner */
+.victory-claim-card {
+  margin: 12px 0;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #3d2c1d, #251a14);
+  border: 1.5px solid #ffd166;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.victory-claim-card p {
+  margin: 0 0 10px;
+  font-weight: 600;
+  color: #fff2db;
+  font-size: 13px;
+}
+
+.victory-claim-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-victory-claim {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Accessibility & Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .topnav .leaderboard-trigger,
+  .topnav .auth-pill,
+  .btn-oauth {
+    transition: none;
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .leaderboard-modal {
+    padding: 14px 12px;
+  }
+  .leaderboard-item {
+    gap: 8px;
+    padding: 6px 8px;
+  }
+  .user-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -139,12 +139,24 @@
        const MIN_PLAYERS = 2;
        const MAX_PLAYERS = 32;
 
+       // Authentication & Cloudflare API configuration
+       const AUTH_CONFIG = {
+         googleClientId: "764310467229-rkh1lrv0tclv07d8q10dj426didl1u8f.apps.googleusercontent.com",
+         githubClientId: "Ov23liHwuHgasom2EnpI",
+         apiBase: (typeof window !== "undefined" && window.location && window.location.hostname === "localhost")
+           ? ""
+           : (typeof window !== "undefined" && window.location && window.location.hostname && window.location.hostname.includes("workers.dev"))
+             ? ""
+             : "https://dhayam.cancun.workers.dev"
+       };
+
       if (typeof window !== "undefined") {
         window.SEATS = SEATS;
         window.START = START;
         window.SAFE = SAFE;
         window.ROUTES = ROUTES;
         window.BUILD_INFO = BUILD_INFO;
+        window.AUTH_CONFIG = AUTH_CONFIG;
       }
       if (typeof globalThis !== "undefined") {
         globalThis.SEATS = SEATS;
@@ -152,6 +164,7 @@
         globalThis.SAFE = SAFE;
         globalThis.ROUTES = ROUTES;
         globalThis.BUILD_INFO = BUILD_INFO;
+        globalThis.AUTH_CONFIG = AUTH_CONFIG;
       }
       if (typeof window !== "undefined") {
         // Dynamically populate the build badge and timestamp so they always
