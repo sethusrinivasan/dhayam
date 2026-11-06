@@ -2,8 +2,8 @@
  * auth.js - OAuth Authentication, Cloudflare D1 Leaderboard & Player Stats
  *
  * Implements Google & GitHub OAuth client flows, secure session synchronization,
- * Global Top 10 Leaderboard rendering, and game score tracking with retroactive
- * guest win claims.
+ * Global Top 10 Leaderboard rendering, and game score tracking with persistent
+ * local caching and retroactive offline/guest win claims.
  */
 "use strict";
 
@@ -16,9 +16,19 @@
 
   const API_BASE = CONFIG.apiBase || "";
 
+  const STORAGE_KEYS = {
+    AUTH_TOKEN: "dhayam_auth_token",
+    CACHED_USER: "dhayam_cached_user",
+    CACHED_STATS: "dhayam_cached_stats",
+    CACHED_RANK: "dhayam_cached_rank",
+    PENDING_MATCHES: "dhayam_pending_matches",
+    LEGACY_PENDING_WIN: "dhayam_pending_win"
+  };
+
   let currentUser = null;
   let currentStats = null;
   let currentRank = null;
+  let isSyncingMatches = false;
 
   function safeEscape(str) {
     if (!str) return "";
@@ -43,7 +53,7 @@
   function getAuthHeaders(extraHeaders = {}) {
     const headers = { ...extraHeaders };
     try {
-      const token = typeof localStorage !== "undefined" ? localStorage.getItem("dhayam_auth_token") : null;
+      const token = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null;
       if (token) {
         headers["Authorization"] = "Bearer " + token;
       }
@@ -51,7 +61,161 @@
     return headers;
   }
 
+  function loadCachedState() {
+    try {
+      if (typeof localStorage === "undefined") return;
+      const userRaw = localStorage.getItem(STORAGE_KEYS.CACHED_USER);
+      if (userRaw) {
+        currentUser = JSON.parse(userRaw);
+      }
+      const statsRaw = localStorage.getItem(STORAGE_KEYS.CACHED_STATS);
+      if (statsRaw) {
+        currentStats = JSON.parse(statsRaw);
+      }
+      const rankRaw = localStorage.getItem(STORAGE_KEYS.CACHED_RANK);
+      if (rankRaw) {
+        currentRank = rankRaw;
+      }
+    } catch (e) {
+      console.warn("[DhayamAuth] Cache load error:", e);
+    }
+  }
+
+  function saveCachedState() {
+    try {
+      if (typeof localStorage === "undefined") return;
+      if (currentUser) {
+        localStorage.setItem(STORAGE_KEYS.CACHED_USER, JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.CACHED_USER);
+      }
+      if (currentStats) {
+        localStorage.setItem(STORAGE_KEYS.CACHED_STATS, JSON.stringify(currentStats));
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.CACHED_STATS);
+      }
+      if (currentRank !== null && currentRank !== undefined) {
+        localStorage.setItem(STORAGE_KEYS.CACHED_RANK, String(currentRank));
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.CACHED_RANK);
+      }
+    } catch (e) {
+      console.warn("[DhayamAuth] Cache save error:", e);
+    }
+  }
+
+  function getPendingMatches() {
+    try {
+      if (typeof localStorage === "undefined") return [];
+      const raw = localStorage.getItem(STORAGE_KEYS.PENDING_MATCHES);
+      let matches = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(matches)) matches = [];
+
+      // Check legacy pending win in localStorage and sessionStorage
+      const legacyLocal = localStorage.getItem(STORAGE_KEYS.LEGACY_PENDING_WIN);
+      if (legacyLocal) {
+        try {
+          const parsed = JSON.parse(legacyLocal);
+          if (parsed && !matches.some(m => m.matchId === parsed.matchId)) {
+            matches.push(parsed);
+          }
+        } catch {}
+      }
+      if (typeof sessionStorage !== "undefined") {
+        const legacySession = sessionStorage.getItem(STORAGE_KEYS.LEGACY_PENDING_WIN);
+        if (legacySession) {
+          try {
+            const parsed = JSON.parse(legacySession);
+            if (parsed && !matches.some(m => m.matchId === parsed.matchId)) {
+              matches.push(parsed);
+            }
+          } catch {}
+        }
+      }
+      return matches;
+    } catch {
+      return [];
+    }
+  }
+
+  function setPendingMatches(matches) {
+    try {
+      if (typeof localStorage === "undefined") return;
+      if (matches && matches.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.PENDING_MATCHES, JSON.stringify(matches));
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.PENDING_MATCHES);
+        localStorage.removeItem(STORAGE_KEYS.LEGACY_PENDING_WIN);
+        if (typeof sessionStorage !== "undefined") {
+          sessionStorage.removeItem(STORAGE_KEYS.LEGACY_PENDING_WIN);
+        }
+      }
+    } catch {}
+  }
+
+  function enqueuePendingMatch(payload) {
+    const matches = getPendingMatches();
+    if (!matches.some(m => m.matchId === payload.matchId)) {
+      matches.push(payload);
+      setPendingMatches(matches);
+    }
+  }
+
+  async function syncPendingMatches() {
+    const token = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null;
+    if (!token && !currentUser) return;
+    if (isSyncingMatches) return;
+    isSyncingMatches = true;
+
+    try {
+      const matches = getPendingMatches();
+      if (!matches || matches.length === 0) return;
+
+      const unconfirmed = [];
+      for (const match of matches) {
+        try {
+          const res = await fetch(API_BASE + "/api/stats/record", {
+            method: "POST",
+            headers: getAuthHeaders({ "Content-Type": "application/json" }),
+            credentials: "include",
+            body: JSON.stringify(match)
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.stats) {
+              currentStats = {
+                games_played: Math.max(currentStats ? currentStats.games_played || 0 : 0, data.stats.games_played || 0),
+                games_won: Math.max(currentStats ? currentStats.games_won || 0 : 0, data.stats.games_won || 0),
+                total_captures: Math.max(currentStats ? currentStats.total_captures || 0 : 0, data.stats.total_captures || 0),
+                total_score: Math.max(currentStats ? currentStats.total_score || 0 : 0, data.stats.total_score || 0)
+              };
+            }
+            if (data.rank) currentRank = data.rank;
+            saveCachedState();
+            updateAuthPill();
+          } else if (res.status === 401) {
+            unconfirmed.push(match);
+            break;
+          } else if (res.status >= 500) {
+            unconfirmed.push(match);
+          }
+        } catch {
+          unconfirmed.push(match);
+        }
+      }
+      setPendingMatches(unconfirmed);
+
+      const modalBack = document.getElementById("leaderboardModalBack");
+      if (modalBack && modalBack.classList.contains("open")) {
+        openLeaderboard();
+      }
+    } finally {
+      isSyncingMatches = false;
+    }
+  }
+
   async function fetchAuthStatus() {
+    const token = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null;
     try {
       const res = await fetch(API_BASE + "/api/auth/me", {
         headers: getAuthHeaders(),
@@ -59,26 +223,40 @@
       });
       if (!res.ok) {
         if (res.status === 401) {
-          try { localStorage.removeItem("dhayam_auth_token"); } catch {}
+          try { localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN); } catch {}
+          currentUser = null;
+          saveCachedState();
+          updateAuthPill();
         }
-        currentUser = null;
-        updateAuthPill();
         return;
       }
       const data = await res.json();
       if (data && data.user) {
         currentUser = data.user;
-        currentStats = data.stats || null;
-        currentRank = data.rank || null;
+        if (data.stats) {
+          if (currentStats) {
+            currentStats = {
+              games_played: Math.max(currentStats.games_played || 0, data.stats.games_played || 0),
+              games_won: Math.max(currentStats.games_won || 0, data.stats.games_won || 0),
+              total_captures: Math.max(currentStats.total_captures || 0, data.stats.total_captures || 0),
+              total_score: Math.max(currentStats.total_score || 0, data.stats.total_score || 0)
+            };
+          } else {
+            currentStats = data.stats;
+          }
+        }
+        currentRank = data.rank || currentRank;
+        saveCachedState();
         updateAuthPill();
-        checkPendingWin();
-      } else {
+        await syncPendingMatches();
+      } else if (!token) {
+        // Explicitly unauthenticated and no local token stored
         currentUser = null;
+        saveCachedState();
         updateAuthPill();
       }
     } catch {
-      currentUser = null;
-      updateAuthPill();
+      // Network error: maintain cached state for offline resilience
     }
   }
 
@@ -179,6 +357,7 @@
     if (stickyEl) {
       if (currentUser && userStanding) {
         currentRank = userStanding.global_rank;
+        saveCachedState();
         updateAuthPill();
         stickyEl.innerHTML = '<div class="personal-rank-card">' +
           '<div class="personal-rank-card-header">Your Global Standing</div>' +
@@ -196,9 +375,15 @@
           '</div>' +
         '</div>';
       } else {
+        const localWins = currentStats ? (currentStats.games_won || 0) : 0;
+        const localScore = currentStats ? (currentStats.total_score || 0) : 0;
+        let guestMessage = '<p>Playing as <strong>Guest</strong>. Sign in to save your game scores and earn your rank!</p>';
+        if (localWins > 0) {
+          guestMessage = '<p>Playing as <strong>Guest</strong> with <strong>' + localWins + ' win(s)</strong> (' + localScore + ' pts) saved locally. Sign in with Google or GitHub to publish them to the Global Leaderboard!</p>';
+        }
         stickyEl.innerHTML = '<div class="personal-rank-card">' +
           '<div class="personal-rank-guest">' +
-            '<p>Playing as <strong>Guest</strong>. Sign in to save your game scores and earn your rank!</p>' +
+            guestMessage +
             '<div style="display:flex;gap:8px;justify-content:center;">' +
               '<button type="button" class="btn" style="padding:6px 14px;font-size:12px;" onclick="DhayamAuth.openAuthModal()">Sign in with Google / GitHub</button>' +
             '</div>' +
@@ -238,6 +423,7 @@
       '</div>';
     } else {
       contentEl.innerHTML = '<div>' +
+        (currentStats && currentStats.games_won > 0 ? '<div style="background:rgba(245,158,11,0.15);border:1px solid #f59e0b;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:12px;color:#fde68a;">🏆 You have ' + currentStats.games_won + ' local victory (' + currentStats.total_score + ' pts) ready to be saved to your profile!</div>' : '') +
         '<p style="color:#d8c4ab;font-size:13px;line-height:1.5;">' +
           'Sign in to link your game statistics, track wins and captures, and compete on the global leaderboard.' +
         '</p>' +
@@ -286,12 +472,13 @@
         headers: getAuthHeaders(),
         credentials: "include"
       });
-    } catch {
-      // Fallback ignore
-    }
+    } catch {}
     try {
       if (typeof localStorage !== "undefined") {
-        localStorage.removeItem("dhayam_auth_token");
+        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.CACHED_USER);
+        localStorage.removeItem(STORAGE_KEYS.CACHED_STATS);
+        localStorage.removeItem(STORAGE_KEYS.CACHED_RANK);
       }
     } catch {}
     currentUser = null;
@@ -302,75 +489,60 @@
   }
 
   async function submitMatchResult(matchPayload) {
-    try {
-      const res = await fetch(API_BASE + "/api/stats/record", {
-        method: "POST",
-        headers: getAuthHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify(matchPayload)
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.stats) currentStats = data.stats;
-        if (data.rank) currentRank = data.rank;
-        updateAuthPill();
-        const modalBack = document.getElementById("leaderboardModalBack");
-        if (modalBack && modalBack.classList.contains("open")) {
-          openLeaderboard();
-        }
-      }
-    } catch {
-      // Network error handled gracefully
-    }
-  }
-
-  function checkPendingWin() {
-    if (!currentUser) return;
-    try {
-      const pendingRaw = sessionStorage.getItem("dhayam_pending_win");
-      if (pendingRaw) {
-        const pending = JSON.parse(pendingRaw);
-        sessionStorage.removeItem("dhayam_pending_win");
-        submitMatchResult(pending);
-      }
-    } catch {
-      // Storage unavailable
-    }
+    enqueuePendingMatch(matchPayload);
+    await syncPendingMatches();
   }
 
   function onGameWin(winner, score, captures) {
     if (!winner) return;
+    const isHumanWin = !winner.computer;
     const matchId = "match_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
     const turnsCount = (typeof game !== "undefined" && game && typeof game.turn === "number")
       ? game.turn
       : (typeof currentTurn !== "undefined" ? currentTurn : 30);
+    const earnedCaptures = captures || (winner.captured ? 1 : 0);
+    const earnedScore = score || (isHumanWin ? (100 + earnedCaptures * 10) : 0);
+
     const matchPayload = {
       matchId: matchId,
-      isWinner: !winner.computer,
+      isWinner: isHumanWin,
       turns: turnsCount,
-      captures: captures || (winner.captured ? 1 : 0),
-      score: score || 100
+      captures: earnedCaptures,
+      score: earnedScore,
+      timestamp: Date.now()
     };
 
-    if (currentUser) {
-      submitMatchResult(matchPayload);
-    } else if (matchPayload.isWinner) {
-      try {
-        sessionStorage.setItem("dhayam_pending_win", JSON.stringify(matchPayload));
-      } catch {
-        // Storage fallback
+    if (isHumanWin) {
+      // Immediately track points locally in cache so refresh never loses them
+      if (!currentStats) {
+        currentStats = { games_played: 0, games_won: 0, total_captures: 0, total_score: 0 };
       }
-      // Inject claim banner into celebration if element exists
-      const victoryModalContent = document.getElementById("modalContent");
-      if (victoryModalContent) {
-        const claimBanner = document.createElement("div");
-        claimBanner.className = "victory-claim-card";
-        claimBanner.innerHTML = '<p>🏆 You won as a Guest! Save this victory (+100 pts) to the Global Leaderboard:</p>' +
-          '<div class="victory-claim-actions">' +
-            '<button type="button" class="btn btn-victory-claim" onclick="DhayamAuth.signInGoogle()">Sign in with Google</button>' +
-            '<button type="button" class="btn secondary btn-victory-claim" onclick="DhayamAuth.signInGitHub()">Sign in with GitHub</button>' +
-          '</div>';
-        victoryModalContent.appendChild(claimBanner);
+      currentStats.games_played = (currentStats.games_played || 0) + 1;
+      currentStats.games_won = (currentStats.games_won || 0) + 1;
+      currentStats.total_captures = (currentStats.total_captures || 0) + earnedCaptures;
+      currentStats.total_score = (currentStats.total_score || 0) + earnedScore;
+      saveCachedState();
+      updateAuthPill();
+
+      // Persist in pending queue
+      enqueuePendingMatch(matchPayload);
+
+      const hasToken = typeof localStorage !== "undefined" && Boolean(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN));
+      if (currentUser || hasToken) {
+        syncPendingMatches();
+      } else {
+        // Guest win: inject claim card into celebration modal
+        const victoryModalContent = document.getElementById("modalContent");
+        if (victoryModalContent) {
+          const claimBanner = document.createElement("div");
+          claimBanner.className = "victory-claim-card";
+          claimBanner.innerHTML = '<p>🏆 You won as a Guest! Save this victory (+' + earnedScore + ' pts) to the Global Leaderboard:</p>' +
+            '<div class="victory-claim-actions">' +
+              '<button type="button" class="btn btn-victory-claim" onclick="DhayamAuth.signInGoogle()">Sign in with Google</button>' +
+              '<button type="button" class="btn secondary btn-victory-claim" onclick="DhayamAuth.signInGitHub()">Sign in with GitHub</button>' +
+            '</div>';
+          victoryModalContent.appendChild(claimBanner);
+        }
       }
     }
   }
@@ -400,19 +572,37 @@
     const tokenFromUrl = params.get("auth_token");
     if (tokenFromUrl) {
       try {
-        localStorage.setItem("dhayam_auth_token", tokenFromUrl);
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenFromUrl);
       } catch {}
     }
-    if (params.has("auth_success") || tokenFromUrl) {
+    const isAuthSuccess = params.has("auth_success") || Boolean(tokenFromUrl);
+    if (isAuthSuccess) {
       params.delete("auth_token");
       params.delete("auth_success");
       const cleanSearch = params.toString() ? "?" + params.toString() : "";
       const cleanUrl = window.location.origin + window.location.pathname + cleanSearch + window.location.hash;
       window.history.replaceState({}, document.title, cleanUrl);
-      setTimeout(openLeaderboard, 400);
     }
 
-    fetchAuthStatus();
+    // 1. Synchronously load and render cached state before any network calls
+    loadCachedState();
+    updateAuthPill();
+
+    // 2. Fetch fresh auth status from edge and flush pending matches
+    fetchAuthStatus().then(() => {
+      if (isAuthSuccess) {
+        setTimeout(openLeaderboard, 400);
+      }
+    });
+
+    // 3. Online & focus auto-reconnect
+    window.addEventListener("online", function () {
+      fetchAuthStatus();
+      syncPendingMatches();
+    });
+    window.addEventListener("focus", function () {
+      if (!currentUser) fetchAuthStatus();
+    });
   }
 
   if (document.readyState === "loading") {
@@ -431,7 +621,15 @@
     logout: logout,
     onGameWin: onGameWin,
     fetchAuthStatus: fetchAuthStatus,
-    getCurrentUser: function () { return currentUser; }
+    syncPendingMatches: syncPendingMatches,
+    getPendingMatches: getPendingMatches,
+    enqueuePendingMatch: enqueuePendingMatch,
+    submitMatchResult: submitMatchResult,
+    getCurrentUser: function () { return currentUser; },
+    getCurrentStats: function () { return currentStats; },
+    getCurrentRank: function () { return currentRank; },
+    loadCachedState: loadCachedState,
+    saveCachedState: saveCachedState
   };
 
   if (typeof window !== "undefined") {
