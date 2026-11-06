@@ -473,3 +473,151 @@ test("client auth: logout clears cached profile, stats, rank, and auth token", a
   assert.equal(mockLocalStorage.getItem("dhayam_cached_stats"), null);
   assert.equal(mockLocalStorage.getItem("dhayam_cached_rank"), null);
 });
+
+test("api: POST /api/stats/record with isWithdrawal=true records a -100 point penalty for authenticated player", async () => {
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+  const userId = "usr_withdrawing_player_1";
+
+  IN_MEMORY_DB.users.set(userId, {
+    id: userId,
+    oauth_provider: "google",
+    oauth_sub: "11223344",
+    alias: "Senthil",
+    avatar_url: "",
+    email: "senthil@example.com",
+    last_login: Date.now()
+  });
+  IN_MEMORY_DB.stats.set(userId, {
+    user_id: userId,
+    games_played: 2,
+    games_won: 2,
+    total_captures: 4,
+    total_score: 240, // Has 240 pts
+    updated_at: Date.now()
+  });
+
+  const sessionToken = await createSessionToken({
+    userId,
+    alias: "Senthil",
+    avatarUrl: "",
+    provider: "google",
+    exp: Math.floor(Date.now() / 1000) + 3600
+  }, TEST_SECRET);
+
+  const withdrawReq = new Request("https://dhayam.cancun.workers.dev/api/stats/record", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({
+      matchId: "match_withdraw_test_1",
+      isWithdrawal: true,
+      turns: 12
+    })
+  });
+
+  const res = await handleAuthAndLeaderboard(withdrawReq, env, new URL(withdrawReq.url));
+  assert.ok(res);
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.ok, true);
+  // Score reduced by 100 points: 240 - 100 = 140
+  assert.equal(data.stats.total_score, 140);
+  assert.equal(data.stats.games_played, 3);
+  assert.equal(data.stats.games_won, 2); // Did not win
+});
+
+test("api: POST /api/stats/record with isWithdrawal=true is rejected with 401 for unauthenticated visitor", async () => {
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+  const withdrawReq = new Request("https://dhayam.cancun.workers.dev/api/stats/record", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      matchId: "match_withdraw_unauth",
+      isWithdrawal: true
+    })
+  });
+
+  const res = await handleAuthAndLeaderboard(withdrawReq, env, new URL(withdrawReq.url));
+  assert.ok(res);
+  assert.equal(res.status, 401);
+});
+
+test("client auth: onGameWithdrawal deducts 100 points locally and flushes to /api/stats/record", async () => {
+  const store = new Map<string, string>();
+  const mockLocalStorage = {
+    getItem: (key: string) => store.get(key) || null,
+    setItem: (key: string, val: string) => { store.set(key, String(val)); },
+    removeItem: (key: string) => { store.delete(key); },
+    clear: () => { store.clear(); }
+  };
+
+  let flushedWithdrawal: any = null;
+  const sandbox = createClientSandbox(mockLocalStorage, async (url: string, opts: any) => {
+    if (url.includes("/api/stats/record")) {
+      flushedWithdrawal = JSON.parse(opts.body);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          ok: true,
+          stats: { games_played: 2, games_won: 1, total_captures: 2, total_score: 50 },
+          rank: 3
+        })
+      };
+    }
+    return { ok: true, status: 200, json: async () => ({ user: null }) };
+  });
+
+  // Seed user with 150 points
+  mockLocalStorage.setItem("dhayam_auth_token", "jwt_token_withdraw");
+  mockLocalStorage.setItem("dhayam_cached_user", JSON.stringify({ id: "usr_w1", alias: "PlayerW" }));
+  mockLocalStorage.setItem("dhayam_cached_stats", JSON.stringify({
+    games_played: 1,
+    games_won: 1,
+    total_captures: 2,
+    total_score: 150
+  }));
+
+  const authCode = fs.readFileSync(AUTH_JS_PATH, "utf-8");
+  vm.createContext(sandbox);
+  vm.runInContext(authCode, sandbox);
+
+  const dhayamAuth = sandbox.DhayamAuth;
+  assert.equal(dhayamAuth.getCurrentStats()?.total_score, 150);
+
+  const result = await dhayamAuth.onGameWithdrawal();
+  assert.equal(result.ok, true);
+
+  // Local stats immediately reduced: 150 - 100 = 50
+  assert.equal(dhayamAuth.getCurrentStats()?.total_score, 50);
+  assert.equal(dhayamAuth.getCurrentStats()?.games_played, 2);
+
+  // Payload verified
+  assert.ok(flushedWithdrawal);
+  assert.equal(flushedWithdrawal.isWithdrawal, true);
+  assert.equal(flushedWithdrawal.score, -100);
+});
+
+test("client auth: onGameWithdrawal is rejected if user is not signed in", async () => {
+  const store = new Map<string, string>();
+  const mockLocalStorage = {
+    getItem: (key: string) => store.get(key) || null,
+    setItem: (key: string, val: string) => { store.set(key, String(val)); },
+    removeItem: (key: string) => { store.delete(key); },
+    clear: () => { store.clear(); }
+  };
+
+  const sandbox = createClientSandbox(mockLocalStorage);
+  const authCode = fs.readFileSync(AUTH_JS_PATH, "utf-8");
+  vm.createContext(sandbox);
+  vm.runInContext(authCode, sandbox);
+
+  const dhayamAuth = sandbox.DhayamAuth;
+  assert.equal(dhayamAuth.getCurrentUser(), null);
+
+  const result = await dhayamAuth.onGameWithdrawal();
+  assert.equal(result.ok, false);
+  assert.ok(result.error.includes("Only OAuth signed-in players"));
+});

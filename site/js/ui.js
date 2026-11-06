@@ -778,6 +778,31 @@
           };
         }
 
+        // 4. Withdraw Buttons (#withdrawBtn & #menuWithdrawBtn)
+        const withdrawBtn = $("withdrawBtn");
+        const menuWithdrawBtn = $("menuWithdrawBtn");
+        const isOAuth = typeof DhayamAuth !== "undefined" && Boolean(DhayamAuth.getCurrentUser());
+        const canWithdraw = isOAuth && game && game.phase !== "done" && !demo;
+
+        if (withdrawBtn) {
+          withdrawBtn.hidden = !canWithdraw;
+          if (canWithdraw) {
+            withdrawBtn.textContent = typeof t === "function" ? t("action_withdraw") : "\ud83c\udff3\ufe0f Withdraw (-100 pts)";
+            withdrawBtn.onclick = () => {
+              if (typeof requestWithdrawal === "function") requestWithdrawal();
+            };
+          }
+        }
+        if (menuWithdrawBtn) {
+          menuWithdrawBtn.hidden = !canWithdraw;
+          if (canWithdraw) {
+            menuWithdrawBtn.textContent = typeof t === "function" ? t("action_withdraw") : "\ud83c\udff3\ufe0f Withdraw (-100 pts)";
+            menuWithdrawBtn.onclick = () => {
+              if (typeof requestWithdrawal === "function") requestWithdrawal();
+            };
+          }
+        }
+
         $("statusTitle").textContent =
           game.phase === "done"
             ? "🏆 " + (typeof t === "function" ? t("winner_title", { name: winner.name }) : winner.name + " wins!")

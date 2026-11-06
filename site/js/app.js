@@ -206,6 +206,126 @@
         $("modalConfirm").style.display = "";
         $("modalCancel").textContent = "Close";
       }
+
+      function requestWithdrawal() {
+        const isOAuthUser = typeof DhayamAuth !== "undefined" && Boolean(DhayamAuth.getCurrentUser());
+        if (!isOAuthUser) {
+          showModal(
+            "Withdrawal Restricted",
+            "<p style='text-align:center;'>Only signed-in OAuth players can withdraw with profile score reduction. Please sign in to link your game records and standings.</p>",
+            "Sign In",
+            () => {
+              if (typeof DhayamAuth !== "undefined") DhayamAuth.openAuthModal();
+            }
+          );
+          return;
+        }
+
+        if (!game || game.phase === "done" || (typeof demo !== "undefined" && demo)) return;
+
+        const isTamil = typeof getLanguage === "function" && getLanguage() === "ta";
+        const currentStats = (typeof DhayamAuth !== "undefined" && DhayamAuth.getCurrentStats()) ? DhayamAuth.getCurrentStats() : null;
+        const currentScore = currentStats ? (currentStats.total_score || 0) : 0;
+        const newScore = currentScore - 100;
+
+        const titleText = isTamil
+          ? "\ud83c\udff3\ufe0f \u0baa\u0bcb\u0b9f\u0bcd\u0b9f\u0bbf\u0baf\u0bbf\u0bb2\u0bbf\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bc1 \u0bb5\u0bbf\u0bb2\u0b95 \u0bb5\u0bc7\u0ba3\u0bcd\u0b9f\u0bc1\u0bae\u0bbe?"
+          : "🏳️ Withdraw from Match?";
+        const confirmLabel = isTamil
+          ? "\u0bb5\u0bbf\u0bb2\u0b95\u0bb2\u0bc8 \u0b89\u0bb1\u0bc1\u0ba4\u0bbf \u0b9a\u0bc6\u0baf\u0bcd (-100 \u0baa\u0bc1\u0bb3\u0bcd\u0bb3\u0bbf\u0b95\u0bb3\u0bcd)"
+          : "Confirm Withdrawal (-100 pts)";
+
+        const modalHtml =
+          '<div class="withdraw-confirm-panel" style="text-align:center;padding:12px 6px;">' +
+            '<div style="font-size:3rem;margin-bottom:8px;">🏳️</div>' +
+            '<p style="font-size:1.05rem;color:#fde68a;font-weight:700;margin-bottom:12px;">' +
+              (isTamil
+                ? "\u0baa\u0bcb\u0b9f\u0bcd\u0b9f\u0bbf\u0baf\u0bbf\u0bb2\u0bbf\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bc1 \u0bb5\u0bbf\u0bb2\u0b95 \u0b89\u0bb1\u0bc1\u0ba4\u0bbf\u0baf\u0bbe\u0b95 \u0bb5\u0bbf\u0bb0\u0bc1\u0bae\u0bcd\u0baa\u0bc1\u0b95\u0bbf\u0bb1\u0bc0\u0bb0\u0bcd\u0b95\u0bb3\u0bbe?"
+                : "Are you sure you want to forfeit this game?") +
+            '</p>' +
+            '<div style="background:rgba(239,68,68,0.15);border:1px solid #ef444488;border-radius:8px;padding:12px;margin:0 auto 16px;max-width:340px;text-align:left;">' +
+              '<div style="color:#f87171;font-weight:700;font-size:14px;margin-bottom:4px;">⚠️ Profile Penalty: -100 Points</div>' +
+              '<div style="font-size:12px;color:#fca5a5;line-height:1.4;">' +
+                (isTamil
+                  ? "\u0baa\u0bcb\u0b9f\u0bcd\u0b9f\u0bbf\u0baf\u0bc8 \u0b95\u0bc8\u0bb5\u0bbf\u0b9f\u0bcd\u0b9f\u0bbe\u0bb2\u0bcd \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0ba4\u0bbf\u0bb5\u0bbf\u0bb2\u0bbf\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bc1 100 \u0baa\u0bc1\u0bb3\u0bcd\u0bb3\u0bbf\u0b95\u0bb3\u0bcd \u0b95\u0bc1\u0bb1\u0bc8\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bc1\u0bae\u0bcd (-100 \u0baa\u0bc1\u0bb3\u0bcd\u0bb3\u0bbf\u0b95\u0bb3\u0bcd)."
+                  : "Withdrawing will end this match immediately and deduct <strong>100 points</strong> from your profile score and leaderboard standing.") +
+              '</div>' +
+              '<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(239,68,68,0.3);font-size:12px;color:#e2e8f0;display:flex;justify-content:space-between;">' +
+                '<span>Current Score: <strong>' + currentScore + ' pts</strong></span>' +
+                '<span>New Score: <strong style="color:#f87171;">' + newScore + ' pts</strong></span>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        showModal(
+          titleText,
+          modalHtml,
+          confirmLabel,
+          () => {
+            executeWithdrawal();
+          }
+        );
+      }
+
+      function executeWithdrawal() {
+        if (!game || game.phase === "done") return;
+
+        if (typeof resetTurnThinkingTimer === "function") resetTurnThinkingTimer();
+        if (rollTimer) clearTimeout(rollTimer);
+        if (computerTimer) clearTimeout(computerTimer);
+        rollTimer = null;
+        computerTimer = null;
+        rolling = false;
+        moving = false;
+
+        const isTamil = typeof getLanguage === "function" && getLanguage() === "ta";
+
+        // Audit & telemetry
+        recordAudit("PLAYER_WITHDREW", {
+          player: game?.players?.[0]?.name || "You",
+          penalty: -100,
+          turn: game ? game.turn : 1
+        });
+        if (typeof FlightRecorder !== "undefined" && typeof FlightRecorder.record === "function") {
+          FlightRecorder.record("PLAYER_WITHDREW", { penalty: -100, turn: game ? game.turn : 1 });
+        }
+
+        game.phase = "done";
+
+        if (typeof DhayamAuth !== "undefined" && typeof DhayamAuth.onGameWithdrawal === "function") {
+          DhayamAuth.onGameWithdrawal();
+        }
+
+        render();
+
+        setTimeout(() => {
+          const updatedScore = (typeof DhayamAuth !== "undefined" && DhayamAuth.getCurrentStats())
+            ? (DhayamAuth.getCurrentStats().total_score || 0)
+            : 0;
+
+          showModal(
+            isTamil ? "\ud83c\udff3\ufe0f \u0baa\u0bcb\u0b9f\u0bcd\u0b9f\u0bbf \u0b95\u0bc8\u0bb5\u0bbf\u0b9f\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1" : "🏳️ Match Forfeited",
+            '<div style="text-align:center;padding:12px 6px;">' +
+              '<div style="font-size:3rem;margin-bottom:8px;">🏳️</div>' +
+              '<p style="font-size:1.1rem;color:#fca5a5;font-weight:700;">' +
+                (isTamil ? "\u0ba8\u0bc0\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0bcb\u0b9f\u0bcd\u0b9f\u0bbf\u0baf\u0bbf\u0bb2\u0bbf\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bc1 \u0bb5\u0bbf\u0bb2\u0b95\u0bbf\u0ba9\u0bc0\u0bb0\u0bcd\u0b95\u0bb3\u0bcd." : "You withdrew from the match.") +
+              '</p>' +
+              '<p style="color:#e2e8f0;font-size:14px;margin-top:6px;">' +
+                (isTamil
+                  ? "100 \u0baa\u0bc1\u0bb3\u0bcd\u0bb3\u0bbf\u0b95\u0bb3\u0bcd \u0b95\u0bc1\u0bb1\u0bc8\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba9. \u0ba4\u0bb1\u0bcd\u0baa\u0bcb\u0ba4\u0bc8\u0baf \u0baa\u0bc1\u0bb3\u0bcd\u0bb3\u0bbf: "
+                  : "A <strong>-100 point penalty</strong> has been applied to your profile.<br>Updated Score: ") +
+                '<strong>' + updatedScore + ' pts</strong>' +
+              '</p>' +
+            '</div>',
+            isTamil ? "\u0baa\u0bc1\u0ba4\u0bbf\u0baf \u0b86\u0b9f\u0bcd\u0b9f\u0bae\u0bcd" : "⚔️ Start New Match",
+            () => {
+              if (typeof newGame === "function") newGame(game ? game.players.length : 2, game ? game.computerCount : 1);
+            }
+          );
+        }, 150);
+      }
+      window.requestWithdrawal = requestWithdrawal;
+      window.executeWithdrawal = executeWithdrawal;
       function openShareModal() {
         const shareUrl = window.location.href.split("#")[0];
         const currentGame = typeof game !== "undefined" ? game : null;
@@ -552,6 +672,8 @@
         });
       }
       if ($("settingsBtn")) $("settingsBtn").onclick = openSettingsModal;
+      if ($("withdrawBtn")) $("withdrawBtn").onclick = requestWithdrawal;
+      if ($("menuWithdrawBtn")) $("menuWithdrawBtn").onclick = requestWithdrawal;
       if ($("copyAuditBtn")) $("copyAuditBtn").onclick = copyGameAudit;
       if ($("editPlayersBtn")) $("editPlayersBtn").onclick = openSettingsModal;
       $("demoRestart").onclick = restartGuidedDemo;

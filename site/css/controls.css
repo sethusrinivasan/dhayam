@@ -145,6 +145,28 @@
   border: 1px solid #ffffff24;
 }
 
+.btn.danger {
+  background: rgba(220, 38, 38, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.btn.danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.4);
+  border-color: #ef4444;
+  color: #fff;
+}
+
+#menuWithdrawBtn {
+  color: #fca5a5;
+}
+
+#menuWithdrawBtn:hover,
+#menuWithdrawBtn:focus-visible {
+  background: rgba(220, 38, 38, 0.2);
+  color: #fff;
+}
+
 .btn:focus-visible,
 .pill:focus-visible,
 .cell:focus-visible {

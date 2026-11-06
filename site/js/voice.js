@@ -257,6 +257,20 @@ function setupKeyboardNavigation() {
       showKeyboardHelpModal();
       return;
     }
+
+    // 8. Withdraw from match: W (only available for OAuth signed-in players)
+    if (key === "w") {
+      const withdrawBtn = document.getElementById("withdrawBtn");
+      if (withdrawBtn && !withdrawBtn.hidden && !withdrawBtn.disabled) {
+        e.preventDefault();
+        if (typeof requestWithdrawal === "function") {
+          requestWithdrawal();
+        } else {
+          withdrawBtn.click();
+        }
+        return;
+      }
+    }
   });
 }
 

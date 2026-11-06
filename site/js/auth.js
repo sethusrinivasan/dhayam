@@ -183,12 +183,7 @@
           if (res.ok) {
             const data = await res.json();
             if (data.stats) {
-              currentStats = {
-                games_played: Math.max(currentStats ? currentStats.games_played || 0 : 0, data.stats.games_played || 0),
-                games_won: Math.max(currentStats ? currentStats.games_won || 0 : 0, data.stats.games_won || 0),
-                total_captures: Math.max(currentStats ? currentStats.total_captures || 0 : 0, data.stats.total_captures || 0),
-                total_score: Math.max(currentStats ? currentStats.total_score || 0 : 0, data.stats.total_score || 0)
-              };
+              currentStats = data.stats;
             }
             if (data.rank) currentRank = data.rank;
             saveCachedState();
@@ -234,13 +229,9 @@
       if (data && data.user) {
         currentUser = data.user;
         if (data.stats) {
-          if (currentStats) {
-            currentStats = {
-              games_played: Math.max(currentStats.games_played || 0, data.stats.games_played || 0),
-              games_won: Math.max(currentStats.games_won || 0, data.stats.games_won || 0),
-              total_captures: Math.max(currentStats.total_captures || 0, data.stats.total_captures || 0),
-              total_score: Math.max(currentStats.total_score || 0, data.stats.total_score || 0)
-            };
+          const pending = getPendingMatches();
+          if (pending && pending.length > 0 && currentStats) {
+            // Pending matches still awaiting sync, keep local state
           } else {
             currentStats = data.stats;
           }
@@ -282,6 +273,23 @@
       if (menuBtn) {
         menuBtn.textContent = "👤 Sign in / Profile";
       }
+    }
+    updateWithdrawVisibility();
+  }
+
+  function updateWithdrawVisibility() {
+    if (typeof document === "undefined") return;
+    const withdrawBtn = document.getElementById("withdrawBtn");
+    const menuWithdrawBtn = document.getElementById("menuWithdrawBtn");
+    const isOAuth = Boolean(currentUser);
+    const isGameActive = typeof game !== "undefined" && game && game.phase !== "done" && !(typeof demo !== "undefined" && demo);
+    const visible = isOAuth && isGameActive;
+
+    if (withdrawBtn) {
+      withdrawBtn.hidden = !visible;
+    }
+    if (menuWithdrawBtn) {
+      menuWithdrawBtn.hidden = !visible;
     }
   }
 
@@ -547,6 +555,40 @@
     }
   }
 
+  async function onGameWithdrawal() {
+    const hasToken = typeof localStorage !== "undefined" && Boolean(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN));
+    if (!currentUser && !hasToken) {
+      return { ok: false, error: "Only OAuth signed-in players can withdraw with profile penalty." };
+    }
+
+    const matchId = "match_withdraw_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+    const turnsCount = (typeof game !== "undefined" && game && typeof game.turn === "number")
+      ? game.turn
+      : 1;
+
+    const matchPayload = {
+      matchId: matchId,
+      isWinner: false,
+      isWithdrawal: true,
+      turns: turnsCount,
+      captures: 0,
+      score: -100,
+      timestamp: Date.now()
+    };
+
+    if (!currentStats) {
+      currentStats = { games_played: 0, games_won: 0, total_captures: 0, total_score: 0 };
+    }
+    currentStats.games_played = (currentStats.games_played || 0) + 1;
+    currentStats.total_score = (currentStats.total_score || 0) - 100;
+    saveCachedState();
+    updateAuthPill();
+
+    enqueuePendingMatch(matchPayload);
+    await syncPendingMatches();
+    return { ok: true, stats: currentStats };
+  }
+
   // Initialize UI hooks on load
   function init() {
     const leaderboardBtn = document.getElementById("leaderboardBtn");
@@ -620,6 +662,8 @@
     signInGitHub: signInGitHub,
     logout: logout,
     onGameWin: onGameWin,
+    onGameWithdrawal: onGameWithdrawal,
+    updateWithdrawVisibility: updateWithdrawVisibility,
     fetchAuthStatus: fetchAuthStatus,
     syncPendingMatches: syncPendingMatches,
     getPendingMatches: getPendingMatches,

@@ -418,10 +418,11 @@ export async function handleAuthAndLeaderboard(request, env, url) {
     try {
       const body = await request.json();
       const matchId = body.matchId || `match_${Date.now()}`;
-      const isWinner = Boolean(body.isWinner);
-      const captures = parseInt(body.captures || 0, 10);
+      const isWithdrawal = Boolean(body.isWithdrawal);
+      const isWinner = isWithdrawal ? false : Boolean(body.isWinner);
+      const captures = isWithdrawal ? 0 : parseInt(body.captures || 0, 10);
       const turns = parseInt(body.turns || 30, 10);
-      const score = (isWinner ? 100 : 0) + (captures * 10);
+      const score = isWithdrawal ? -100 : ((isWinner ? 100 : 0) + (captures * 10));
 
       const recordResult = await recordMatch(env, {
         matchId,
