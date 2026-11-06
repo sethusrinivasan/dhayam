@@ -26,9 +26,9 @@ Issues are classified using a 4-tier impact-vs-effort framework:
 | 🟡 **P2** | **#13** | [Camera Hand Gesture Tracking: Touchless game controls via webcam gesture recognition](https://github.com/sethusrinivasan/dhayam/issues/13) | Accessibility & AI Vision | Optional touchless control mode using device webcam with 100% on-device privacy. |
 | 🟡 **P2** | **#5** | [Gameplay: Regional Traditional Rule Variants (2v2 Team Play & Entry Customization)](https://github.com/sethusrinivasan/dhayam/issues/5) | Rules Engine | Traditional regional variants including partner 2v2 play and customized opening entries. |
 | 🟡 **P2** | **#2** | [Multiplayer: Public Room Discovery & Instant Matchmaking Lobby](https://github.com/sethusrinivasan/dhayam/issues/2) | Multiplayer | Public lobby list for quick open room discovery. |
+| 🟡 **P2** | **#9** | [OAuth Sign-In (Google & GitHub) & Frugal Cloudflare D1 Leaderboard](https://github.com/sethusrinivasan/dhayam/issues/9) | Auth & Storage | Persistent player profiles, Google & GitHub OAuth 2.0 PKCE, zero-cost Cloudflare D1 SQL store, top 10 leaderboard, and global user rank. [Design Doc](oauth-leaderboard-design.md). |
 | ⚪ **P3** | **#4** | [i18n & Localization: Support Hindi, Telugu, Kannada](https://github.com/sethusrinivasan/dhayam/issues/4) | Localization | Expansion to secondary Indian languages (English and Tamil are already fully shipped). |
 | ⚪ **P3** | **#11** | [Investigate 32-player 128x stress rendering and Linux GPU crash diagnostics](https://github.com/sethusrinivasan/dhayam/issues/11) | Performance / Benchmarking | Extreme benchmark testing for 32-player quantum stress scenarios. |
-| ⚪ **P3** | **#9** | [Add OAuth Sign‑In Support (Google & GitHub)](https://github.com/sethusrinivasan/dhayam/issues/9) | Auth | Optional account profiles; intentionally low priority to preserve zero-friction static gameplay. |
 
 ---
 

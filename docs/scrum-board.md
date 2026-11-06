@@ -9,7 +9,7 @@
 
 ```
 +-------------------------------------------------------------------------------------------------------------------+
-|  BACKLOG (44 pts)          |  TODO (5 pts)             |  IN-PROGRESS (5 pts)      |  DONE (Sprint 0 / Shipped)   |
+|  BACKLOG (47 pts)          |  TODO (5 pts)             |  IN-PROGRESS (5 pts)      |  DONE (Sprint 0 / Shipped)   |
 +-------------------------------------------------------------------------------------------------------------------+
 |  #15 (5 pts) Layout Audit  |  (Ready for Sprint 1)     |  #14 (5 pts) Dynamic      |  #7 (8 pts) Tamil i18n       |
 |  #12 (8 pts) Offline PWA   |                           |  Personas, Naming, Voice  |  #8 (5 pts) AI Guided Demo   |
@@ -19,7 +19,7 @@
 |  #2  (3 pts) Public Lobby  |                           |                           |                              |
 |  #4  (3 pts) Regional i18n |                           |                           |                              |
 |  #11 (5 pts) 32p Stress    |                           |                           |                              |
-|  #9  (5 pts) OAuth Login   |                           |                           |                              |
+|  #9  (8 pts) OAuth & D1    |                           |                           |                              |
 +-------------------------------------------------------------------------------------------------------------------+
 ```
 
@@ -35,7 +35,7 @@
 
 ## 3. Product Backlog & Story Point Estimation
 
-Total Backlog: **44 Story Points**
+Total Backlog: **47 Story Points**
 
 | Priority | Issue | Title | Points | Complexity Justification |
 |---|---|---|---|---|
@@ -47,7 +47,7 @@ Total Backlog: **44 Story Points**
 | 🟡 **P2** | **[#2](https://github.com/sethusrinivasan/dhayam/issues/2)** | Multiplayer: Public Room Discovery & Instant Matchmaking Lobby | **3** | Durable Object room indexing and public lobby list UI. |
 | ⚪ **P3** | **[#4](https://github.com/sethusrinivasan/dhayam/issues/4)** | i18n & Localization: Support Hindi, Telugu, Kannada | **3** | String catalog expansions and voice locale mapping beyond English & Tamil. |
 | ⚪ **P3** | **[#11](https://github.com/sethusrinivasan/dhayam/issues/11)** | Investigate 32-player 128x stress rendering and Linux GPU crash diagnostics | **5** | Headless Chrome stress benchmarking and WebGL/Canvas allocation limits. |
-| ⚪ **P3** | **[#9](https://github.com/sethusrinivasan/dhayam/issues/9)** | Add OAuth Sign‑In Support (Google & GitHub) | **5** | OAuth 2.0 PKCE client flow, user profile badge, optional cloud sync. |
+| 🟡 **P2** | **[#9](https://github.com/sethusrinivasan/dhayam/issues/9)** | OAuth Sign-In (Google & GitHub) & Frugal Cloudflare D1 Leaderboard | **8** | Full-stack auth flow (Google & GitHub), Cloudflare D1 persistent schema, windowed SQL rank queries, anti-tamper match audit, header menu button & responsive leaderboard modal. [Design Doc](oauth-leaderboard-design.md). |
 
 ---
 
