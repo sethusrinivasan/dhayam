@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   alias TEXT NOT NULL,                       -- Player chosen alias (<= 8 chars)
   avatar_url TEXT NOT NULL,                  -- Avatar URL or preset identifier
   email TEXT,                                -- Never exposed publicly
+  is_computer INTEGER NOT NULL DEFAULT 0,    -- 0 for human, 1 for AI / computer persona
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
   last_login INTEGER NOT NULL DEFAULT (unixepoch()),
   UNIQUE(oauth_provider, oauth_sub)

@@ -781,8 +781,8 @@
         // 4. Withdraw Buttons (#withdrawBtn & #menuWithdrawBtn)
         const withdrawBtn = $("withdrawBtn");
         const menuWithdrawBtn = $("menuWithdrawBtn");
-        const isOAuth = typeof DhayamAuth !== "undefined" && Boolean(DhayamAuth.getCurrentUser());
-        const canWithdraw = isOAuth && game && game.phase !== "done" && !demo;
+        const isSignedIn = typeof DhayamAuth !== "undefined" && Boolean(DhayamAuth.getCurrentUser());
+        const canWithdraw = isSignedIn && game && game.phase !== "done" && !demo;
 
         if (withdrawBtn) {
           withdrawBtn.hidden = !canWithdraw;

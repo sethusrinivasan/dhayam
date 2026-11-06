@@ -7,7 +7,7 @@
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
     <meta name="theme-color" content="#251a14" />
-    <meta name="description" content="Play Dhayam (Dhayam (Dhayam)) — authentic ancient Tamil race-and-capture board game on Cloudflare Edge with 3D brass dice and real-time multiplayer!" />
+    <meta name="description" content="Play Dhayam (Dhayam) — authentic ancient Tamil race-and-capture board game with 3D brass dice and real-time online multiplayer!" />
     <!-- Open Graph / Social Sharing -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://dhayam.cancun.workers.dev/" />
@@ -196,6 +196,13 @@
                   aria-label="Demo speed factor up to 128"
                 />
                 <output id="demoSpeedValue" for="demoSpeed">1×</output>
+              </label>
+              <label class="demopcs" for="demoPiecesSelect" style="display:inline-flex;align-items:center;gap:4px;font-size:0.75rem;color:#f2dec5;">
+                Pieces
+                <select id="demoPiecesSelect" class="demobtn" style="padding:2px 6px;cursor:pointer;border-radius:6px;" aria-label="Demo pieces per player">
+                  <option value="1">1 Piece</option>
+                  <option value="6" selected>6 Pieces</option>
+                </select>
               </label>
               <button
                 class="demobtn"

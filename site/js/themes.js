@@ -191,12 +191,23 @@ const THEME_DEFINITIONS = {
   },
 };
 
-let currentTheme = localStorage.getItem("dhayam_theme") || "diwali";
+let currentTheme = "diwali";
+try {
+  if (typeof localStorage !== "undefined") {
+    currentTheme = localStorage.getItem("dhayam_theme") || "diwali";
+  }
+} catch (_) {
+  currentTheme = "diwali";
+}
 
 function applyTheme(themeId) {
   if (!THEME_DEFINITIONS[themeId]) themeId = "diwali";
   currentTheme = themeId;
-  localStorage.setItem("dhayam_theme", themeId);
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("dhayam_theme", themeId);
+    }
+  } catch (_) {}
   if (document.documentElement) {
     document.documentElement.setAttribute("data-theme", themeId);
   }
@@ -209,6 +220,7 @@ function applyTheme(themeId) {
   if (typeof THEMES !== "undefined") {
     def.players.forEach((p, idx) => {
       if (THEMES[idx]) {
+        THEMES[idx].name = p.name;
         THEMES[idx].avatar = p.avatar;
         THEMES[idx].color = p.color;
       }

@@ -258,7 +258,7 @@ function setupKeyboardNavigation() {
       return;
     }
 
-    // 8. Withdraw from match: W (only available for OAuth signed-in players)
+    // 8. Withdraw from match: W (only available for signed-in players)
     if (key === "w") {
       const withdrawBtn = document.getElementById("withdrawBtn");
       if (withdrawBtn && !withdrawBtn.hidden && !withdrawBtn.disabled) {

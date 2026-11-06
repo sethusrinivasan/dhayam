@@ -57,10 +57,10 @@
         ENTRY = { N: "B4", E: "D6", S: "F4", W: "D2" },
         APPROACH = { N: "C4", E: "D5", S: "E4", W: "D3" };
       const THEMES = [
-        { name: "Maya", avatar: "🐘", color: "#e74c3c" },
-        { name: "Leo", avatar: "🐯", color: "#2389da" },
-        { name: "Amina", avatar: "🦚", color: "#f4b400" },
-        { name: "Kai", avatar: "🦁", color: "#2e9d57" },
+        { name: "Maya", avatar: "🪔", color: "#f97316" },
+        { name: "Ashwin", avatar: "🌺", color: "#0f766e" },
+        { name: "Deepa", avatar: "✨", color: "#ca8a04" },
+        { name: "Vikram", avatar: "🌟", color: "#be123c" },
         { name: "Sofia", avatar: "🦊", color: "#8e5bd9" },
         { name: "Noah", avatar: "🦉", color: "#00a6a6" },
         { name: "Zara", avatar: "🦄", color: "#ec4899" },

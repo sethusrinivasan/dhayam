@@ -291,9 +291,9 @@
     if (typeof document === "undefined") return;
     const withdrawBtn = document.getElementById("withdrawBtn");
     const menuWithdrawBtn = document.getElementById("menuWithdrawBtn");
-    const isOAuth = Boolean(currentUser);
+    const isSignedIn = Boolean(currentUser);
     const isGameActive = typeof game !== "undefined" && game && game.phase !== "done" && !(typeof demo !== "undefined" && demo);
-    const visible = isOAuth && isGameActive;
+    const visible = isSignedIn && isGameActive;
 
     if (withdrawBtn) {
       withdrawBtn.hidden = !visible;
@@ -526,6 +526,10 @@
     const earnedCaptures = captures || (winner.captured ? 1 : 0);
     const earnedScore = score || (isHumanWin ? (100 + earnedCaptures * 10) : 0);
 
+    const computerOpponent = (typeof game !== "undefined" && game && Array.isArray(game.players))
+      ? game.players.find((p) => p.computer)
+      : null;
+
     const matchPayload = {
       matchId: matchId,
       isWinner: isHumanWin,
@@ -534,6 +538,19 @@
       score: earnedScore,
       timestamp: Date.now()
     };
+
+    if (computerOpponent) {
+      const botWon = Boolean(winner && winner.computer && winner.id === computerOpponent.id);
+      matchPayload.computerPlayer = {
+        id: "bot_" + (computerOpponent.name || "maya").toLowerCase().replace(/[^a-z0-9]/g, ""),
+        alias: computerOpponent.name || "Maya",
+        avatar: computerOpponent.avatar || "🪔",
+        isWinner: botWon,
+        captures: computerOpponent.captured ? 1 : 0,
+        turns: turnsCount,
+        score: botWon ? (100 + (computerOpponent.captured ? 10 : 0)) : (computerOpponent.captured ? 10 : 0)
+      };
+    }
 
     if (isHumanWin) {
       // Immediately track points locally in cache so refresh never loses them
@@ -567,13 +584,26 @@
           victoryModalContent.appendChild(claimBanner);
         }
       }
+    } else {
+      // Computer won: track match for signed-in player and track computer's victory
+      const hasToken = typeof localStorage !== "undefined" && Boolean(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN));
+      if (currentUser || hasToken) {
+        if (!currentStats) {
+          currentStats = { games_played: 0, games_won: 0, total_captures: 0, total_score: 0 };
+        }
+        currentStats.games_played = (currentStats.games_played || 0) + 1;
+        saveCachedState();
+        updateAuthPill();
+        enqueuePendingMatch(matchPayload);
+        syncPendingMatches();
+      }
     }
   }
 
   async function onGameWithdrawal() {
     const hasToken = typeof localStorage !== "undefined" && Boolean(localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN));
     if (!currentUser && !hasToken) {
-      return { ok: false, error: "Only OAuth signed-in players can withdraw with profile penalty." };
+      return { ok: false, error: "Only signed-in players can withdraw with profile penalty." };
     }
 
     const matchId = "match_withdraw_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);

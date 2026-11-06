@@ -12,7 +12,7 @@
           const p1 = (game && game.players && game.players[0]) || { name: "Maya", avatar: "🎃" };
           if (typeof displayFloatingEmote === "function") displayFloatingEmote("👋", p1.name);
           return demoScene(
-            "Cloudflare Edge Room CF88 created. WebSocket hibernation active with host " + p1.name + " in Seat 1.",
+            "Online Arena Room CF88 created with host " + p1.name + " in Seat 1.",
             () => {
               game.current = 0;
               game.turn = 1;
@@ -120,7 +120,7 @@
           const p2 = (game && game.players && game.players[1]) || { name: "Leo", avatar: "👻" };
           if (typeof displayFloatingEmote === "function") displayFloatingEmote("📱", p2.name);
           return demoScene(
-            "Turn handed over Cloudflare Edge to " + p2.name + " on mobile. Interactive controls illuminate on Leo's phone.",
+            "Turn handed over online match to " + p2.name + " on mobile. Interactive controls illuminate on Leo's phone.",
             () => {
               game.current = 1;
               game.turn = 2;
@@ -345,7 +345,7 @@
         if (game.phase === "done")
           message =
             player.name +
-            " finishes all six pieces, wins the game, and play stops.";
+            " finishes all " + (player.pieces.length === 1 ? "1 piece" : player.pieces.length + " pieces") + ", wins the game, and play stops.";
         $("statusTitle").textContent =
           game.phase === "done"
             ? (demoMode === "multiplayer" ? "🌐 Room CF88 complete" : "Full guided game complete")
@@ -397,7 +397,7 @@
           ? (demoMode.startsWith("multiplayer") ? "🌐 Room match complete" : "Full match complete")
           : (demoPaused ? "Paused · " : "") +
             (isReal
-              ? "🌐 Cloudflare Live Edge · Room " + (multiplayer.roomCode || "") + " · Turn " + (game ? game.turn : 1)
+              ? "🌐 Online Match · Room " + (multiplayer.roomCode || "") + " · Turn " + (game ? game.turn : 1)
               : opening
                 ? (demoMode === "multiplayer" ? "Multiplayer demo " : "Lesson ") +
                   Math.max(1, demoStep) +
@@ -434,6 +434,10 @@
           $("demoSuperSpeed").setAttribute("aria-pressed", String(isSuper));
           $("demoSuperSpeed").disabled = complete || isQuantum;
         }
+        if ($("demoPiecesSelect")) {
+          $("demoPiecesSelect").value = String(demoPiecesCount);
+          $("demoPiecesSelect").disabled = complete;
+        }
         $("demoAudioToggle").textContent = available
           ? audioEnabled && !isFastMuted
             ? "🔊 Audio on"
@@ -460,20 +464,36 @@
         if (game.phase !== "done" && !demoWaitingForSpeech)
           scheduleDemo(demoNextDelay);
       }
-      function startGuidedDemo(mode = "classic", playerCount = 2) {
+
+      let demoPiecesCount = 6;
+      function setDemoPiecesCount(count) {
+        demoPiecesCount = Math.max(1, Math.min(6, parseInt(count || 6, 10)));
+        if ($("demoPiecesSelect")) $("demoPiecesSelect").value = String(demoPiecesCount);
+      }
+      function getDemoPiecesCount() {
+        return demoPiecesCount;
+      }
+      window.setDemoPiecesCount = setDemoPiecesCount;
+      window.getDemoPiecesCount = getDemoPiecesCount;
+
+      function startGuidedDemo(mode = "classic", playerCount = 2, piecesCount = demoPiecesCount) {
+        if (piecesCount !== undefined && piecesCount !== null) {
+          demoPiecesCount = Math.max(1, Math.min(6, parseInt(piecesCount || 6, 10)));
+        }
         if (mode === "multiplayer-real") {
-          return startRealOnlineDemo(playerCount);
+          return startRealOnlineDemo(playerCount, demoPiecesCount);
         }
         stopDemo();
         demoMode = mode || "classic";
         demoPlayerCount = Number(playerCount) || 2;
-        newGame(demoMode === "multiplayer" ? demoPlayerCount : 2, 0);
+        newGame(demoMode === "multiplayer" ? demoPlayerCount : 2, 0, demoPiecesCount);
         demo = true;
         audit.mode =
           demoMode === "multiplayer" ? "demo-multiplayer-sim" : "demo-classic";
         recordAudit("MODE_CHANGE", {
           mode: audit.mode,
           playerCount: demoPlayerCount,
+          piecesCount: demoPiecesCount,
         });
         demoPaused = false;
         demoStep = 0;
@@ -512,6 +532,7 @@
             FlightRecorder.recordGameStart({
               mode: demoMode === "multiplayer" ? "demo-multiplayer-sim" : "demo-classic",
               playerCount: demoPlayerCount,
+              piecesCount: demoPiecesCount,
               computerCount: 0,
               roomCode: demoMode === "multiplayer" ? "CF88" : null,
               transport: demoMode === "multiplayer" ? "simulated_cf_ws" : "local",
@@ -529,20 +550,25 @@
         }
 
         $("demoBar").hidden = false;
+        if ($("demoPiecesSelect")) $("demoPiecesSelect").value = String(demoPiecesCount);
         runDemoStep();
       }
 
-      async function startRealOnlineDemo(playerCount = 2) {
+      async function startRealOnlineDemo(playerCount = 2, piecesCount = demoPiecesCount) {
+        if (piecesCount !== undefined && piecesCount !== null) {
+          demoPiecesCount = Math.max(1, Math.min(6, parseInt(piecesCount || 6, 10)));
+        }
         stopDemo();
         demo = true;
         demoMode = "multiplayer-real";
         demoPlayerCount = Number(playerCount) || 2;
-        audit.mode = "demo-real-cloudflare";
-        recordAudit("MODE_CHANGE", { mode: audit.mode, playerCount: demoPlayerCount });
+        audit.mode = "demo-real-online";
+        recordAudit("MODE_CHANGE", { mode: audit.mode, playerCount: demoPlayerCount, piecesCount: demoPiecesCount });
         demoPaused = false;
         demoStep = 0;
         demoRollQueue = [];
         $("demoBar").hidden = false;
+        if ($("demoPiecesSelect")) $("demoPiecesSelect").value = String(demoPiecesCount);
 
         const cfHost = window.location.host && window.location.host.includes("workers.dev")
           ? window.location.host
@@ -564,16 +590,17 @@
           typeof THEMES !== "undefined" && THEMES.length >= 8
             ? THEMES.map((t) => t.name)
             : ["Maya", "Leo", "Amina", "Kai", "Sofia", "Noah", "Zara", "Arun"];
-        $("statusTitle").textContent = "Connecting to Cloudflare Edge";
+        $("statusTitle").textContent = "Connecting to Online Match";
         $("statusText").textContent =
-          "Establishing live WebSocket room " + roomCode + " on Cloudflare Durable Objects…";
-        speakDemo("Connecting to live Cloudflare Edge room " + roomCode);
+          "Establishing live room " + roomCode + " via global arbitrator…";
+        speakDemo("Connecting to live online room " + roomCode);
 
         if (typeof FlightRecorder !== "undefined") {
           if (typeof FlightRecorder.recordGameStart === "function") {
             FlightRecorder.recordGameStart({
-              mode: "demo-real-cloudflare",
+              mode: "demo-real-online",
               playerCount: demoPlayerCount,
+              piecesCount: demoPiecesCount,
               computerCount: 0,
               roomCode,
               cfHost,
@@ -586,13 +613,13 @@
                 computer: false,
               })),
               theme: document.body ? document.body.getAttribute("data-theme") || "diwali" : "diwali",
-              rulesVariant: "Dhayam 7x7 live Cloudflare Durable Objects multiplayer demo",
+              rulesVariant: "Dhayam 7x7 live online multiplayer demo",
             });
           }
         }
 
         try {
-          const wsUrlBase = `${wsProtocol}//${cfHost}/api/room/${roomCode}/ws?code=${roomCode}&players=${demoPlayerCount}`;
+          const wsUrlBase = `${wsProtocol}//${cfHost}/api/room/${roomCode}/ws?code=${roomCode}&players=${demoPlayerCount}&pieces=${demoPiecesCount}`;
           const tokens = [
             "demo-host-" + Math.random().toString(36).slice(2, 8),
             ...Array.from({ length: demoPlayerCount - 1 }, (_, s) => "demo-g-" + (s + 1) + "-" + Math.random().toString(36).slice(2, 8)),
@@ -703,7 +730,7 @@
               if (seatIndex === 0) {
                 multiplayer.status = "connected";
                 updateMultiplayerBadge();
-                const startMsg = "Live Cloudflare room " + roomCode + " established with " + demoPlayerCount + " players!";
+                const startMsg = "Live online room " + roomCode + " established with " + demoPlayerCount + " players!";
                 $("statusTitle").textContent = "🌐 Live Room " + roomCode;
                 $("statusText").textContent = startMsg;
                 speakDemo(startMsg);
@@ -734,8 +761,8 @@
                 FlightRecorder.record("DEMO_WS_ERROR", { seat: seatIndex, error: errMsg });
               }
               if (seatIndex === 0 && multiplayer.status === "connecting") {
-                console.warn("Live Cloudflare WebSocket failed to connect, falling back to simulated demo");
-                startGuidedDemo("multiplayer", demoPlayerCount);
+                console.warn("Live online WebSocket failed to connect, falling back to simulated demo");
+                startGuidedDemo("multiplayer", demoPlayerCount, demoPiecesCount);
               }
             };
 
@@ -839,7 +866,7 @@
             activeSocket.send(JSON.stringify({ type: "ROLL" }));
             actionSent = true;
             $("statusTitle").textContent = "🌐 Room " + (multiplayer.roomCode || "") + " · Turn " + game.turn;
-            $("statusText").textContent = p.name + " is rolling via Cloudflare Durable Object…";
+            $("statusText").textContent = p.name + " is rolling via global arbitrator…";
             if (typeof FlightRecorder !== "undefined") {
               FlightRecorder.record("DEMO_ACTION_SENT", {
                 type: "ROLL",
@@ -932,7 +959,7 @@
       }
 
       function restartGuidedDemo() {
-        startGuidedDemo(demoMode, demoPlayerCount);
+        startGuidedDemo(demoMode, demoPlayerCount, demoPiecesCount);
       }
       function toggleDemoPause() {
         if (!demo) return;

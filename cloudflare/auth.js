@@ -451,6 +451,12 @@ export async function handleAuthAndLeaderboard(request, env, url) {
         score
       });
 
+      if (body.computerPlayer) {
+        try {
+          await recordComputerMatch(env, body.computerPlayer);
+        } catch (_) {}
+      }
+
       return new Response(JSON.stringify(recordResult), { headers: cors });
     } catch (err) {
       return new Response(JSON.stringify({ error: "Invalid payload: " + err.message }), {
@@ -465,16 +471,17 @@ export async function handleAuthAndLeaderboard(request, env, url) {
 
 // ─── D1 & In-Memory Store Implementations ─────────────────────────────────────
 
-async function upsertUser(env, { id, provider, sub, alias, avatarUrl, email }) {
+async function upsertUser(env, { id, provider, sub, alias, avatarUrl, email, isComputer = 0 }) {
   if (env && env.DB) {
     await env.DB.prepare(`
-      INSERT INTO users (id, oauth_provider, oauth_sub, alias, avatar_url, email, last_login)
-      VALUES (?, ?, ?, ?, ?, ?, unixepoch())
+      INSERT INTO users (id, oauth_provider, oauth_sub, alias, avatar_url, email, is_computer, last_login)
+      VALUES (?, ?, ?, ?, ?, ?, ?, unixepoch())
       ON CONFLICT(oauth_provider, oauth_sub) DO UPDATE SET
         alias = excluded.alias,
         avatar_url = excluded.avatar_url,
+        is_computer = excluded.is_computer,
         last_login = unixepoch()
-    `).bind(id, provider, sub, alias, avatarUrl, email).run();
+    `).bind(id, provider, sub, alias, avatarUrl, email, isComputer ? 1 : 0).run();
 
     await env.DB.prepare(`
       INSERT INTO player_stats (user_id) VALUES (?)
@@ -486,11 +493,12 @@ async function upsertUser(env, { id, provider, sub, alias, avatarUrl, email }) {
   // In-memory fallback
   let user = IN_MEMORY_DB.users.get(id);
   if (!user) {
-    user = { id, oauth_provider: provider, oauth_sub: sub, alias, avatar_url: avatarUrl, email, last_login: Date.now() };
+    user = { id, oauth_provider: provider, oauth_sub: sub, alias, avatar_url: avatarUrl, email, is_computer: isComputer ? 1 : 0, last_login: Date.now() };
     IN_MEMORY_DB.users.set(id, user);
   } else {
     user.alias = alias;
     user.avatar_url = avatarUrl;
+    user.is_computer = isComputer ? 1 : 0;
     user.last_login = Date.now();
   }
 
@@ -506,10 +514,35 @@ async function upsertUser(env, { id, provider, sub, alias, avatarUrl, email }) {
   }
 }
 
+async function recordComputerMatch(env, { id, alias, avatar, isWinner, captures, turns, score }) {
+  const botId = id || ("bot_" + (alias || "maya").toLowerCase().replace(/[^a-z0-9]/g, ""));
+  const botAlias = sanitizeAlias(alias || "Maya");
+  const botAvatar = avatar || "🪔";
+  await upsertUser(env, {
+    id: botId,
+    provider: "computer",
+    sub: botId,
+    alias: botAlias,
+    avatarUrl: botAvatar,
+    email: null,
+    isComputer: 1
+  });
+
+  const botMatchId = "bot_match_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+  return recordMatch(env, {
+    matchId: botMatchId,
+    userId: botId,
+    isWinner: Boolean(isWinner),
+    captures: parseInt(captures || 0, 10),
+    turns: parseInt(turns || 30, 10),
+    score: parseInt(score || 0, 10)
+  });
+}
+
 async function getUserAndRank(env, userId) {
   if (env && env.DB) {
     const userRow = await env.DB.prepare(
-      "SELECT id, oauth_provider, alias, avatar_url FROM users WHERE id = ?"
+      "SELECT id, oauth_provider, alias, avatar_url, is_computer FROM users WHERE id = ?"
     ).bind(userId).first();
 
     const statsRow = await env.DB.prepare(
@@ -546,10 +579,23 @@ async function getUserAndRank(env, userId) {
 
 async function getLeaderboard(env, currentUserId) {
   if (env && env.DB) {
+    // Check total real (human) users in system who have played games
+    const realCountRow = await env.DB.prepare(`
+      SELECT COUNT(*) AS count
+      FROM player_stats ps
+      JOIN users u ON ps.user_id = u.id
+      WHERE (u.is_computer = 0 OR u.is_computer IS NULL) AND ps.games_played > 0
+    `).first();
+    const realHumanCount = realCountRow ? (realCountRow.count || 0) : 0;
+
+    // Only exception case: if total real users in system is less than 10, bring in computer's scores
+    const filterSql = realHumanCount >= 10 ? "WHERE (u.is_computer = 0 OR u.is_computer IS NULL)" : "";
+
     const topRows = await env.DB.prepare(`
       SELECT 
         u.alias,
         u.avatar_url,
+        u.is_computer,
         ps.total_score,
         ps.games_won,
         ps.games_played,
@@ -557,6 +603,7 @@ async function getLeaderboard(env, currentUserId) {
         ROW_NUMBER() OVER (ORDER BY ps.total_score DESC, ps.games_won DESC) AS rank
       FROM player_stats ps
       JOIN users u ON ps.user_id = u.id
+      ${filterSql}
       ORDER BY ps.total_score DESC, ps.games_won DESC
       LIMIT 10
     `).all();
@@ -567,9 +614,11 @@ async function getLeaderboard(env, currentUserId) {
         WITH ranked AS (
           SELECT user_id, total_score, games_won, total_captures,
                  ROW_NUMBER() OVER (ORDER BY total_score DESC, games_won DESC) AS global_rank
-          FROM player_stats
+          FROM player_stats ps
+          JOIN users u ON ps.user_id = u.id
+          ${filterSql}
         )
-        SELECT r.global_rank, r.total_score, r.games_won, r.total_captures, u.alias, u.avatar_url
+        SELECT r.global_rank, r.total_score, r.games_won, r.total_captures, u.alias, u.avatar_url, u.is_computer
         FROM ranked r
         JOIN users u ON r.user_id = u.id
         WHERE r.user_id = ?
@@ -588,6 +637,7 @@ async function getLeaderboard(env, currentUserId) {
       list.push({
         alias: user.alias,
         avatar_url: user.avatar_url,
+        is_computer: user.is_computer ? 1 : 0,
         total_score: stats.total_score,
         games_won: stats.games_won,
         games_played: stats.games_played,
@@ -596,21 +646,29 @@ async function getLeaderboard(env, currentUserId) {
     }
   }
 
-  list.sort((a, b) => (b.total_score - a.total_score) || (b.games_won - a.games_won));
-  const top10 = list.slice(0, 10).map((item, idx) => ({ ...item, rank: idx + 1 }));
+  // Check total real human users
+  const realHumanCount = list.filter((item) => !item.is_computer && item.games_played > 0).length;
+  // If real users >= 10, bring ONLY human users. If < 10, bring in computer scores as well.
+  const filteredList = realHumanCount >= 10
+    ? list.filter((item) => !item.is_computer)
+    : [...list];
+
+  filteredList.sort((a, b) => (b.total_score - a.total_score) || (b.games_won - a.games_won));
+  const top10 = filteredList.slice(0, 10).map((item, idx) => ({ ...item, rank: idx + 1 }));
 
   let currentUser = null;
   if (currentUserId && IN_MEMORY_DB.users.has(currentUserId)) {
     const user = IN_MEMORY_DB.users.get(currentUserId);
     const stats = IN_MEMORY_DB.stats.get(currentUserId);
-    const rankIdx = list.findIndex((item) => item.alias === user.alias);
+    const rankIdx = filteredList.findIndex((item) => item.alias === user.alias);
     currentUser = {
-      global_rank: rankIdx >= 0 ? rankIdx + 1 : list.length + 1,
+      global_rank: rankIdx >= 0 ? rankIdx + 1 : filteredList.length + 1,
       total_score: stats.total_score,
       games_won: stats.games_won,
       total_captures: stats.total_captures,
       alias: user.alias,
-      avatar_url: user.avatar_url
+      avatar_url: user.avatar_url,
+      is_computer: user.is_computer ? 1 : 0
     };
   }
 
@@ -673,3 +731,11 @@ async function recordMatch(env, { matchId, userId, isWinner, captures, turns, sc
   const current = await getUserAndRank(env, userId);
   return { ok: true, stats: current.stats, rank: current.rank };
 }
+
+export {
+  upsertUser,
+  recordComputerMatch,
+  getLeaderboard,
+  recordMatch,
+  getUserAndRank
+};

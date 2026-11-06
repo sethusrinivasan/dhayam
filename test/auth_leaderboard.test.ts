@@ -12,7 +12,10 @@ import {
   parseCookies,
   getAuthCorsHeaders,
   extractToken,
-  IN_MEMORY_DB
+  IN_MEMORY_DB,
+  upsertUser,
+  recordComputerMatch,
+  getLeaderboard
 } from "../cloudflare/auth.js";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
@@ -630,7 +633,7 @@ test("client auth: onGameWithdrawal is rejected if user is not signed in", async
 
   const result = await dhayamAuth.onGameWithdrawal();
   assert.equal(result.ok, false);
-  assert.ok(result.error.includes("Only OAuth signed-in players"));
+  assert.ok(result.error.includes("Only signed-in players"));
 });
 
 test("api: GET /api/leaderboard masks names and strips avatars for unauthenticated visitors", async () => {
@@ -714,6 +717,230 @@ test("client auth: openLeaderboard renders masked names and generic avatars for 
   assert.ok(listEl.innerHTML.includes("Mur***"));
   // Avatar should be generic
   assert.ok(listEl.innerHTML.includes("leaderboard-avatar-generic"));
-  // Real photo URL should NOT be rendered in DOM
+  // Real photo URL should NOT be rejected in DOM
   assert.ok(!listEl.innerHTML.includes("https://example.com/pfp.jpg"));
+});
+
+test("withdrawal restricted modal: uses user-friendly copy and omits technical terms like OAuth", () => {
+  const appJsPath = path.join(ROOT_DIR, "site", "js", "app.js");
+  const appJsContent = fs.readFileSync(appJsPath, "utf-8");
+
+  // Verify the modal message exists in app.js
+  assert.ok(appJsContent.includes("Withdrawal Restricted"));
+  assert.ok(
+    appJsContent.includes(
+      "Only signed-in players can withdraw with profile score reduction. Please sign in to link your game records and standings."
+    )
+  );
+
+  // Assert no user-facing "OAuth" in the withdrawal restriction prompt
+  const withdrawalSnippetMatch = appJsContent.match(
+    /function requestWithdrawal\(\)[\s\S]*?return;\s*\}/
+  );
+  assert.ok(withdrawalSnippetMatch, "requestWithdrawal function must exist");
+  const snippet = withdrawalSnippetMatch[0];
+  assert.ok(!snippet.includes("OAuth players"), "Should not refer to OAuth players");
+  assert.ok(!snippet.includes("OAuth signed-in"), "Should not refer to OAuth signed-in");
+});
+
+test("theme system: defaults launch theme to Diwali across index.html, DOM data-theme and THEMES configuration", () => {
+  const indexHtmlPath = path.join(ROOT_DIR, "site", "index.html");
+  const htmlContent = fs.readFileSync(indexHtmlPath, "utf-8");
+
+  // Verify site/index.html has data-theme="diwali" on html and body
+  assert.ok(htmlContent.includes('<html lang="en" data-theme="diwali">'));
+  assert.ok(htmlContent.includes('<body data-theme="diwali">'));
+
+  // Verify themes.js defaults currentTheme to diwali
+  const themesJsPath = path.join(ROOT_DIR, "site", "js", "themes.js");
+  const themesContent = fs.readFileSync(themesJsPath, "utf-8");
+  assert.ok(themesContent.includes('currentTheme = "diwali"'));
+  assert.ok(themesContent.includes('THEME_DEFINITIONS[themeId]) themeId = "diwali"'));
+
+  // Verify config.js default THEMES have Diwali avatars
+  const configJsPath = path.join(ROOT_DIR, "site", "js", "config.js");
+  const configContent = fs.readFileSync(configJsPath, "utf-8");
+  assert.ok(configContent.includes('{ name: "Maya", avatar: "🪔", color: "#f97316" }'));
+  assert.ok(configContent.includes('{ name: "Ashwin", avatar: "🌺", color: "#0f766e" }'));
+  assert.ok(configContent.includes('{ name: "Deepa", avatar: "✨", color: "#ca8a04" }'));
+  assert.ok(configContent.includes('{ name: "Vikram", avatar: "🌟", color: "#be123c" }'));
+});
+
+test("computer player score tracking: tracks score in database and marks is_computer = 1", async () => {
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+  const botId = "bot_deepa";
+
+  const res = await recordComputerMatch(env, {
+    id: botId,
+    alias: "Deepa",
+    avatar: "✨",
+    isWinner: true,
+    captures: 2,
+    turns: 18,
+    score: 120
+  });
+
+  assert.equal(res.ok, true);
+  const user = IN_MEMORY_DB.users.get(botId);
+  assert.ok(user, "Computer player must exist in users table");
+  assert.equal(user.is_computer, 1, "Computer player must be marked with is_computer = 1");
+  assert.equal(user.alias, "Deepa");
+
+  const stats = IN_MEMORY_DB.stats.get(botId);
+  assert.ok(stats);
+  assert.equal(stats.games_won, 1);
+  assert.equal(stats.total_score, 120);
+});
+
+test("leaderboard: brings in computer player scores when total real human users < 10", async () => {
+  // Clear in-memory DB
+  IN_MEMORY_DB.users.clear();
+  IN_MEMORY_DB.stats.clear();
+  IN_MEMORY_DB.submissions.clear();
+
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+
+  // Add 3 real human users (< 10)
+  for (let i = 1; i <= 3; i++) {
+    const uid = `human_user_${i}`;
+    await upsertUser(env, {
+      id: uid,
+      provider: "google",
+      sub: `sub_${i}`,
+      alias: `Human${i}`,
+      avatarUrl: "👤",
+      isComputer: 0
+    });
+    IN_MEMORY_DB.stats.set(uid, {
+      user_id: uid,
+      games_played: 2,
+      games_won: 2,
+      total_captures: 3,
+      total_score: 250 - i * 10,
+      updated_at: Date.now()
+    });
+  }
+
+  // Add 2 computer users
+  await recordComputerMatch(env, {
+    id: "bot_maya",
+    alias: "Maya",
+    avatar: "🪔",
+    isWinner: true,
+    captures: 1,
+    score: 300
+  });
+  await recordComputerMatch(env, {
+    id: "bot_ashwin",
+    alias: "Ashwin",
+    avatar: "🌺",
+    isWinner: true,
+    captures: 1,
+    score: 150
+  });
+
+  // Query leaderboard
+  const { top10 } = await getLeaderboard(env, null);
+
+  // Since total real human users = 3 (< 10), computer scores are included
+  assert.equal(top10.length, 5);
+  const botAliases = top10.map((u) => u.alias);
+  assert.ok(botAliases.includes("Maya"), "Maya bot should be in leaderboard when real users < 10");
+  assert.ok(botAliases.includes("Ashwin"), "Ashwin bot should be in leaderboard when real users < 10");
+});
+
+test("leaderboard: strictly excludes computer player scores when total real human users >= 10", async () => {
+  // Clear in-memory DB
+  IN_MEMORY_DB.users.clear();
+  IN_MEMORY_DB.stats.clear();
+  IN_MEMORY_DB.submissions.clear();
+
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+
+  // Add 12 real human users (>= 10)
+  for (let i = 1; i <= 12; i++) {
+    const uid = `human_user_${i}`;
+    await upsertUser(env, {
+      id: uid,
+      provider: "google",
+      sub: `sub_${i}`,
+      alias: `Player${i}`,
+      avatarUrl: "👤",
+      isComputer: 0
+    });
+    IN_MEMORY_DB.stats.set(uid, {
+      user_id: uid,
+      games_played: 3,
+      games_won: i,
+      total_captures: 2,
+      total_score: i * 50,
+      updated_at: Date.now()
+    });
+  }
+
+  // Add computer user with highest score (5000)
+  await recordComputerMatch(env, {
+    id: "bot_godmode",
+    alias: "GodBot",
+    avatar: "🤖",
+    isWinner: true,
+    captures: 10,
+    score: 5000
+  });
+
+  // Query leaderboard
+  const { top10 } = await getLeaderboard(env, null);
+
+  // Since total real human users >= 10, computer scores must be strictly excluded
+  assert.equal(top10.length, 10);
+  const botFound = top10.find((u) => u.alias === "GodBot" || u.is_computer === 1);
+  assert.equal(botFound, undefined, "Computer bot must NOT appear in leaderboard when real human users >= 10");
+  assert.ok(top10.every((u) => !u.is_computer), "All leaderboard entries must be human users");
+});
+
+test("demo mode: supports setting pieces count to 1 or 6 (default 6)", () => {
+  const demoJsPath = path.join(ROOT_DIR, "site", "js", "demo.js");
+  const demoContent = fs.readFileSync(demoJsPath, "utf-8");
+
+  // Verify demo.js has piece count getter and setter
+  assert.ok(demoContent.includes("let demoPiecesCount = 6;"));
+  assert.ok(demoContent.includes("function setDemoPiecesCount(count)"));
+  assert.ok(demoContent.includes("function getDemoPiecesCount()"));
+
+  // Verify app.js newGame supports piecesCount
+  const appJsPath = path.join(ROOT_DIR, "site", "js", "app.js");
+  const appContent = fs.readFileSync(appJsPath, "utf-8");
+  assert.ok(appContent.includes("function newGame(count = 2, computerCount = 1, piecesCount = 6)"));
+  assert.ok(appContent.includes("const pieceTotal = Math.max(1, Math.min(6, parseInt(piecesCount || 6, 10)));"));
+
+  // Verify demoBar has demoPiecesSelect
+  const indexHtmlPath = path.join(ROOT_DIR, "site", "index.html");
+  const htmlContent = fs.readFileSync(indexHtmlPath, "utf-8");
+  assert.ok(htmlContent.includes('id="demoPiecesSelect"'));
+  assert.ok(htmlContent.includes('value="1">1 Piece</option>'));
+  assert.ok(htmlContent.includes('value="6" selected>6 Pieces</option>'));
+});
+
+test("curious non-tech copy: rolling status states 'rolling via global arbitrator' and avoids tech jargon", () => {
+  const demoJsPath = path.join(ROOT_DIR, "site", "js", "demo.js");
+  const demoContent = fs.readFileSync(demoJsPath, "utf-8");
+
+  // Verify curious phrase "rolling via global arbitrator"
+  assert.ok(
+    demoContent.includes('is rolling via global arbitrator…'),
+    "Status text must state 'rolling via global arbitrator'"
+  );
+  assert.ok(
+    !demoContent.includes('is rolling via Cloudflare Durable Object…'),
+    "Should not show techy 'rolling via Cloudflare Durable Object'"
+  );
+
+  // Verify modal clearly distinguishes Online Game vs Local Game
+  const appJsPath = path.join(ROOT_DIR, "site", "js", "app.js");
+  const appContent = fs.readFileSync(appJsPath, "utf-8");
+  assert.ok(appContent.includes("Live Online Match"));
+  assert.ok(appContent.includes("Online Game"));
+  assert.ok(appContent.includes("Local Game Simulation"));
+  assert.ok(appContent.includes("Local Game"));
+  assert.ok(!appContent.includes("Real Cloudflare Online Match"));
 });

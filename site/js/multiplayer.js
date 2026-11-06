@@ -497,7 +497,7 @@ function connectCloudflareRoom(roomCode, isHost, playerCount = 2, customName = n
     if (multiplayer.status !== "reconnecting") {
       showModal(
         isHost ? "Creating Room " + roomCode : "Connecting to Room " + roomCode,
-        '<div style="text-align:center;padding:16px 0;"><div class="mp-spinner"></div><p style="margin-top:12px;color:#f2dec5;">Connecting to Cloudflare Edge…</p></div>',
+        '<div style="text-align:center;padding:16px 0;"><div class="mp-spinner"></div><p style="margin-top:12px;color:#f2dec5;">Connecting to Online Match…</p></div>',
         "Cancel",
         leaveMultiplayer
       );
@@ -708,7 +708,7 @@ function handleWsMessage(msg) {
             '<p style="font-size:1.1rem;color:#ffe4b5;margin:0 0 6px 0;">You are playing as <strong>' +
             escapeHtml(myPlayer.name) +
             "</strong></p>" +
-            '<p style="font-size:0.85rem;color:#a3e635;">Connected to Cloudflare Edge in Room <strong>' +
+            '<p style="font-size:0.85rem;color:#a3e635;">Connected to Online Game in Room <strong>' +
             multiplayer.roomCode +
             "</strong></p>" +
             '<p style="font-size:0.82rem;color:#d8c4ab;margin-top:8px;">When it is your turn, dice and piece movements will be enabled for you.</p>' +
@@ -1418,7 +1418,7 @@ function updateMultiplayerBadge() {
   badge.hidden = false;
   const role = multiplayer.isHost ? "Host" : "Guest";
   const seatName = game?.players[multiplayer.mySeat]?.name || "Player";
-  const transportLabel = multiplayer.transport === "cf_ws" ? "⚡ Cloudflare Edge" : "P2P";
+  const transportLabel = multiplayer.transport === "cf_ws" ? "⚡ Online Match" : "P2P Local";
 
   // Show amber reconnecting state when mid-retry
   if (multiplayer.status === "reconnecting") {

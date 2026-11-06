@@ -100,8 +100,9 @@ class DhayamEngine {
     }
   }
 
-  initNewMatch(names = ["Player 1", "Player 2"]) {
+  initNewMatch(names = ["Player 1", "Player 2"], piecesPerPlayer = 6) {
     const count = Math.min(Math.max(names.length, 2), 32);
+    const pieceTotal = Math.max(1, Math.min(6, parseInt(piecesPerPlayer || 6, 10)));
     const avatars = ["🎃", "👻", "🧙", "🦇", "🐺", "🕷️", "💀", "🌙", "🦊", "🐯", "🦚", "🦁", "🐘", "🦉", "🦄", "🦅", "🐲", "🦋", "🐬", "🦀", "🐸", "🦩", "🐙", "🦜", "🐺", "🦝", "🐻", "🦔", "🦭", "🐆", "🦣", "🦤"];
     const colors = ["#ff7518", "#2dd4bf", "#f59e0b", "#6366f1", "#ec4899", "#8b5cf6", "#10b981", "#06b6d4", "#e74c3c", "#2389da", "#f4b400", "#2e9d57", "#8e5bd9", "#00a6a6", "#f97316", "#14b8a6", "#ef4444", "#3b82f6", "#eab308", "#22c55e", "#a855f7", "#06b6d4", "#f43f5e", "#0ea5e9", "#84cc16", "#d946ef", "#fb923c", "#4ade80", "#38bdf8", "#c084fc", "#fbbf24", "#34d399"];
 
@@ -114,7 +115,7 @@ class DhayamEngine {
       captured: false,
       rank: null,
       bonusPoints: 0,
-      pieces: Array.from({ length: 6 }, (_, q) => ({ id: "P" + i + "-" + q, progress: -1 }))
+      pieces: Array.from({ length: pieceTotal }, (_, q) => ({ id: "P" + i + "-" + q, progress: -1 }))
     }));
 
     this.current = 0;
@@ -1099,13 +1100,14 @@ export class DhayamRoom extends DurableObject {
     }
   }
 
-  ensureInitialized(targetCount = 2, code = "") {
+  ensureInitialized(targetCount = 2, code = "", piecesCount = 6) {
     if (!this.engine) {
       this.roomCode = code;
       this.targetPlayers = Math.min(Math.max(targetCount, 2), 32);
+      const pieceTotal = Math.max(1, Math.min(6, parseInt(piecesCount || 6, 10)));
       const names = Array.from({ length: this.targetPlayers }, (_, i) => "Player " + (i + 1));
       this.engine = new DhayamEngine();
-      this.engine.initNewMatch(names);
+      this.engine.initNewMatch(names, pieceTotal);
       this.claimedSeats = {};
       this.persist();
     }
@@ -1153,7 +1155,8 @@ export class DhayamRoom extends DurableObject {
       const codeFromPath = parts.length >= 3 ? parts[2] : "";
       const code = (url.searchParams.get("code") || codeFromPath || "ROOM").toUpperCase();
       const targetCount = parseInt(url.searchParams.get("players") || "2", 10);
-      this.ensureInitialized(targetCount, code);
+      const piecesCount = parseInt(url.searchParams.get("pieces") || "6", 10);
+      this.ensureInitialized(targetCount, code, piecesCount);
 
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
@@ -1187,7 +1190,8 @@ export class DhayamRoom extends DurableObject {
 
       const code = (url.searchParams.get("code") || url.pathname.split("/")[2] || "AI-ROOM").toUpperCase();
       const targetCount = body.player_count || parseInt(url.searchParams.get("players") || "2", 10);
-      this.ensureInitialized(targetCount, code);
+      const piecesCount = body.pieces || parseInt(url.searchParams.get("pieces") || "6", 10);
+      this.ensureInitialized(targetCount, code, piecesCount);
 
       const turns = Math.min(Math.max(body.turns || 1, 1), 50);
       const strategy = body.strategy || "balanced";

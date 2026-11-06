@@ -77,7 +77,7 @@
         gameTimerInterval = setInterval(updateGameTimer, GAME_TIMER_INTERVAL_MS);
       }
 
-      function newGame(count = 2, computerCount = 1) {
+      function newGame(count = 2, computerCount = 1, piecesCount = 6) {
         stopDemo();
         if (rollTimer) clearTimeout(rollTimer);
         if (computerTimer) clearTimeout(computerTimer);
@@ -93,6 +93,7 @@
         const _minP = typeof MIN_PLAYERS !== "undefined" ? MIN_PLAYERS : 2;
         if (count < _minP || count > _maxP)
           throw new RangeError("Dhayam supports " + _minP + " to " + _maxP + " total players");
+        const pieceTotal = Math.max(1, Math.min(6, parseInt(piecesCount || 6, 10)));
         const BASE_SEATS = ["N", "E", "S", "W"];
         const seats =
           count === 2
@@ -133,7 +134,7 @@
               captured: false,
               rank: null,
               bonusPoints: 0,
-              pieces: Array.from({ length: 6 }, (_, j) => ({
+              pieces: Array.from({ length: pieceTotal }, (_, j) => ({
                 id: "P" + i + "-" + j,
                 progress: -1,
               })),
@@ -208,12 +209,17 @@
       }
 
       function requestWithdrawal() {
-        const isOAuthUser = typeof DhayamAuth !== "undefined" && Boolean(DhayamAuth.getCurrentUser());
-        if (!isOAuthUser) {
+        const isSignedIn = typeof DhayamAuth !== "undefined" && Boolean(DhayamAuth.getCurrentUser());
+        if (!isSignedIn) {
+          const isTamil = typeof getLanguage === "function" && getLanguage() === "ta";
           showModal(
-            "Withdrawal Restricted",
-            "<p style='text-align:center;'>Only signed-in OAuth players can withdraw with profile score reduction. Please sign in to link your game records and standings.</p>",
-            "Sign In",
+            isTamil ? "\u0bb5\u0bbf\u0bb2\u0b95\u0bb2\u0bcd \u0b95\u0b9f\u0bcd\u0b9f\u0bc1\u0baa\u0bcd\u0baa\u0bbe\u0b9f\u0bc1" : "Withdrawal Restricted",
+            "<p style='text-align:center;'>" +
+              (isTamil
+                ? "\u0b89\u0bb3\u0bcd\u0ba8\u0bc1\u0bb4\u0bc8\u0ba8\u0bcd\u0ba4 \u0bb5\u0bc0\u0bb0\u0bb0\u0bcd\u0b95\u0bb3\u0bcd \u0bae\u0b9f\u0bcd\u0b9f\u0bc1\u0bae\u0bc7 \u0baa\u0bc1\u0bb3\u0bcd\u0bb3\u0bbf\u0b95\u0bcd \u0b95\u0bc1\u0bb1\u0bc8\u0baa\u0bcd\u0baa\u0bc1\u0b9f\u0ba9\u0bcd \u0bb5\u0bbf\u0bb2\u0b95 \u0bae\u0bc1\u0b9f\u0bbf\u0baf\u0bc1\u0bae\u0bcd. \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0ba4\u0bbf\u0bb5\u0bc1\u0b95\u0bb3\u0bc8 \u0b87\u0ba3\u0bc8\u0b95\u0bcd\u0b95 \u0ba4\u0baf\u0bb5\u0bc1\u0b9a\u0bc6\u0baf\u0bcd\u0ba4\u0bc1 \u0b89\u0bb3\u0bcd\u0ba8\u0bc1\u0bb4\u0bc8\u0baf\u0bb5\u0bc1\u0bae\u0bcd."
+                : "Only signed-in players can withdraw with profile score reduction. Please sign in to link your game records and standings.") +
+              "</p>",
+            isTamil ? "\u0b89\u0bb3\u0bcd\u0ba8\u0bc1\u0bb4\u0bc8\u0b95" : "Sign In",
             () => {
               if (typeof DhayamAuth !== "undefined") DhayamAuth.openAuthModal();
             }
@@ -678,6 +684,14 @@
       if ($("editPlayersBtn")) $("editPlayersBtn").onclick = openSettingsModal;
       $("demoRestart").onclick = restartGuidedDemo;
       $("demoExit").onclick = exitGuidedDemo;
+      const demoPiecesSelect = $("demoPiecesSelect");
+      if (demoPiecesSelect) {
+        demoPiecesSelect.onchange = () => {
+          const val = parseInt(demoPiecesSelect.value, 10) || 6;
+          if (typeof setDemoPiecesCount === "function") setDemoPiecesCount(val);
+          if (typeof restartGuidedDemo === "function") restartGuidedDemo();
+        };
+      }
       $("modalCancel").onclick = closeModal;
       $("modalConfirm").onclick = () => {
         if (modalAction) modalAction();
@@ -904,6 +918,7 @@
       $("demoBtn").onclick = () => {
         let selectedMode = "multiplayer-real";
         let selectedCount = 2;
+        let selectedPieces = (typeof getDemoPiecesCount === "function") ? getDemoPiecesCount() : 6;
 
         const content =
           '<div style="display:flex;flex-direction:column;gap:10px;text-align:left;">' +
@@ -912,12 +927,12 @@
               '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">' +
                 '<div style="display:flex;align-items:center;gap:7px;">' +
                   '<span style="font-size:1.25rem;">🌐</span>' +
-                  '<strong style="font-size:0.92rem;color:#fcd34d;">Real Cloudflare Online Match</strong>' +
+                  '<strong style="font-size:0.92rem;color:#fcd34d;">Live Online Match</strong>' +
                 '</div>' +
-                '<span style="background:#f59e0b;color:#180b05;font-weight:700;font-size:0.65rem;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:0.5px;">Live Cloudflare Edge</span>' +
+                '<span style="background:#f59e0b;color:#180b05;font-weight:700;font-size:0.65rem;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:0.5px;">Online Game</span>' +
               '</div>' +
               '<p style="margin:0 0 8px;font-size:0.8rem;color:#f2dec5;line-height:1.35;">' +
-                'Targets the live Cloudflare Worker & Durable Objects endpoint (dhayam.cancun.workers.dev). Spawns a real online room over live WebSockets with authoritative server rolls, QR share link, and multi-device edge sync.' +
+                'Connects to a live online game arena with real-time server rolls via global arbitrator, instant QR share link, and multi-device sync across phones and computers.' +
               '</p>' +
               '<div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#e2cbb2;" id="demoRealPcountRow">' +
                 '<span>Simulate:</span>' +
@@ -936,12 +951,12 @@
               '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">' +
                 '<div style="display:flex;align-items:center;gap:7px;">' +
                   '<span style="font-size:1.25rem;">⚡</span>' +
-                  '<strong style="font-size:0.92rem;color:#fff1db;">Instant Offline Simulation</strong>' +
+                  '<strong style="font-size:0.92rem;color:#fff1db;">Local Game Simulation</strong>' +
                 '</div>' +
-                '<span style="border:1px solid #a87d4d;color:#cdbda8;font-size:0.65rem;padding:2px 6px;border-radius:10px;">Offline Demo</span>' +
+                '<span style="border:1px solid #a87d4d;color:#cdbda8;font-size:0.65rem;padding:2px 6px;border-radius:10px;">Local Game</span>' +
               '</div>' +
               '<p style="margin:0 0 8px;font-size:0.8rem;color:#cdbda8;line-height:1.35;">' +
-                'Instant client-side simulation of Cloudflare room CF88, mobile QR joins, 3D dice physics, and live floating emoji banter without requiring network connectivity.' +
+                'Local device simulation of room CF88, virtual phone joins, 3D dice physics, and live floating emoji banter without requiring internet connection.' +
               '</p>' +
               '<div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#e2cbb2;" id="demoSimPcountRow">' +
                 '<span>Simulate:</span>' +
@@ -962,11 +977,18 @@
                   '<span style="font-size:1.25rem;">📖</span>' +
                   '<strong style="font-size:0.92rem;color:#fff1db;">Classic Rules Walkthrough</strong>' +
                 '</div>' +
-                '<span style="border:1px solid #a87d4d;color:#cdbda8;font-size:0.65rem;padding:2px 6px;border-radius:10px;">Tabletop</span>' +
+                '<span style="border:1px solid #a87d4d;color:#cdbda8;font-size:0.65rem;padding:2px 6px;border-radius:10px;">Local Game</span>' +
               '</div>' +
               '<p style="margin:0;font-size:0.8rem;color:#cdbda8;line-height:1.35;">' +
                 'Traditional 2-player walkthrough explaining piece entry on roll of 1, bonus rolls, board circuits, and safe floral squares.' +
               '</p>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#1e1109;border:1px solid #7a4623;border-radius:10px;margin-top:2px;">' +
+              '<span style="font-size:0.84rem;color:#f2dec5;font-weight:700;">Pieces per player:</span>' +
+              '<div style="display:flex;gap:6px;" id="demoPiecesGroup">' +
+                '<button type="button" class="pill demo-piece-btn" data-pieces="1" style="padding:3px 10px;font-size:0.78rem;font-weight:700;cursor:pointer;">1 Piece (Fast)</button>' +
+                '<button type="button" class="pill demo-piece-btn selected" data-pieces="6" style="padding:3px 10px;font-size:0.78rem;font-weight:700;cursor:pointer;border-color:#f59e0b;background:#f59e0b44;color:#fff;">6 Pieces (Standard)</button>' +
+              '</div>' +
             '</div>' +
           '</div>';
 
@@ -974,7 +996,7 @@
           "✦ Select Demo Experience",
           content,
           "Start demo",
-          () => startGuidedDemo(selectedMode, selectedCount),
+          () => startGuidedDemo(selectedMode, selectedCount, selectedPieces),
         );
 
         setTimeout(() => {
@@ -983,6 +1005,7 @@
           const cardClassic = $("cardDemoClassic");
           const realBtns = document.querySelectorAll(".real-pcount");
           const simBtns = document.querySelectorAll(".sim-pcount");
+          const pieceBtns = document.querySelectorAll(".demo-piece-btn");
 
           function updateCardSelection() {
             [cardReal, cardMp, cardClassic].forEach((card) => {
@@ -1045,6 +1068,26 @@
 
           setupCountGroup(realBtns, "multiplayer-real");
           setupCountGroup(simBtns, "multiplayer");
+
+          pieceBtns.forEach((btn) => {
+            const pCount = parseInt(btn.dataset.pieces, 10) || 6;
+            const isCur = pCount === selectedPieces;
+            btn.style.borderColor = isCur ? "#f59e0b" : "#7a4623";
+            btn.style.background = isCur ? "#f59e0b44" : "transparent";
+            btn.style.color = isCur ? "#fff" : "#f2dec5";
+
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              selectedPieces = pCount;
+              if (typeof setDemoPiecesCount === "function") setDemoPiecesCount(selectedPieces);
+              pieceBtns.forEach((b) => {
+                const match = (parseInt(b.dataset.pieces, 10) || 6) === selectedPieces;
+                b.style.borderColor = match ? "#f59e0b" : "#7a4623";
+                b.style.background = match ? "#f59e0b44" : "transparent";
+                b.style.color = match ? "#fff" : "#f2dec5";
+              });
+            };
+          });
         }, 40);
       };
       function showQrModal() {
