@@ -11,6 +11,8 @@
 > **Multi-Device UX Audit:** Layout and responsiveness verification for solo mode is tracked in [issue #15](https://github.com/sethusrinivasan/dhayam/issues/15). See the [UX audit matrix](responsive-device-ux-audit-matrix.md).
 >
 > **Multiplayer Spectator Mode & QR Join:** Real-time spectator joining via QR code with a live board spectator counter is tracked in [issue #16](https://github.com/sethusrinivasan/dhayam/issues/16). See the [spectator mode design](spectator-mode-design.md).
+>
+> **Roadmap & Prioritization:** The prioritized triage matrix and delivery roadmap across all open issues is tracked in [issue triage roadmap](issue-triage-roadmap.md).
 
 An authentic, zero-dependency, modular web architecture designed for lifelong longevity, instant load times (<30KB gzipped), and $0 hosting cost.
 
