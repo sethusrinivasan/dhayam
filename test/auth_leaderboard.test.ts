@@ -8,6 +8,7 @@ import {
   createSessionToken,
   verifySessionToken,
   sanitizeAlias,
+  maskAlias,
   parseCookies,
   getAuthCorsHeaders,
   extractToken,
@@ -25,6 +26,15 @@ test("auth: alias sanitization restricts length to 8 and strips HTML", () => {
   assert.equal(sanitizeAlias("<script>alert(1)</script>"), "alert(1)");
   assert.equal(sanitizeAlias(""), "Player");
   assert.equal(sanitizeAlias(null), "Player");
+});
+
+test("auth: maskAlias keeps first 3 letters and appends ***", () => {
+  assert.equal(maskAlias("Murugan"), "Mur***");
+  assert.equal(maskAlias("Leo"), "Leo***");
+  assert.equal(maskAlias("Kavitha"), "Kav***");
+  assert.equal(maskAlias("AI"), "AI***");
+  assert.equal(maskAlias(""), "Pla***");
+  assert.equal(maskAlias(null), "Pla***");
 });
 
 test("auth: parseCookies parses complex cookie header accurately", () => {
@@ -279,6 +289,7 @@ function createClientSandbox(mockLocalStorage: any, fetchHandler?: Function) {
             contains(c: string) { return this.classes.has(c); }
           },
           setAttribute() {},
+          removeAttribute() {},
           innerHTML: "",
           textContent: "",
           appendChild() {},
@@ -620,4 +631,89 @@ test("client auth: onGameWithdrawal is rejected if user is not signed in", async
   const result = await dhayamAuth.onGameWithdrawal();
   assert.equal(result.ok, false);
   assert.ok(result.error.includes("Only OAuth signed-in players"));
+});
+
+test("api: GET /api/leaderboard masks names and strips avatars for unauthenticated visitors", async () => {
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+  const userId = "usr_public_player";
+
+  IN_MEMORY_DB.users.set(userId, {
+    id: userId,
+    oauth_provider: "google",
+    oauth_sub: "556677",
+    alias: "Karthikeyan",
+    avatar_url: "https://lh3.googleusercontent.com/photo.jpg",
+    email: "karthik@example.com",
+    last_login: Date.now()
+  });
+  IN_MEMORY_DB.stats.set(userId, {
+    user_id: userId,
+    games_played: 5,
+    games_won: 4,
+    total_captures: 10,
+    total_score: 500,
+    updated_at: Date.now()
+  });
+
+  // Request WITHOUT any auth token or session cookie
+  const unauthReq = new Request("https://dhayam.cancun.workers.dev/api/leaderboard");
+  const res = await handleAuthAndLeaderboard(unauthReq, env, new URL(unauthReq.url));
+  assert.ok(res);
+  assert.equal(res.status, 200);
+  const data = await res.json();
+
+  assert.equal(data.currentUser, null);
+  assert.ok(data.top10.length > 0);
+  const found = data.top10.find((p: any) => p.total_score === 500);
+  assert.ok(found);
+  // Alias must be masked: "Kar***"
+  assert.equal(found.alias, "Kar***");
+  // Avatar must be stripped: ""
+  assert.equal(found.avatar_url, "");
+});
+
+test("client auth: openLeaderboard renders masked names and generic avatars for non-signed-in users", async () => {
+  const store = new Map<string, string>();
+  const mockLocalStorage = {
+    getItem: (key: string) => store.get(key) || null,
+    setItem: (key: string, val: string) => { store.set(key, String(val)); },
+    removeItem: (key: string) => { store.delete(key); },
+    clear: () => { store.clear(); }
+  };
+
+  const elements = new Map<string, any>();
+  const sandbox = createClientSandbox(mockLocalStorage, async (url: string) => {
+    if (url.includes("/api/leaderboard")) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          top10: [
+            { alias: "Murugan", avatar_url: "https://example.com/pfp.jpg", total_score: 300, games_won: 3, total_captures: 5 }
+          ],
+          currentUser: null
+        })
+      };
+    }
+    return { ok: true, status: 200, json: async () => ({ user: null }) };
+  });
+
+  const authCode = fs.readFileSync(AUTH_JS_PATH, "utf-8");
+  vm.createContext(sandbox);
+  vm.runInContext(authCode, sandbox);
+
+  const dhayamAuth = sandbox.DhayamAuth;
+  // Ensure not signed in
+  assert.equal(dhayamAuth.getCurrentUser(), null);
+
+  await dhayamAuth.openLeaderboard();
+
+  const listEl = sandbox.document.getElementById("leaderboardList");
+  assert.ok(listEl);
+  // Name should be masked with first 3 letters and remaining ***
+  assert.ok(listEl.innerHTML.includes("Mur***"));
+  // Avatar should be generic
+  assert.ok(listEl.innerHTML.includes("leaderboard-avatar-generic"));
+  // Real photo URL should NOT be rendered in DOM
+  assert.ok(!listEl.innerHTML.includes("https://example.com/pfp.jpg"));
 });

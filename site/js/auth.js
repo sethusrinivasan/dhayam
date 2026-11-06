@@ -40,7 +40,17 @@
       .replace(/'/g, "&#39;");
   }
 
-  function getAvatarMarkup(avatarUrl, alias, size = 32) {
+  function maskAlias(alias) {
+    if (!alias) return "Pla***";
+    const str = String(alias).trim();
+    const prefix = str.slice(0, 3);
+    return prefix + "***";
+  }
+
+  function getAvatarMarkup(avatarUrl, alias, size = 32, isGeneric = false) {
+    if (isGeneric) {
+      return '<div class="leaderboard-avatar leaderboard-avatar-generic" style="width:' + size + 'px;height:' + size + 'px;display:flex;align-items:center;justify-content:center;background:#334155;color:#94a3b8;font-size:' + (size * 0.5) + 'px;border-radius:50%;" title="Player">👤</div>';
+    }
     if (avatarUrl && (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://") || avatarUrl.startsWith("data:"))) {
       return '<img src="' + safeEscape(avatarUrl) + '" alt="' + safeEscape(alias) + '" class="leaderboard-avatar" style="width:' + size + 'px;height:' + size + 'px;" onerror="this.src=\'assets/qr-dhayam.svg\'">';
     }
@@ -334,6 +344,8 @@
     const stickyEl = document.getElementById("leaderboardStickyUser");
     if (!listEl) return;
 
+    const isSignedIn = Boolean(currentUser);
+
     if (top10.length === 0) {
       listEl.innerHTML = '<div style="text-align:center;padding:24px;color:#d8c4ab;">No rankings recorded yet. Be the first to win and set the record!</div>';
     } else {
@@ -346,11 +358,14 @@
         else if (rank === 2) rankBadge = "🥈";
         else if (rank === 3) rankBadge = "🥉";
 
+        const isGeneric = !isSignedIn;
+        const displayName = isSignedIn ? leader.alias : maskAlias(leader.alias);
+
         html += '<div class="leaderboard-item ' + rankClass + '">' +
           '<div class="leaderboard-rank">' + rankBadge + '</div>' +
-          getAvatarMarkup(leader.avatar_url, leader.alias, 34) +
+          getAvatarMarkup(leader.avatar_url, displayName, 34, isGeneric) +
           '<div class="leaderboard-name-col">' +
-            '<div class="leaderboard-alias">' + safeEscape(leader.alias) + '</div>' +
+            '<div class="leaderboard-alias">' + safeEscape(displayName) + '</div>' +
             '<div class="leaderboard-substats">' + leader.games_won + ' wins · ' + (leader.total_captures || 0) + ' captures</div>' +
           '</div>' +
           '<div class="leaderboard-score-badge">' +
@@ -673,7 +688,8 @@
     getCurrentStats: function () { return currentStats; },
     getCurrentRank: function () { return currentRank; },
     loadCachedState: loadCachedState,
-    saveCachedState: saveCachedState
+    saveCachedState: saveCachedState,
+    maskAlias: maskAlias
   };
 
   if (typeof window !== "undefined") {

@@ -56,6 +56,13 @@ export function sanitizeAlias(raw) {
   return cleaned || "Player";
 }
 
+export function maskAlias(alias) {
+  if (!alias) return "Pla***";
+  const str = String(alias).trim();
+  const prefix = str.slice(0, 3);
+  return prefix + "***";
+}
+
 function hexStringToBytes(hex) {
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
@@ -400,9 +407,20 @@ export async function handleAuthAndLeaderboard(request, env, url) {
 
     const { top10, currentUser } = await getLeaderboard(env, userId);
     const headers = new Headers(cors);
-    // Edge cache 30s to keep D1 reads frugal and prevent unnecessary SQL load
-    headers.set("Cache-Control", "public, max-age=15, s-maxage=30");
-    return new Response(JSON.stringify({ top10, currentUser }), { headers });
+
+    if (session) {
+      headers.set("Cache-Control", "private, no-cache");
+      return new Response(JSON.stringify({ top10, currentUser }), { headers });
+    } else {
+      headers.set("Cache-Control", "public, max-age=15, s-maxage=30");
+      headers.set("Vary", "Authorization, Cookie");
+      const maskedTop10 = top10.map((item) => ({
+        ...item,
+        alias: maskAlias(item.alias),
+        avatar_url: ""
+      }));
+      return new Response(JSON.stringify({ top10: maskedTop10, currentUser: null }), { headers });
+    }
   }
 
   // 9. Match Score Recording: /api/stats/record
