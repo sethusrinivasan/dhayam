@@ -218,6 +218,15 @@
   white-space: nowrap;
 }
 
+.share-preview-hashtags {
+  display: block;
+  margin-top: 6px;
+  color: #f6ad55;
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
 .share-actions,
 .share-secondary-actions {
   display: grid;

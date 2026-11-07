@@ -339,13 +339,16 @@
           shareUrl = "https://sethusrinivasan.github.io/dhayam/";
         }
         const shareTitle = "🪔 Dhayam — Ancient Tamil Board Game";
-        const shareCaption = "🎲 Roll the brass dice. Strike rivals and race to victory in Dhayam — the ancient Tamil strategy game!";
-        const shareText = `${shareCaption}\nPlay now: ${shareUrl}`;
-        const shareMessage = shareText;
+        const shareCaption = "🎲 Roll the brass dice. Strike rivals and race to victory!";
+        const shareHashtags = "#Dhayam #Dayakattai #BoardGames #AncientGames #StrategyGames";
+        const twitterHashtags = "Dhayam,Dayakattai,BoardGames,AncientGames,StrategyGames";
+        const shareText = `${shareCaption}\nPlay now: ${shareUrl}\n\n${shareHashtags}`;
+        const shareMessage = `${shareTitle}\n\n${shareText}`;
         const encodedText = encodeURIComponent(shareCaption);
         const encodedMessage = encodeURIComponent(shareMessage);
         const encodedUrl = encodeURIComponent(shareUrl);
-        const preview = escapeHtml(`${shareTitle}\n\n${shareText}`);
+        const encodedTwitterHashtags = encodeURIComponent(twitterHashtags);
+        const preview = escapeHtml(shareMessage);
 
         showModal(
           "Share Dhayam",
@@ -354,12 +357,13 @@
             '<div class="share-preview" aria-label="Share preview">' +
               '<img class="share-preview-image" src="assets/preview.png" alt="Dhayam ancient Tamil board game" />' +
               '<strong>' + escapeHtml(shareTitle) + '</strong>' +
-              '<p>' + escapeHtml(shareText).replace(/\n/g, "<br>") + '</p>' +
+              '<p>' + escapeHtml(shareCaption) + '<br>Play now: <a href="' + escapeHtml(shareUrl) + '" target="_blank" rel="noopener">' + escapeHtml(shareUrl) + '</a>' +
+              '<span class="share-preview-hashtags">' + escapeHtml(shareHashtags) + '</span></p>' +
             '</div>' +
             '<div class="share-actions" aria-label="Social sharing options">' +
               '<button type="button" class="btn share-action share-whatsapp" data-share-url="https://wa.me/?text=' + encodedMessage + '">💬 WhatsApp</button>' +
               '<button type="button" class="btn share-action share-facebook" data-share-url="https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl + '">📘 Facebook</button>' +
-              '<button type="button" class="btn share-action share-x" data-share-url="https://twitter.com/intent/tweet?text=' + encodedText + '&url=' + encodedUrl + '">𝕏 Twitter / X</button>' +
+              '<button type="button" class="btn share-action share-x" data-share-url="https://twitter.com/intent/tweet?text=' + encodedText + '&url=' + encodedUrl + '&hashtags=' + encodedTwitterHashtags + '">𝕏 Twitter / X</button>' +
               '<button type="button" class="btn share-action share-instagram" id="shareInstagramBtn">📷 Instagram</button>' +
             '</div>' +
             '<div class="share-secondary-actions">' +

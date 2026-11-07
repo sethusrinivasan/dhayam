@@ -1263,9 +1263,16 @@ test("social sharing: succinct, exciting text without meaningless player-specifi
   assert.ok(!appContent.includes("Ashiwin"));
   assert.ok(!appContent.includes("${activePlayer.name}'s turn"));
 
-  // Must include meaningful, exciting text
+  // Must include meaningful, exciting text without redundant repetitions of Dhayam
   assert.ok(appContent.includes("Roll the brass dice"));
   assert.ok(appContent.includes("Strike rivals and race to victory"));
+  assert.ok(!appContent.includes("in Dhayam — the ancient Tamil strategy game"));
+
+  // Must include targeted social hashtags
+  assert.ok(appContent.includes("#Dhayam"));
+  assert.ok(appContent.includes("#Dayakattai"));
+  assert.ok(appContent.includes("#BoardGames"));
+  assert.ok(appContent.includes("twitterHashtags"));
 
   // Verify index.html Open Graph and Twitter Card tags
   const indexHtmlPath = path.join(ROOT_DIR, "site", "index.html");
@@ -1278,6 +1285,8 @@ test("social sharing: succinct, exciting text without meaningless player-specifi
   assert.ok(htmlContent.includes('property="og:image:height" content="630"'));
   assert.ok(htmlContent.includes('rel="icon" type="image/svg+xml" href="favicon.svg"'));
   assert.ok(htmlContent.includes('rel="shortcut icon" href="favicon.ico"'));
+  assert.ok(htmlContent.includes('property="og:description" content="Roll the 3D brass dice, strike rivals, and race to victory in this authentic ancient race-and-capture game."'));
+  assert.ok(htmlContent.includes('name="twitter:description" content="Roll the 3D brass dice, strike rivals, and race to victory in this authentic ancient race-and-capture game."'));
   assert.ok(!htmlContent.includes("Dhayam (Dhayam (Dhayam))"));
 });
 

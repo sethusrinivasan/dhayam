@@ -288,9 +288,10 @@ CREATE INDEX IF NOT EXISTS idx_user_feedback_user ON user_feedback(user_id);
 
 Open Graph and Twitter Card metadata are optimized for rich visual previews and impactful messaging across Twitter / X, WhatsApp, and Facebook:
 - **Card Type**: `summary_large_image`
-- **Canonical Preview Image**: Absolute HTTPS URL `https://sethusrinivasan.github.io/dhayam/assets/preview.png` (1280×840 PNG rendering the authentic wooden 7×7 board, 3D brass dice, and floral safe squares).
-- **Succinct, Exciting Copy**: Replaced placeholder phrases with compelling, focused messaging:
-  > *"🎲 Roll the brass dice. Strike rivals and race to victory in Dhayam — the ancient Tamil strategy game!"*
+- **Canonical Preview Image**: Absolute HTTPS URL `https://sethusrinivasan.github.io/dhayam/assets/preview.png` (1200×630 PNG rendering the authentic wooden 7×7 board, 3D brass dice, and floral safe squares).
+- **Succinct, Non-Redundant Copy & High-Engagement Hashtags**: Replaced placeholder phrases and eliminated redundant repetitions of "Dhayam":
+  > *"🎲 Roll the brass dice. Strike rivals and race to victory!"*
+  > *`#Dhayam #Dayakattai #BoardGames #AncientGames #StrategyGames`*
 
 ---
 
