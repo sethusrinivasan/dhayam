@@ -333,6 +333,16 @@
         <div class="leaderboard-subtitle">
           Top 10 players ranked by wins & points.
         </div>
+        <div class="leaderboard-region-bar" style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px;font-size:12px;color:#d8c4ab;flex-wrap:wrap;gap:6px;">
+          <span id="leaderboardRegionBadge">📍 Region: Smart Detect</span>
+          <select id="leaderboardRegionSelect" aria-label="Select Leaderboard Region" onchange="DhayamAuth.setRegionPreference(this.value)" style="background:#2d1b14;color:#f5e6d3;border:1px solid #78350f;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;">
+            <option value="auto">Auto (Smart Detect)</option>
+            <option value="southAsia">South Asia (Kavitha, Murugan)</option>
+            <option value="northAmerica">North America (Liam, Emma)</option>
+            <option value="southeastAsia">Southeast Asia (Siva, Geetha)</option>
+            <option value="global">Global (Kai, Chloe)</option>
+          </select>
+        </div>
         <div class="leaderboard-list" id="leaderboardList"></div>
         <div id="leaderboardStickyUser"></div>
       </div>

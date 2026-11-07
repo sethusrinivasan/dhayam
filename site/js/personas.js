@@ -278,31 +278,160 @@
     ]
   };
 
+  let serverDetectedRegion = null;
+
   /**
-   * Determine client regional context from timezone and locale
+   * Set or update client region detected from server handshake
+   */
+  function setClientRegion(region, details = null) {
+    if (region && ["northAmerica", "southAsia", "southeastAsia", "global"].includes(region)) {
+      serverDetectedRegion = region;
+      if (typeof window !== "undefined") {
+        window.DHAYAM_CLIENT_REGION = region;
+        if (details) window.DHAYAM_DETECTED_INFO = details;
+        try {
+          sessionStorage.setItem("dhayam_detected_region", region);
+        } catch (_) {}
+      }
+    }
+  }
+
+  /**
+   * Evaluate multi-factor signals available on the client device
+   */
+  function resolveClientRegion() {
+    const scores = {
+      southAsia: 0,
+      northAmerica: 0,
+      southeastAsia: 0,
+      global: 0
+    };
+
+    try {
+      // 1. Active game language
+      if (typeof window !== "undefined" && window.dhayamActiveLanguage === "ta") {
+        scores.southAsia += 250;
+      }
+
+      // 2. Client Timezone Offset
+      const offset = new Date().getTimezoneOffset();
+      if (offset === -330 || offset === -345) {
+        // India Standard Time (UTC+5:30) or Nepal Time (UTC+5:45)
+        scores.southAsia += 180;
+      } else if (offset === -300) {
+        scores.southAsia += 90;
+      } else if (offset === -480) {
+        scores.southeastAsia += 80;
+      } else if (offset >= 240 && offset <= 600) {
+        scores.northAmerica += 50;
+      }
+
+      // 3. Client Timezone Name
+      const tz = (typeof Intl !== "undefined" && Intl.DateTimeFormat)
+        ? (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
+        : "";
+      if (
+        tz.includes("Kolkata") || tz.includes("Calcutta") || tz.includes("Colombo") ||
+        tz.includes("India") || tz.includes("Delhi") || tz.includes("Mumbai") ||
+        tz.includes("Chennai") || tz.includes("Bangalore") || tz.includes("Kathmandu") ||
+        tz.includes("Dhaka") || tz.includes("Karachi")
+      ) {
+        scores.southAsia += 140;
+      } else if (
+        tz.includes("Singapore") || tz.includes("Kuala_Lumpur") || tz.includes("Bangkok") ||
+        tz.includes("Jakarta") || tz.includes("Manila") || tz.includes("Ho_Chi_Minh")
+      ) {
+        scores.southeastAsia += 110;
+      } else if (
+        tz.startsWith("America/") || tz.startsWith("US/") || tz.startsWith("Canada/")
+      ) {
+        scores.northAmerica += 60;
+      } else if (
+        tz.startsWith("Europe/") || tz.startsWith("Australia/") || tz.startsWith("Pacific/")
+      ) {
+        scores.global += 50;
+      }
+
+      // 4. Browser Languages
+      const langs = [];
+      if (typeof navigator !== "undefined") {
+        if (navigator.languages && navigator.languages.length) {
+          langs.push(...navigator.languages);
+        } else if (navigator.language) {
+          langs.push(navigator.language);
+        }
+      }
+      for (const rawLang of langs) {
+        const l = String(rawLang || "").toLowerCase().trim();
+        if (
+          l.startsWith("ta") || l.startsWith("hi") || l.startsWith("te") ||
+          l.startsWith("kn") || l.startsWith("ml") || l.startsWith("mr") ||
+          l.startsWith("bn") || l.startsWith("gu") || l.startsWith("pa") ||
+          l.startsWith("ur") || l.startsWith("or") || l.startsWith("as") ||
+          l.includes("-in") || l.includes("en-in")
+        ) {
+          scores.southAsia += 130;
+          break;
+        } else if (
+          l.includes("-sg") || l.includes("-my") || l.startsWith("ms") ||
+          l.startsWith("id") || l.startsWith("th") || l.startsWith("vi")
+        ) {
+          scores.southeastAsia += 90;
+          break;
+        } else if (l.startsWith("en-us") || l.startsWith("en-ca")) {
+          scores.northAmerica += 30;
+          break;
+        }
+      }
+    } catch (_) {}
+
+    let bestRegion = "southAsia"; // Cultural heritage baseline of Dhayam
+    let maxScore = -1;
+    const regionOrder = ["southAsia", "northAmerica", "southeastAsia", "global"];
+    for (const r of regionOrder) {
+      if (scores[r] > maxScore) {
+        maxScore = scores[r];
+        bestRegion = r;
+      }
+    }
+    return bestRegion;
+  }
+
+  /**
+   * Determine client regional context with fallback hierarchy:
+   * 1. Explicit user setting (localStorage)
+   * 2. Edge server detected region (window or sessionStorage)
+   * 3. Multi-factor client heuristic
    */
   function getClientRegion() {
-    let region = "northAmerica";
+    // 1. Explicit user preference
     try {
-      if (typeof window !== "undefined" && window.dhayamActiveLanguage === "ta") {
-        return "southAsia";
+      if (typeof localStorage !== "undefined") {
+        const userPref = localStorage.getItem("dhayam_user_region");
+        if (userPref && ["northAmerica", "southAsia", "southeastAsia", "global"].includes(userPref)) {
+          return userPref;
+        }
       }
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-      const lang = (typeof navigator !== "undefined" && (navigator.language || (navigator.languages && navigator.languages[0]))) || "";
-      if (tz.includes("Kolkata") || tz.includes("Colombo") || tz.includes("India") || lang.startsWith("ta") || lang.startsWith("hi")) {
-        return "southAsia";
+    } catch (_) {}
+
+    // 2. Server-detected edge region
+    if (serverDetectedRegion) {
+      return serverDetectedRegion;
+    }
+    if (typeof window !== "undefined" && window.DHAYAM_CLIENT_REGION) {
+      return window.DHAYAM_CLIENT_REGION;
+    }
+    try {
+      if (typeof sessionStorage !== "undefined") {
+        const saved = sessionStorage.getItem("dhayam_detected_region");
+        if (saved && ["northAmerica", "southAsia", "southeastAsia", "global"].includes(saved)) {
+          return saved;
+        }
       }
-      if (tz.includes("Singapore") || tz.includes("Kuala_Lumpur") || tz.includes("Bangkok") || tz.includes("Jakarta")) {
-        return "southeastAsia";
-      }
-      if (tz.startsWith("America/") || tz.startsWith("US/") || tz.startsWith("Canada/") || lang.startsWith("en-US") || lang.startsWith("en-CA")) {
-        return "northAmerica";
-      }
-      if (tz.startsWith("Europe/") || tz.startsWith("Australia/") || tz.startsWith("Pacific/")) {
-        return "global";
-      }
-    } catch (e) {}
-    return region;
+    } catch (_) {}
+
+    // 3. Multi-factor client device signals
+    return resolveClientRegion();
   }
 
   /**
@@ -354,6 +483,8 @@
   // Exports to window
   window.COMPUTER_PERSONAS = COMPUTER_PERSONAS;
   window.getClientRegion = getClientRegion;
+  window.setClientRegion = setClientRegion;
+  window.resolveClientRegion = resolveClientRegion;
   window.getRandomComputerPersona = getRandomComputerPersona;
   window.getPersonaByName = getPersonaByName;
   window.getSuggestedLocalizedNames = getSuggestedLocalizedNames;

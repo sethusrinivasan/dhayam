@@ -219,10 +219,33 @@
     }
   }
 
+  function buildClientSignalParams() {
+    const params = new URLSearchParams();
+    try {
+      const tz = (typeof Intl !== "undefined" && Intl.DateTimeFormat)
+        ? (Intl.DateTimeFormat().resolvedOptions().timeZone || "")
+        : "";
+      if (tz) params.set("tz", tz);
+      params.set("offset", String(new Date().getTimezoneOffset()));
+      const lang = (typeof navigator !== "undefined" && (navigator.language || (navigator.languages && navigator.languages[0]))) || "";
+      if (lang) params.set("lang", lang);
+      const userPref = typeof localStorage !== "undefined" ? localStorage.getItem("dhayam_user_region") : "";
+      if (userPref && userPref !== "auto") {
+        params.set("region", userPref);
+      }
+      if (typeof window !== "undefined" && window.dhayamActiveLanguage) {
+        params.set("activeLanguage", window.dhayamActiveLanguage);
+      }
+    } catch (_) {}
+    return params.toString();
+  }
+
   async function fetchAuthStatus() {
     const token = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null;
     try {
-      const res = await fetch(API_BASE + "/api/auth/me", {
+      const sigParams = buildClientSignalParams();
+      const meUrl = API_BASE + "/api/auth/me" + (sigParams ? "?" + sigParams : "");
+      const res = await fetch(meUrl, {
         headers: getAuthHeaders(),
         credentials: "include"
       });
@@ -236,6 +259,11 @@
         return;
       }
       const data = await res.json();
+      if (data && data.detected && data.detected.region) {
+        if (typeof window !== "undefined" && typeof window.setClientRegion === "function") {
+          window.setClientRegion(data.detected.region, data.detected);
+        }
+      }
       if (data && data.user) {
         currentUser = data.user;
         if (data.stats) {
@@ -321,15 +349,20 @@
     }
 
     try {
-      const tz = (typeof Intl !== "undefined" && Intl.DateTimeFormat) ? (Intl.DateTimeFormat().resolvedOptions().timeZone || "") : "";
-      const lbUrl = API_BASE + "/api/leaderboard" + (tz ? "?tz=" + encodeURIComponent(tz) : "");
+      const sigParams = buildClientSignalParams();
+      const lbUrl = API_BASE + "/api/leaderboard" + (sigParams ? "?" + sigParams : "");
       const res = await fetch(lbUrl, {
         headers: getAuthHeaders(),
         credentials: "include"
       });
       if (!res.ok) throw new Error("Failed to load rankings");
       const data = await res.json();
-      renderLeaderboard(data.top10 || [], data.currentUser || null);
+      if (data && data.detected && data.detected.region) {
+        if (typeof window !== "undefined" && typeof window.setClientRegion === "function") {
+          window.setClientRegion(data.detected.region, data.detected);
+        }
+      }
+      renderLeaderboard(data.top10 || [], data.currentUser || null, data.detected || null);
     } catch (err) {
       if (listEl) {
         listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#f87171;">Unable to load leaderboard. Please check your connection.</div>';
@@ -345,10 +378,52 @@
     }
   }
 
-  function renderLeaderboard(top10, userStanding) {
+  function setRegionPreference(region) {
+    try {
+      if (typeof localStorage !== "undefined") {
+        if (!region || region === "auto") {
+          localStorage.removeItem("dhayam_user_region");
+        } else {
+          localStorage.setItem("dhayam_user_region", region);
+        }
+      }
+    } catch (_) {}
+
+    if (typeof window !== "undefined" && typeof window.setClientRegion === "function") {
+      if (region && region !== "auto") {
+        window.setClientRegion(region);
+      } else if (typeof window.resolveClientRegion === "function") {
+        window.setClientRegion(window.resolveClientRegion());
+      }
+    }
+    openLeaderboard();
+  }
+
+  function renderLeaderboard(top10, userStanding, detected = null) {
     const listEl = document.getElementById("leaderboardList");
     const stickyEl = document.getElementById("leaderboardStickyUser");
+    const badgeEl = document.getElementById("leaderboardRegionBadge");
+    const selectEl = document.getElementById("leaderboardRegionSelect");
     if (!listEl) return;
+
+    if (selectEl) {
+      try {
+        const userPref = typeof localStorage !== "undefined" ? localStorage.getItem("dhayam_user_region") : "";
+        selectEl.value = userPref || "auto";
+      } catch (_) {}
+    }
+
+    if (badgeEl && detected) {
+      const regionLabels = {
+        southAsia: "South Asia (India)",
+        northAmerica: "North America (US/CA)",
+        southeastAsia: "Southeast Asia (SG/MY)",
+        global: "Global / International"
+      };
+      const label = regionLabels[detected.region] || detected.region;
+      const countryTag = detected.country ? ` [${detected.country}]` : "";
+      badgeEl.textContent = `📍 Region: ${label}${countryTag}`;
+    }
 
     const isSignedIn = Boolean(currentUser);
 
@@ -841,6 +916,7 @@
   const DhayamAuth = {
     openLeaderboard: openLeaderboard,
     closeLeaderboard: closeLeaderboard,
+    setRegionPreference: setRegionPreference,
     openAuthModal: openAuthModal,
     closeAuthModal: closeAuthModal,
     openFeedbackModal: openFeedbackModal,

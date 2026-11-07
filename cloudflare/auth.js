@@ -69,20 +69,135 @@ export const REGIONAL_LEADERBOARD_PERSONAS = {
 
 export const FAKE_LEADERBOARD_ENTRIES = REGIONAL_LEADERBOARD_PERSONAS.southAsia;
 
+/**
+ * Resolves the optimal persona & leaderboard region using a multi-factor weighted heuristic.
+ * Accurately handles:
+ * 1. Physical and VPN network connections (e.g., India VPN from a US machine)
+ * 2. Virtual server VPN locations (e.g., India VPN routed via Singapore or UK data centers)
+ * 3. Client timezone offsets (IST = UTC+5:30 -> offset -330)
+ * 4. Multi-language preferences (en-IN, ta, hi, etc.)
+ * 5. Traditional cultural origin baseline (Dhayam defaults to southAsia if unknown)
+ * 6. Explicit user overrides (highest priority)
+ */
+export function resolveRegionHeuristic(signals = {}) {
+  // 1. Explicit user override takes absolute highest priority
+  const req = String(signals.requestedRegion || signals.region || "").trim();
+  if (["northAmerica", "southAsia", "southeastAsia", "global"].includes(req)) {
+    return req;
+  }
+
+  const scores = {
+    southAsia: 0,
+    northAmerica: 0,
+    southeastAsia: 0,
+    global: 0
+  };
+
+  const country = String(signals.country || "").toUpperCase().trim();
+  const clientTz = String(signals.clientTz || signals.tz || "").trim();
+  const edgeTz = String(signals.edgeTz || "").trim();
+  const offset = typeof signals.offset === "number" ? signals.offset : (signals.offset !== undefined && signals.offset !== null && signals.offset !== "" ? parseInt(signals.offset, 10) : null);
+  const lang = String(signals.lang || signals.language || "").toLowerCase().trim();
+  const activeLang = String(signals.activeLanguage || "").toLowerCase().trim();
+
+  // Active game language
+  if (activeLang === "ta" || activeLang.startsWith("ta-")) {
+    scores.southAsia += 250;
+  }
+
+  // Edge Network IP Country (VPN or ISP) - high weight (+200) to ensure VPN connection in India takes precedence
+  if (["IN", "LK", "NP", "BD", "PK"].includes(country)) {
+    scores.southAsia += 200;
+  } else if (["SG", "MY", "TH", "ID", "PH", "VN"].includes(country)) {
+    scores.southeastAsia += 120;
+  } else if (["US", "CA"].includes(country)) {
+    scores.northAmerica += 120;
+  } else if (["GB", "AU", "NZ", "IE"].includes(country)) {
+    scores.northAmerica += 90;
+  } else if (country && !["XX", "T1", "A1"].includes(country)) {
+    scores.global += 60;
+  }
+
+  // Client Timezone Offset:
+  // -330 minutes = UTC+5:30 (India Standard Time IST, Sri Lanka)
+  // -345 minutes = UTC+5:45 (Nepal Time NPT)
+  if (offset === -330 || offset === -345) {
+    scores.southAsia += 180;
+  } else if (offset === -300) {
+    scores.southAsia += 90; // Pakistan (UTC+5:00)
+  } else if (offset === -480) {
+    scores.southeastAsia += 80; // Singapore, Malaysia (UTC+8:00)
+  } else if (offset !== null && offset >= 240 && offset <= 600) {
+    scores.northAmerica += 50; // North America (UTC-4 to UTC-10)
+  }
+
+  // Timezone Strings (Edge and Client)
+  const tzPool = [clientTz, edgeTz].filter(Boolean);
+  for (const t of tzPool) {
+    if (
+      t.includes("Kolkata") || t.includes("Calcutta") || t.includes("Colombo") ||
+      t.includes("India") || t.includes("Delhi") || t.includes("Mumbai") ||
+      t.includes("Chennai") || t.includes("Bangalore") || t.includes("Kathmandu") ||
+      t.includes("Dhaka") || t.includes("Karachi")
+    ) {
+      scores.southAsia += 140;
+    } else if (
+      t.includes("Singapore") || t.includes("Kuala_Lumpur") || t.includes("Bangkok") ||
+      t.includes("Jakarta") || t.includes("Manila") || t.includes("Ho_Chi_Minh")
+    ) {
+      scores.southeastAsia += 110;
+    } else if (
+      t.startsWith("America/") || t.startsWith("US/") || t.startsWith("Canada/")
+    ) {
+      scores.northAmerica += 60;
+    } else if (
+      t.startsWith("Europe/") || t.startsWith("Australia/") || t.startsWith("Pacific/")
+    ) {
+      scores.global += 50;
+    }
+  }
+
+  // Client Languages (e.g. en-IN, ta, hi, etc.)
+  if (
+    lang.startsWith("ta") || lang.startsWith("hi") || lang.startsWith("te") ||
+    lang.startsWith("kn") || lang.startsWith("ml") || lang.startsWith("mr") ||
+    lang.startsWith("bn") || lang.startsWith("gu") || lang.startsWith("pa") ||
+    lang.startsWith("ur") || lang.startsWith("or") || lang.startsWith("as") ||
+    lang.includes("-in") || lang.includes("en-in")
+  ) {
+    scores.southAsia += 130;
+  } else if (
+    lang.includes("-sg") || lang.includes("-my") || lang.startsWith("ms") ||
+    lang.startsWith("id") || lang.startsWith("th") || lang.startsWith("vi")
+  ) {
+    scores.southeastAsia += 90;
+  } else if (lang.startsWith("en-us") || lang.startsWith("en-ca")) {
+    scores.northAmerica += 30; // Modest weight so foreign OS language doesn't defeat Indian VPN
+  }
+
+  // Virtual VPN Heuristics:
+  // Many Indian VPNs route virtually through Singapore or London/New Jersey datacenters.
+  // If exit is SG/GB/US but client offset is IST (-330) or language is Indian, boost southAsia!
+  if (["SG", "GB", "US"].includes(country) && (offset === -330 || scores.southAsia >= 100)) {
+    scores.southAsia += 100;
+  }
+
+  // Traditional Dhayam cultural origin baseline
+  let bestRegion = "southAsia";
+  let maxScore = -1;
+  const regionOrder = ["southAsia", "northAmerica", "southeastAsia", "global"];
+  for (const r of regionOrder) {
+    if (scores[r] > maxScore) {
+      maxScore = scores[r];
+      bestRegion = r;
+    }
+  }
+
+  return bestRegion;
+}
+
 export function getRegionFromCountryOrTz(country = "", tz = "") {
-  const c = String(country || "").toUpperCase().trim();
-  const t = String(tz || "").trim();
-
-  if (["US", "CA", "GB", "AU", "NZ", "IE"].includes(c)) return "northAmerica";
-  if (["IN", "LK", "NP", "BD", "PK"].includes(c)) return "southAsia";
-  if (["SG", "MY", "TH", "ID", "PH", "VN"].includes(c)) return "southeastAsia";
-
-  if (t.startsWith("America/") || t.startsWith("US/") || t.startsWith("Canada/")) return "northAmerica";
-  if (t.includes("Kolkata") || t.includes("Colombo") || t.includes("India")) return "southAsia";
-  if (t.includes("Singapore") || t.includes("Kuala_Lumpur") || t.includes("Bangkok") || t.includes("Jakarta")) return "southeastAsia";
-  if (t.startsWith("Europe/")) return "global";
-
-  return c ? "global" : "southAsia";
+  return resolveRegionHeuristic({ country, clientTz: tz });
 }
 
 export function populateWithFakeEntries(list, targetCount = 10, region = "southAsia", candidatePoolOverride = null) {
@@ -258,12 +373,25 @@ export async function handleAuthAndLeaderboard(request, env, url) {
     return new Response(null, { status: 204, headers: cors });
   }
 
-  // 1. Auth Configuration: returns public OAuth client IDs
+  // 1. Auth Configuration: returns public OAuth client IDs and edge detected location
   if (url.pathname === "/api/auth/config") {
+    const country = url.searchParams.get("country") || request.headers.get("CF-IPCountry") || (request.cf && request.cf.country) || "";
+    const clientTz = url.searchParams.get("tz") || "";
+    const edgeTz = (request.cf && request.cf.timezone) || "";
+    const offset = url.searchParams.get("offset") ? parseInt(url.searchParams.get("offset"), 10) : null;
+    const lang = url.searchParams.get("lang") || "";
+    const requestedRegion = url.searchParams.get("region") || "";
+    const region = resolveRegionHeuristic({ country, clientTz, edgeTz, offset, lang, requestedRegion });
+
     return new Response(JSON.stringify({
       googleClientId: (env && env.GOOGLE_CLIENT_ID) || "764310467229-rkh1lrv0tclv07d8q10dj426didl1u8f.apps.googleusercontent.com",
       githubClientId: (env && env.GITHUB_CLIENT_ID) || "Ov23liHwuHgasom2EnpI",
-      githubConfigured: Boolean(env && env.GITHUB_CLIENT_ID)
+      githubConfigured: Boolean(env && env.GITHUB_CLIENT_ID),
+      detected: {
+        country: country || "",
+        region: region,
+        timezone: edgeTz || clientTz
+      }
     }), { headers: cors });
   }
 
@@ -488,14 +616,19 @@ export async function handleAuthAndLeaderboard(request, env, url) {
 
   // 6. Current User Me Profile: /api/auth/me
   if (url.pathname === "/api/auth/me") {
+    const country = url.searchParams.get("country") || request.headers.get("CF-IPCountry") || (request.cf && request.cf.country) || "";
+    const clientTz = url.searchParams.get("tz") || "";
+    const edgeTz = (request.cf && request.cf.timezone) || "";
+    const offset = url.searchParams.get("offset") ? parseInt(url.searchParams.get("offset"), 10) : null;
+    const lang = url.searchParams.get("lang") || "";
+    const requestedRegion = url.searchParams.get("region") || "";
+    const region = resolveRegionHeuristic({ country, clientTz, edgeTz, offset, lang, requestedRegion });
+    const detectedInfo = { country: country || "", region, timezone: edgeTz || clientTz };
+
     const session = await verifySessionToken(token, secret);
     if (!session || !session.userId) {
-      return new Response(JSON.stringify({ user: null }), { headers: cors });
+      return new Response(JSON.stringify({ user: null, detected: detectedInfo }), { headers: cors });
     }
-
-    const country = url.searchParams.get("country") || request.headers.get("CF-IPCountry") || (request.cf && request.cf.country) || "";
-    const tz = url.searchParams.get("tz") || "";
-    const region = url.searchParams.get("region") || getRegionFromCountryOrTz(country, tz);
 
     const { user, stats, rank } = await getUserAndRank(env, session.userId, region);
     return new Response(JSON.stringify({
@@ -506,7 +639,8 @@ export async function handleAuthAndLeaderboard(request, env, url) {
         oauth_provider: session.provider
       },
       stats: stats || { games_played: 0, games_won: 0, total_captures: 0, total_score: 0 },
-      rank: rank || null
+      rank: rank || null,
+      detected: detectedInfo
     }), { headers: cors });
   }
 
@@ -522,24 +656,29 @@ export async function handleAuthAndLeaderboard(request, env, url) {
     const session = await verifySessionToken(token, secret);
     const userId = session ? session.userId : null;
     const country = url.searchParams.get("country") || request.headers.get("CF-IPCountry") || (request.cf && request.cf.country) || "";
-    const tz = url.searchParams.get("tz") || "";
-    const region = url.searchParams.get("region") || getRegionFromCountryOrTz(country, tz);
+    const clientTz = url.searchParams.get("tz") || "";
+    const edgeTz = (request.cf && request.cf.timezone) || "";
+    const offset = url.searchParams.get("offset") ? parseInt(url.searchParams.get("offset"), 10) : null;
+    const lang = url.searchParams.get("lang") || "";
+    const requestedRegion = url.searchParams.get("region") || "";
+    const region = resolveRegionHeuristic({ country, clientTz, edgeTz, offset, lang, requestedRegion });
+    const detectedInfo = { country: country || "", region, timezone: edgeTz || clientTz };
 
     const { top10, currentUser } = await getLeaderboard(env, userId, region);
     const headers = new Headers(cors);
 
     if (session) {
       headers.set("Cache-Control", "private, no-cache");
-      return new Response(JSON.stringify({ top10, currentUser }), { headers });
+      return new Response(JSON.stringify({ top10, currentUser, detected: detectedInfo }), { headers });
     } else {
-      headers.set("Cache-Control", "public, max-age=15, s-maxage=30");
-      headers.set("Vary", "Authorization, Cookie");
+      headers.set("Cache-Control", "private, no-cache");
+      headers.set("Vary", "Authorization, Cookie, CF-IPCountry");
       const maskedTop10 = top10.map((item) => ({
         ...item,
         alias: maskAlias(item.alias),
         avatar_url: ""
       }));
-      return new Response(JSON.stringify({ top10: maskedTop10, currentUser: null }), { headers });
+      return new Response(JSON.stringify({ top10: maskedTop10, currentUser: null, detected: detectedInfo }), { headers });
     }
   }
 

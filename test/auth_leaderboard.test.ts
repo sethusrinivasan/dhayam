@@ -20,7 +20,8 @@ import {
   submitFeedback,
   getFeedback,
   FAKE_LEADERBOARD_ENTRIES,
-  populateWithFakeEntries
+  populateWithFakeEntries,
+  resolveRegionHeuristic
 } from "../cloudflare/auth.js";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
@@ -1329,4 +1330,123 @@ test("regional_personas D1 table: queries frugal table for regional fake persona
   assert.equal(data.top10[0].alias, "D1L***", "Leaderboard must populate from regional_personas D1 table");
   assert.equal(data.top10[0].total_score, 550);
 });
+
+test("regional heuristics: accurately handles Indian VPN connections from US laptops", () => {
+  // Case 1: Player in US connects via VPN in India
+  // - Edge IP Country is IN
+  // - Laptop OS timezone is still America/Los_Angeles
+  // - Laptop OS language is en-US
+  const vpnRegion = resolveRegionHeuristic({
+    country: "IN",
+    clientTz: "America/Los_Angeles",
+    lang: "en-US",
+    offset: 480
+  });
+  assert.equal(vpnRegion, "southAsia", "VPN with country IN must decisively resolve to southAsia");
+
+  // Case 2: Virtual VPN routing to India via Singapore datacenter
+  // - Exit node is SG
+  // - Device clock offset is IST (-330 minutes = UTC+5:30)
+  const virtualVpnRegion = resolveRegionHeuristic({
+    country: "SG",
+    offset: -330,
+    lang: "en-IN"
+  });
+  assert.equal(virtualVpnRegion, "southAsia", "Virtual VPN with IST offset -330 must resolve to southAsia");
+
+  // Case 3: Native US visitor
+  const usRegion = resolveRegionHeuristic({
+    country: "US",
+    clientTz: "America/New_York",
+    lang: "en-US",
+    offset: 300
+  });
+  assert.equal(usRegion, "northAmerica", "Native US visitor must resolve to northAmerica");
+
+  // Case 4: Explicit user preference overrides network location
+  const overrideRegion = resolveRegionHeuristic({
+    country: "US",
+    requestedRegion: "southAsia"
+  });
+  assert.equal(overrideRegion, "southAsia", "Explicit user override must take highest priority");
+});
+
+test("client personas & auth: setRegionPreference and edge handshake sync properly", () => {
+  const personasJsPath = path.join(ROOT_DIR, "site", "js", "personas.js");
+  const personasContent = fs.readFileSync(personasJsPath, "utf-8");
+  const authJsContent = fs.readFileSync(AUTH_JS_PATH, "utf-8");
+
+  const storageMock: Record<string, string> = {};
+  const sandbox: any = {
+    URLSearchParams,
+    URL,
+    window: {
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      location: { search: "", pathname: "/", origin: "https://sethusrinivasan.github.io", hash: "" },
+      history: { replaceState: () => {} }
+    },
+    navigator: { language: "en-US", languages: ["en-US"] },
+    Intl: {
+      DateTimeFormat: () => ({
+        resolvedOptions: () => ({ timeZone: "America/Los_Angeles" })
+      })
+    },
+    localStorage: {
+      getItem: (k: string) => storageMock[k] || null,
+      setItem: (k: string, v: string) => { storageMock[k] = String(v); },
+      removeItem: (k: string) => { delete storageMock[k]; }
+    },
+    sessionStorage: {
+      getItem: (k: string) => storageMock["session_" + k] || null,
+      setItem: (k: string, v: string) => { storageMock["session_" + k] = String(v); },
+      removeItem: (k: string) => { delete storageMock["session_" + k]; }
+    },
+    document: {
+      getElementById: (id: string) => ({
+        classList: { add: () => {}, remove: () => {}, contains: () => false },
+        removeAttribute: () => {},
+        setAttribute: () => {},
+        addEventListener: () => {},
+        value: "",
+        textContent: "",
+        innerHTML: ""
+      }),
+      addEventListener: () => {},
+      readyState: "complete"
+    },
+    fetch: async () => ({
+      ok: true,
+      json: async () => ({
+        top10: [],
+        currentUser: null,
+        detected: { country: "IN", region: "southAsia" }
+      })
+    })
+  };
+  sandbox.location = { search: "", pathname: "/", origin: "https://sethusrinivasan.github.io", hash: "" };
+  sandbox.history = { replaceState: () => {} };
+  sandbox.addEventListener = () => {};
+  sandbox.removeEventListener = () => {};
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+
+  vm.createContext(sandbox);
+  vm.runInContext(personasContent, sandbox);
+  vm.runInContext(authJsContent, sandbox);
+
+  assert.equal(typeof sandbox.window.setClientRegion, "function");
+  assert.equal(typeof sandbox.window.getClientRegion, "function");
+  assert.equal(typeof sandbox.DhayamAuth.setRegionPreference, "function");
+
+  // Server edge handshake sets southAsia
+  sandbox.window.setClientRegion("southAsia", { country: "IN" });
+  assert.equal(sandbox.window.getClientRegion(), "southAsia", "Edge handshake must set client region to southAsia");
+
+  // User explicitly selects northAmerica
+  sandbox.DhayamAuth.setRegionPreference("northAmerica");
+  assert.equal(sandbox.window.getClientRegion(), "northAmerica", "Explicit user preference must override edge detection");
+  assert.equal(sandbox.localStorage.getItem("dhayam_user_region"), "northAmerica");
+});
+
 
