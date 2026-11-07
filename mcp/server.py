@@ -859,16 +859,16 @@ TOOLS = [
 FEEDBACK_RECORDS = []
 
 FAKE_LEADERBOARD_ENTRIES = [
-    {"alias": "Kavitha", "avatar_url": "🪷", "total_score": 520, "games_won": 5, "games_played": 7, "total_captures": 9, "is_computer": 1, "is_fake": 1},
-    {"alias": "Murugan", "avatar_url": "🪔", "total_score": 460, "games_won": 4, "games_played": 6, "total_captures": 8, "is_computer": 1, "is_fake": 1},
-    {"alias": "Ananya", "avatar_url": "🌺", "total_score": 410, "games_won": 4, "games_played": 5, "total_captures": 6, "is_computer": 1, "is_fake": 1},
-    {"alias": "Kavin", "avatar_url": "⚡", "total_score": 350, "games_won": 3, "games_played": 5, "total_captures": 5, "is_computer": 1, "is_fake": 1},
-    {"alias": "Rani", "avatar_url": "🐆", "total_score": 310, "games_won": 3, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
-    {"alias": "Arjun", "avatar_url": "🏹", "total_score": 270, "games_won": 2, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
-    {"alias": "Meera", "avatar_url": "🦚", "total_score": 220, "games_won": 2, "games_played": 3, "total_captures": 3, "is_computer": 1, "is_fake": 1},
-    {"alias": "Mani", "avatar_url": "🐅", "total_score": 180, "games_won": 1, "games_played": 3, "total_captures": 2, "is_computer": 1, "is_fake": 1},
-    {"alias": "Selvi", "avatar_url": "🌾", "total_score": 140, "games_won": 1, "games_played": 2, "total_captures": 2, "is_computer": 1, "is_fake": 1},
-    {"alias": "Vikram", "avatar_url": "🦅", "total_score": 90, "games_won": 1, "games_played": 2, "total_captures": 1, "is_computer": 1, "is_fake": 1}
+    {"alias": "Kavitha", "avatar_url": "🪷", "total_score": 524, "games_won": 5, "games_played": 7, "total_captures": 9, "is_computer": 1, "is_fake": 1},
+    {"alias": "Murugan", "avatar_url": "🪔", "total_score": 462, "games_won": 4, "games_played": 6, "total_captures": 8, "is_computer": 1, "is_fake": 1},
+    {"alias": "Ananya", "avatar_url": "🌺", "total_score": 415, "games_won": 4, "games_played": 5, "total_captures": 6, "is_computer": 1, "is_fake": 1},
+    {"alias": "Kavin", "avatar_url": "⚡", "total_score": 358, "games_won": 3, "games_played": 5, "total_captures": 5, "is_computer": 1, "is_fake": 1},
+    {"alias": "Rani", "avatar_url": "🐆", "total_score": 312, "games_won": 3, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
+    {"alias": "Arjun", "avatar_url": "🏹", "total_score": 276, "games_won": 2, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
+    {"alias": "Meera", "avatar_url": "🦚", "total_score": 228, "games_won": 2, "games_played": 3, "total_captures": 3, "is_computer": 1, "is_fake": 1},
+    {"alias": "Mani", "avatar_url": "🐅", "total_score": 184, "games_won": 1, "games_played": 3, "total_captures": 2, "is_computer": 1, "is_fake": 1},
+    {"alias": "Selvi", "avatar_url": "🌾", "total_score": 142, "games_won": 1, "games_played": 2, "total_captures": 2, "is_computer": 1, "is_fake": 1},
+    {"alias": "Vikram", "avatar_url": "🦅", "total_score": 95, "games_won": 1, "games_played": 2, "total_captures": 1, "is_computer": 1, "is_fake": 1}
 ]
 
 def handle_tool_call(name: str, args: Dict[str, Any]) -> Any:

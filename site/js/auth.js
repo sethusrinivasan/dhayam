@@ -246,7 +246,11 @@
             currentStats = data.stats;
           }
         }
-        currentRank = data.rank || currentRank;
+        if (data.rank !== undefined && data.rank !== null) {
+          currentRank = data.rank;
+        } else {
+          currentRank = null;
+        }
         saveCachedState();
         updateAuthPill();
         await syncPendingMatches();

@@ -17,16 +17,16 @@ export const IN_MEMORY_DB = {
 };
 
 export const FAKE_LEADERBOARD_ENTRIES = [
-  { alias: "Kavitha", avatar_url: "🪷", total_score: 520, games_won: 5, games_played: 7, total_captures: 9, is_computer: 1, is_fake: 1 },
-  { alias: "Murugan", avatar_url: "🪔", total_score: 460, games_won: 4, games_played: 6, total_captures: 8, is_computer: 1, is_fake: 1 },
-  { alias: "Ananya", avatar_url: "🌺", total_score: 410, games_won: 4, games_played: 5, total_captures: 6, is_computer: 1, is_fake: 1 },
-  { alias: "Kavin", avatar_url: "⚡", total_score: 350, games_won: 3, games_played: 5, total_captures: 5, is_computer: 1, is_fake: 1 },
-  { alias: "Rani", avatar_url: "🐆", total_score: 310, games_won: 3, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
-  { alias: "Arjun", avatar_url: "🏹", total_score: 270, games_won: 2, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
-  { alias: "Meera", avatar_url: "🦚", total_score: 220, games_won: 2, games_played: 3, total_captures: 3, is_computer: 1, is_fake: 1 },
-  { alias: "Mani", avatar_url: "🐅", total_score: 180, games_won: 1, games_played: 3, total_captures: 2, is_computer: 1, is_fake: 1 },
-  { alias: "Selvi", avatar_url: "🌾", total_score: 140, games_won: 1, games_played: 2, total_captures: 2, is_computer: 1, is_fake: 1 },
-  { alias: "Vikram", avatar_url: "🦅", total_score: 90, games_won: 1, games_played: 2, total_captures: 1, is_computer: 1, is_fake: 1 }
+  { alias: "Kavitha", avatar_url: "🪷", total_score: 524, games_won: 5, games_played: 7, total_captures: 9, is_computer: 1, is_fake: 1 },
+  { alias: "Murugan", avatar_url: "🪔", total_score: 462, games_won: 4, games_played: 6, total_captures: 8, is_computer: 1, is_fake: 1 },
+  { alias: "Ananya", avatar_url: "🌺", total_score: 415, games_won: 4, games_played: 5, total_captures: 6, is_computer: 1, is_fake: 1 },
+  { alias: "Kavin", avatar_url: "⚡", total_score: 358, games_won: 3, games_played: 5, total_captures: 5, is_computer: 1, is_fake: 1 },
+  { alias: "Rani", avatar_url: "🐆", total_score: 312, games_won: 3, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+  { alias: "Arjun", avatar_url: "🏹", total_score: 276, games_won: 2, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+  { alias: "Meera", avatar_url: "🦚", total_score: 228, games_won: 2, games_played: 3, total_captures: 3, is_computer: 1, is_fake: 1 },
+  { alias: "Mani", avatar_url: "🐅", total_score: 184, games_won: 1, games_played: 3, total_captures: 2, is_computer: 1, is_fake: 1 },
+  { alias: "Selvi", avatar_url: "🌾", total_score: 142, games_won: 1, games_played: 2, total_captures: 2, is_computer: 1, is_fake: 1 },
+  { alias: "Vikram", avatar_url: "🦅", total_score: 95, games_won: 1, games_played: 2, total_captures: 1, is_computer: 1, is_fake: 1 }
 ];
 
 export function populateWithFakeEntries(list, targetCount = 10) {
@@ -38,11 +38,6 @@ export function populateWithFakeEntries(list, targetCount = 10) {
   const needed = targetCount - list.length;
   const fillers = [];
 
-  const hasExisting = list.length > 0;
-  const minScore = hasExisting
-    ? Math.min(...list.map((item) => item.total_score || 0))
-    : 550;
-
   let personaIdx = 0;
   while (fillers.length < needed && personaIdx < FAKE_LEADERBOARD_ENTRIES.length) {
     const candidate = FAKE_LEADERBOARD_ENTRIES[personaIdx];
@@ -51,27 +46,25 @@ export function populateWithFakeEntries(list, targetCount = 10) {
       continue;
     }
 
-    const assignedScore = hasExisting
-      ? Math.max(10, minScore - (fillers.length + 1) * 10)
-      : candidate.total_score;
-    const gamesWon = Math.max(1, Math.floor(assignedScore / 100));
-    const gamesPlayed = gamesWon + 1;
-    const totalCaptures = Math.max(1, Math.floor((assignedScore % 100) / 10) || 1);
-
     fillers.push({
       alias: candidate.alias,
       avatar_url: candidate.avatar_url,
       is_computer: 1,
       is_fake: 1,
-      total_score: assignedScore,
-      games_won: gamesWon,
-      games_played: gamesPlayed,
-      total_captures: totalCaptures
+      total_score: candidate.total_score,
+      games_won: candidate.games_won,
+      games_played: candidate.games_played,
+      total_captures: candidate.total_captures
     });
   }
 
   const combined = [...list, ...fillers];
-  combined.sort((a, b) => (b.total_score - a.total_score) || (b.games_won - a.games_won));
+  combined.sort((a, b) =>
+    (b.total_score - a.total_score) ||
+    (b.games_won - a.games_won) ||
+    ((b.total_captures || 0) - (a.total_captures || 0))
+  );
+
   return combined.slice(0, targetCount);
 }
 
@@ -657,41 +650,38 @@ async function recordComputerMatch(env, { id, alias, avatar, isWinner, captures,
 }
 
 async function getUserAndRank(env, userId) {
+  let user = null;
+  let stats = null;
+
   if (env && env.DB) {
-    const userRow = await env.DB.prepare(
+    user = await env.DB.prepare(
       "SELECT id, oauth_provider, alias, avatar_url, is_computer FROM users WHERE id = ?"
-    ).bind(userId).first();
+    ).bind(userId).first() || null;
 
-    const statsRow = await env.DB.prepare(
+    stats = await env.DB.prepare(
       "SELECT games_played, games_won, total_captures, total_score FROM player_stats WHERE user_id = ?"
-    ).bind(userId).first();
+    ).bind(userId).first() || null;
+  } else {
+    user = IN_MEMORY_DB.users.get(userId) || null;
+    stats = IN_MEMORY_DB.stats.get(userId) || null;
+  }
 
-    const rankRow = await env.DB.prepare(`
-      WITH ranked AS (
-        SELECT user_id, ROW_NUMBER() OVER (ORDER BY total_score DESC, games_won DESC) AS rank
-        FROM player_stats
-      )
-      SELECT rank FROM ranked WHERE user_id = ?
-    `).bind(userId).first();
-
+  if (!stats || !stats.games_played) {
     return {
-      user: userRow || null,
-      stats: statsRow || null,
-      rank: rankRow ? rankRow.rank : null
+      user: user || null,
+      stats: stats || null,
+      rank: null
     };
   }
 
-  // In-memory fallback
-  const user = IN_MEMORY_DB.users.get(userId) || null;
-  const stats = IN_MEMORY_DB.stats.get(userId) || null;
-
-  // Calculate rank
-  const allStats = Array.from(IN_MEMORY_DB.stats.values());
-  allStats.sort((a, b) => (b.total_score - a.total_score) || (b.games_won - a.games_won));
-  const rankIdx = allStats.findIndex((s) => s.user_id === userId);
-  const rank = rankIdx >= 0 ? rankIdx + 1 : null;
-
-  return { user, stats, rank };
+  // To ensure rank is 100% consistent with the active leaderboard (including fake fillers and computer players),
+  // obtain user's true rank from getLeaderboard
+  const { currentUser } = await getLeaderboard(env, userId);
+  return {
+    user: user || null,
+    stats: stats || null,
+    rank: currentUser ? currentUser.global_rank : null
+  };
 }
 
 async function getLeaderboard(env, currentUserId) {
@@ -710,6 +700,7 @@ async function getLeaderboard(env, currentUserId) {
       // Real human users >= 10: strictly exclude computer players & fake entries
       const topRows = await env.DB.prepare(`
         SELECT 
+          u.id AS user_id,
           u.alias,
           u.avatar_url,
           u.is_computer,
@@ -720,7 +711,7 @@ async function getLeaderboard(env, currentUserId) {
         FROM player_stats ps
         JOIN users u ON ps.user_id = u.id
         WHERE (u.is_computer = 0 OR u.is_computer IS NULL) AND ps.games_played > 0
-        ORDER BY ps.total_score DESC, ps.games_won DESC
+        ORDER BY ps.total_score DESC, ps.games_won DESC, ps.total_captures DESC
         LIMIT 10
       `).all();
       rows = topRows.results || [];
@@ -728,6 +719,7 @@ async function getLeaderboard(env, currentUserId) {
       // Real human users < 10: bring in real players and recorded computer players
       const allRows = await env.DB.prepare(`
         SELECT 
+          u.id AS user_id,
           u.alias,
           u.avatar_url,
           u.is_computer,
@@ -738,7 +730,7 @@ async function getLeaderboard(env, currentUserId) {
         FROM player_stats ps
         JOIN users u ON ps.user_id = u.id
         WHERE ps.games_played > 0
-        ORDER BY ps.total_score DESC, ps.games_won DESC
+        ORDER BY ps.total_score DESC, ps.games_won DESC, ps.total_captures DESC
         LIMIT 10
       `).all();
       // If not fully populated with 10 entries, fill in with fake entries; as real user entries are added, fake entries reduce
@@ -752,23 +744,38 @@ async function getLeaderboard(env, currentUserId) {
 
     let currentUser = null;
     if (currentUserId) {
-      const userRank = await env.DB.prepare(`
-        WITH ranked AS (
-          SELECT user_id, total_score, games_won, total_captures,
-                 ROW_NUMBER() OVER (ORDER BY total_score DESC, games_won DESC) AS global_rank
-          FROM player_stats ps
-          JOIN users u ON ps.user_id = u.id
-          ${realHumanCount >= 10 ? "WHERE (u.is_computer = 0 OR u.is_computer IS NULL)" : ""}
-        )
-        SELECT r.global_rank, r.total_score, r.games_won, r.total_captures, u.alias, u.avatar_url, u.is_computer
-        FROM ranked r
-        JOIN users u ON r.user_id = u.id
-        WHERE r.user_id = ?
-      `).bind(currentUserId).first();
-      currentUser = userRank || null;
+      const inTop10 = top10.find((item) => item.user_id === currentUserId || item.id === currentUserId);
+      if (inTop10) {
+        currentUser = {
+          global_rank: inTop10.rank,
+          total_score: inTop10.total_score,
+          games_won: inTop10.games_won,
+          games_played: inTop10.games_played,
+          total_captures: inTop10.total_captures,
+          alias: inTop10.alias,
+          avatar_url: inTop10.avatar_url,
+          is_computer: inTop10.is_computer || 0
+        };
+      } else {
+        const userRank = await env.DB.prepare(`
+          WITH ranked AS (
+            SELECT user_id, total_score, games_won, games_played, total_captures,
+                   ROW_NUMBER() OVER (ORDER BY total_score DESC, games_won DESC, total_captures DESC) AS global_rank
+            FROM player_stats ps
+            JOIN users u ON ps.user_id = u.id
+            WHERE (u.is_computer = 0 OR u.is_computer IS NULL) AND ps.games_played > 0
+          )
+          SELECT r.global_rank, r.total_score, r.games_won, r.games_played, r.total_captures, u.alias, u.avatar_url, u.is_computer
+          FROM ranked r
+          JOIN users u ON r.user_id = u.id
+          WHERE r.user_id = ?
+        `).bind(currentUserId).first();
+        currentUser = userRank || null;
+      }
     }
 
-    return { top10, currentUser };
+    const sanitizedTop10 = top10.map(({ user_id, id, ...rest }) => rest);
+    return { top10: sanitizedTop10, currentUser };
   }
 
   // In-memory fallback
@@ -777,6 +784,7 @@ async function getLeaderboard(env, currentUserId) {
     const user = IN_MEMORY_DB.users.get(uid);
     if (user && stats.games_played > 0) {
       list.push({
+        user_id: uid,
         alias: user.alias,
         avatar_url: user.avatar_url,
         is_computer: user.is_computer ? 1 : 0,
@@ -795,7 +803,7 @@ async function getLeaderboard(env, currentUserId) {
     ? list.filter((item) => !item.is_computer)
     : [...list];
 
-  baseList.sort((a, b) => (b.total_score - a.total_score) || (b.games_won - a.games_won));
+  baseList.sort((a, b) => (b.total_score - a.total_score) || (b.games_won - a.games_won) || ((b.total_captures || 0) - (a.total_captures || 0)));
 
   const filteredList = realHumanCount >= 10
     ? baseList.slice(0, 10)
@@ -807,19 +815,38 @@ async function getLeaderboard(env, currentUserId) {
   if (currentUserId && IN_MEMORY_DB.users.has(currentUserId)) {
     const user = IN_MEMORY_DB.users.get(currentUserId);
     const stats = IN_MEMORY_DB.stats.get(currentUserId);
-    const rankIdx = top10.findIndex((item) => item.alias === user.alias);
-    currentUser = {
-      global_rank: rankIdx >= 0 ? rankIdx + 1 : (realHumanCount + 1),
-      total_score: stats ? stats.total_score : 0,
-      games_won: stats ? stats.games_won : 0,
-      total_captures: stats ? stats.total_captures : 0,
-      alias: user.alias,
-      avatar_url: user.avatar_url,
-      is_computer: user.is_computer ? 1 : 0
-    };
+    const inTop10 = top10.find((item) => item.user_id === currentUserId || (item.alias && item.alias.toLowerCase() === user.alias.toLowerCase()));
+
+    if (inTop10) {
+      currentUser = {
+        global_rank: inTop10.rank,
+        total_score: inTop10.total_score,
+        games_won: inTop10.games_won,
+        games_played: inTop10.games_played,
+        total_captures: inTop10.total_captures,
+        alias: inTop10.alias,
+        avatar_url: inTop10.avatar_url,
+        is_computer: inTop10.is_computer ? 1 : 0
+      };
+    } else {
+      const humanList = list.filter((item) => !item.is_computer);
+      humanList.sort((a, b) => (b.total_score - a.total_score) || (b.games_won - a.games_won) || ((b.total_captures || 0) - (a.total_captures || 0)));
+      const rankIdx = humanList.findIndex((item) => item.user_id === currentUserId);
+      currentUser = {
+        global_rank: rankIdx >= 0 ? rankIdx + 1 : (humanList.length + 1),
+        total_score: stats ? stats.total_score : 0,
+        games_won: stats ? stats.games_won : 0,
+        games_played: stats ? stats.games_played : 0,
+        total_captures: stats ? stats.total_captures : 0,
+        alias: user.alias,
+        avatar_url: user.avatar_url,
+        is_computer: user.is_computer ? 1 : 0
+      };
+    }
   }
 
-  return { top10, currentUser };
+  const sanitizedTop10 = top10.map(({ user_id, id, ...rest }) => rest);
+  return { top10: sanitizedTop10, currentUser };
 }
 
 async function submitFeedback(env, {

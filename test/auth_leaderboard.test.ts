@@ -16,6 +16,7 @@ import {
   upsertUser,
   recordComputerMatch,
   getLeaderboard,
+  getUserAndRank,
   submitFeedback,
   getFeedback,
   FAKE_LEADERBOARD_ENTRIES,
@@ -185,7 +186,7 @@ test("api: full lifecycle - register, record match score, leaderboard ranking, a
   assert.equal(matchData.stats.games_won, 1);
   assert.equal(matchData.stats.total_captures, 2);
   assert.equal(matchData.stats.total_score, 120); // 100 win + 20 captures
-  assert.equal(matchData.rank, 1);
+  assert.equal(matchData.rank, 9); // In populated leaderboard with varied fake entries, 120 pts places Murugan at rank 9
 
   // 4. Duplicate match submission rejected idempotently
   const dupReq = new Request("https://dhayam.cancun.workers.dev/api/stats/record", {
@@ -206,17 +207,19 @@ test("api: full lifecycle - register, record match score, leaderboard ranking, a
   assert.equal(dupData.duplicate, true);
   assert.equal(dupData.stats.total_score, 120);
 
-  // 5. GET /api/leaderboard verifies Murugan is Rank #1
+  // 5. GET /api/leaderboard verifies Murugan is ranked at rank 9 in top 10
   const lbReq = new Request("https://dhayam.cancun.workers.dev/api/leaderboard", {
     headers: { Cookie: `dhayam_session=${sessionToken}` }
   });
   const lbRes = await handleAuthAndLeaderboard(lbReq, env, new URL(lbReq.url));
   assert.ok(lbRes);
   const lbData = await lbRes.json();
-  assert.ok(lbData.top10.length >= 1);
-  assert.equal(lbData.top10[0].alias, "Murugan");
-  assert.equal(lbData.top10[0].total_score, 120);
-  assert.equal(lbData.currentUser.global_rank, 1);
+  assert.equal(lbData.top10.length, 10);
+  const muruganLeader = lbData.top10.find((u) => u.alias === "Murugan");
+  assert.ok(muruganLeader, "Murugan must be present in top 10");
+  assert.equal(muruganLeader.total_score, 120);
+  assert.equal(muruganLeader.rank, 9);
+  assert.equal(lbData.currentUser.global_rank, 9);
 
   // 6. POST /api/auth/logout clears session
   const logoutReq = new Request("https://dhayam.cancun.workers.dev/api/auth/logout", {
@@ -1010,6 +1013,57 @@ test("leaderboard: fills in with fake entries when < 10 and reduces fake entries
   const fullRes = await getLeaderboard(env, null);
   assert.equal(fullRes.top10.length, 10);
   assert.equal(fullRes.top10.filter((u) => u.is_fake || u.is_computer).length, 0, "Fake entries must be completely reduced to 0");
+});
+
+test("leaderboard: fictitious scores have variation and last-place player is ranked #10 not #1", async () => {
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+  IN_MEMORY_DB.users.clear();
+  IN_MEMORY_DB.stats.clear();
+  IN_MEMORY_DB.submissions.clear();
+
+  // Simulate Sethu with negative score from withdrawals (-200)
+  const userId = "usr_google_sethu";
+  await upsertUser(env, {
+    id: userId,
+    provider: "google",
+    sub: "google_sub_sethu",
+    alias: "Sethu",
+    avatarUrl: "👤",
+    isComputer: 0
+  });
+  IN_MEMORY_DB.stats.set(userId, {
+    user_id: userId,
+    games_played: 2,
+    games_won: 0,
+    total_captures: 0,
+    total_score: -200,
+    updated_at: Date.now()
+  });
+
+  // 1. Leaderboard query for Sethu
+  const lb = await getLeaderboard(env, userId);
+  assert.equal(lb.top10.length, 10, "Leaderboard must have exactly 10 entries");
+
+  // Verify all fake entries have variation (scores are distinct)
+  const fakeEntries = lb.top10.filter((u) => u.is_fake === 1 || u.is_computer === 1);
+  assert.equal(fakeEntries.length, 9, "Must have 9 fake entries when 1 real user exists");
+  const uniqueScores = new Set(fakeEntries.map((u) => u.total_score));
+  assert.equal(uniqueScores.size, fakeEntries.length, "All fake entries must have distinct, varied scores");
+
+  // Verify Sethu is ranked #10 (last) and NOT #1
+  assert.equal(lb.top10[9].alias, "Sethu");
+  assert.equal(lb.top10[9].rank, 10);
+  assert.equal(lb.top10[9].total_score, -200);
+
+  // Crucial: currentUser.global_rank must be 10, NOT 1
+  assert.ok(lb.currentUser, "currentUser standing must exist");
+  assert.equal(lb.currentUser.global_rank, 10, "Sethu's standing must be rank 10 when score is last in pool");
+  assert.notEqual(lb.currentUser.global_rank, 1, "Sethu must NOT be stated as #1 when score is last in pool");
+
+  // 2. getUserAndRank (/api/auth/me) must also report rank 10, NOT 1
+  const userAndRank = await getUserAndRank(env, userId);
+  assert.equal(userAndRank.rank, 10, "getUserAndRank must return rank 10 matching the leaderboard position");
+  assert.notEqual(userAndRank.rank, 1, "getUserAndRank must never report #1 for last-place player");
 });
 
 test("feedback durable table: stores user feedback with timestamp, user details, and IP address", async () => {
