@@ -114,9 +114,10 @@
             if (isComputer && typeof getRandomComputerPersona === "function") {
               persona = getRandomComputerPersona(chosenPersonaNames);
               if (persona) {
-                pName = persona.name;
+                pName = persona.displayName || persona.name;
                 pAvatar = persona.avatar;
                 pColor = persona.color;
+                chosenPersonaNames.push(pName);
                 chosenPersonaNames.push(persona.name);
               }
             } else if (i === 0 && computerCount) {

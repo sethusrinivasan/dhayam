@@ -16,20 +16,76 @@ export const IN_MEMORY_DB = {
   feedback: new Map()      // feedbackId -> { id, user_id, user_alias, user_email, ip_address, user_agent, feedback_text, category, rating, metadata, created_at }
 };
 
-export const FAKE_LEADERBOARD_ENTRIES = [
-  { alias: "Kavitha", avatar_url: "🪷", total_score: 524, games_won: 5, games_played: 7, total_captures: 9, is_computer: 1, is_fake: 1 },
-  { alias: "Murugan", avatar_url: "🪔", total_score: 462, games_won: 4, games_played: 6, total_captures: 8, is_computer: 1, is_fake: 1 },
-  { alias: "Ananya", avatar_url: "🌺", total_score: 415, games_won: 4, games_played: 5, total_captures: 6, is_computer: 1, is_fake: 1 },
-  { alias: "Kavin", avatar_url: "⚡", total_score: 358, games_won: 3, games_played: 5, total_captures: 5, is_computer: 1, is_fake: 1 },
-  { alias: "Rani", avatar_url: "🐆", total_score: 312, games_won: 3, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
-  { alias: "Arjun", avatar_url: "🏹", total_score: 276, games_won: 2, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
-  { alias: "Meera", avatar_url: "🦚", total_score: 228, games_won: 2, games_played: 3, total_captures: 3, is_computer: 1, is_fake: 1 },
-  { alias: "Mani", avatar_url: "🐅", total_score: 184, games_won: 1, games_played: 3, total_captures: 2, is_computer: 1, is_fake: 1 },
-  { alias: "Selvi", avatar_url: "🌾", total_score: 142, games_won: 1, games_played: 2, total_captures: 2, is_computer: 1, is_fake: 1 },
-  { alias: "Vikram", avatar_url: "🦅", total_score: 95, games_won: 1, games_played: 2, total_captures: 1, is_computer: 1, is_fake: 1 }
-];
+export const REGIONAL_LEADERBOARD_PERSONAS = {
+  northAmerica: [
+    { alias: "Liam", avatar_url: "🪔", total_score: 524, games_won: 5, games_played: 7, total_captures: 9, is_computer: 1, is_fake: 1 },
+    { alias: "Emma", avatar_url: "🪷", total_score: 462, games_won: 4, games_played: 6, total_captures: 8, is_computer: 1, is_fake: 1 },
+    { alias: "Noah", avatar_url: "🦅", total_score: 415, games_won: 4, games_played: 5, total_captures: 6, is_computer: 1, is_fake: 1 },
+    { alias: "Olivia", avatar_url: "🌺", total_score: 358, games_won: 3, games_played: 5, total_captures: 5, is_computer: 1, is_fake: 1 },
+    { alias: "Ethan", avatar_url: "⚡", total_score: 312, games_won: 3, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+    { alias: "Sophia", avatar_url: "🌾", total_score: 276, games_won: 2, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+    { alias: "Mason", avatar_url: "🏹", total_score: 228, games_won: 2, games_played: 3, total_captures: 3, is_computer: 1, is_fake: 1 },
+    { alias: "Maya", avatar_url: "🦚", total_score: 184, games_won: 1, games_played: 3, total_captures: 2, is_computer: 1, is_fake: 1 },
+    { alias: "Logan", avatar_url: "🐅", total_score: 142, games_won: 1, games_played: 2, total_captures: 2, is_computer: 1, is_fake: 1 },
+    { alias: "Harper", avatar_url: "🐆", total_score: 95, games_won: 1, games_played: 2, total_captures: 1, is_computer: 1, is_fake: 1 }
+  ],
+  southAsia: [
+    { alias: "Kavitha", avatar_url: "🪷", total_score: 524, games_won: 5, games_played: 7, total_captures: 9, is_computer: 1, is_fake: 1 },
+    { alias: "Murugan", avatar_url: "🪔", total_score: 462, games_won: 4, games_played: 6, total_captures: 8, is_computer: 1, is_fake: 1 },
+    { alias: "Ananya", avatar_url: "🌺", total_score: 415, games_won: 4, games_played: 5, total_captures: 6, is_computer: 1, is_fake: 1 },
+    { alias: "Kavin", avatar_url: "⚡", total_score: 358, games_won: 3, games_played: 5, total_captures: 5, is_computer: 1, is_fake: 1 },
+    { alias: "Rani", avatar_url: "🐆", total_score: 312, games_won: 3, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+    { alias: "Arjun", avatar_url: "🏹", total_score: 276, games_won: 2, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+    { alias: "Meera", avatar_url: "🦚", total_score: 228, games_won: 2, games_played: 3, total_captures: 3, is_computer: 1, is_fake: 1 },
+    { alias: "Mani", avatar_url: "🐅", total_score: 184, games_won: 1, games_played: 3, total_captures: 2, is_computer: 1, is_fake: 1 },
+    { alias: "Selvi", avatar_url: "🌾", total_score: 142, games_won: 1, games_played: 2, total_captures: 2, is_computer: 1, is_fake: 1 },
+    { alias: "Vikram", avatar_url: "🦅", total_score: 95, games_won: 1, games_played: 2, total_captures: 1, is_computer: 1, is_fake: 1 }
+  ],
+  southeastAsia: [
+    { alias: "Siva", avatar_url: "🪔", total_score: 524, games_won: 5, games_played: 7, total_captures: 9, is_computer: 1, is_fake: 1 },
+    { alias: "Geetha", avatar_url: "🪷", total_score: 462, games_won: 4, games_played: 6, total_captures: 8, is_computer: 1, is_fake: 1 },
+    { alias: "Wei", avatar_url: "🦅", total_score: 415, games_won: 4, games_played: 5, total_captures: 6, is_computer: 1, is_fake: 1 },
+    { alias: "Malar", avatar_url: "🌺", total_score: 358, games_won: 3, games_played: 5, total_captures: 5, is_computer: 1, is_fake: 1 },
+    { alias: "Kavi", avatar_url: "⚡", total_score: 312, games_won: 3, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+    { alias: "Nur", avatar_url: "🌾", total_score: 276, games_won: 2, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+    { alias: "Dinesh", avatar_url: "🏹", total_score: 228, games_won: 2, games_played: 3, total_captures: 3, is_computer: 1, is_fake: 1 },
+    { alias: "Mei", avatar_url: "🦚", total_score: 184, games_won: 1, games_played: 3, total_captures: 2, is_computer: 1, is_fake: 1 },
+    { alias: "Kumaran", avatar_url: "🐅", total_score: 142, games_won: 1, games_played: 2, total_captures: 2, is_computer: 1, is_fake: 1 },
+    { alias: "Malaya", avatar_url: "🐆", total_score: 95, games_won: 1, games_played: 2, total_captures: 1, is_computer: 1, is_fake: 1 }
+  ],
+  global: [
+    { alias: "Kai", avatar_url: "🪔", total_score: 524, games_won: 5, games_played: 7, total_captures: 9, is_computer: 1, is_fake: 1 },
+    { alias: "Chloe", avatar_url: "🪷", total_score: 462, games_won: 4, games_played: 6, total_captures: 8, is_computer: 1, is_fake: 1 },
+    { alias: "Gabriel", avatar_url: "🦅", total_score: 415, games_won: 4, games_played: 5, total_captures: 6, is_computer: 1, is_fake: 1 },
+    { alias: "Elena", avatar_url: "🌺", total_score: 358, games_won: 3, games_played: 5, total_captures: 5, is_computer: 1, is_fake: 1 },
+    { alias: "Lucas", avatar_url: "⚡", total_score: 312, games_won: 3, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+    { alias: "Amara", avatar_url: "🌾", total_score: 276, games_won: 2, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+    { alias: "Leo", avatar_url: "🏹", total_score: 228, games_won: 2, games_played: 3, total_captures: 3, is_computer: 1, is_fake: 1 },
+    { alias: "Maya", avatar_url: "🦚", total_score: 184, games_won: 1, games_played: 3, total_captures: 2, is_computer: 1, is_fake: 1 },
+    { alias: "Felix", avatar_url: "🐅", total_score: 142, games_won: 1, games_played: 2, total_captures: 2, is_computer: 1, is_fake: 1 },
+    { alias: "Zara", avatar_url: "🐆", total_score: 95, games_won: 1, games_played: 2, total_captures: 1, is_computer: 1, is_fake: 1 }
+  ]
+};
 
-export function populateWithFakeEntries(list, targetCount = 10) {
+export const FAKE_LEADERBOARD_ENTRIES = REGIONAL_LEADERBOARD_PERSONAS.southAsia;
+
+export function getRegionFromCountryOrTz(country = "", tz = "") {
+  const c = String(country || "").toUpperCase().trim();
+  const t = String(tz || "").trim();
+
+  if (["US", "CA", "GB", "AU", "NZ", "IE"].includes(c)) return "northAmerica";
+  if (["IN", "LK", "NP", "BD", "PK"].includes(c)) return "southAsia";
+  if (["SG", "MY", "TH", "ID", "PH", "VN"].includes(c)) return "southeastAsia";
+
+  if (t.startsWith("America/") || t.startsWith("US/") || t.startsWith("Canada/")) return "northAmerica";
+  if (t.includes("Kolkata") || t.includes("Colombo") || t.includes("India")) return "southAsia";
+  if (t.includes("Singapore") || t.includes("Kuala_Lumpur") || t.includes("Bangkok") || t.includes("Jakarta")) return "southeastAsia";
+  if (t.startsWith("Europe/")) return "global";
+
+  return c ? "global" : "southAsia";
+}
+
+export function populateWithFakeEntries(list, targetCount = 10, region = "southAsia") {
   if (list.length >= targetCount) {
     return list.slice(0, targetCount);
   }
@@ -38,9 +94,11 @@ export function populateWithFakeEntries(list, targetCount = 10) {
   const needed = targetCount - list.length;
   const fillers = [];
 
+  const candidatePool = REGIONAL_LEADERBOARD_PERSONAS[region] || REGIONAL_LEADERBOARD_PERSONAS.southAsia;
+
   let personaIdx = 0;
-  while (fillers.length < needed && personaIdx < FAKE_LEADERBOARD_ENTRIES.length) {
-    const candidate = FAKE_LEADERBOARD_ENTRIES[personaIdx];
+  while (fillers.length < needed && personaIdx < candidatePool.length) {
+    const candidate = candidatePool[personaIdx];
     personaIdx++;
     if (existingAliases.has(candidate.alias.toLowerCase())) {
       continue;
@@ -433,7 +491,11 @@ export async function handleAuthAndLeaderboard(request, env, url) {
       return new Response(JSON.stringify({ user: null }), { headers: cors });
     }
 
-    const { user, stats, rank } = await getUserAndRank(env, session.userId);
+    const country = url.searchParams.get("country") || request.headers.get("CF-IPCountry") || (request.cf && request.cf.country) || "";
+    const tz = url.searchParams.get("tz") || "";
+    const region = url.searchParams.get("region") || getRegionFromCountryOrTz(country, tz);
+
+    const { user, stats, rank } = await getUserAndRank(env, session.userId, region);
     return new Response(JSON.stringify({
       user: user || {
         id: session.userId,
@@ -457,8 +519,11 @@ export async function handleAuthAndLeaderboard(request, env, url) {
   if (url.pathname === "/api/leaderboard") {
     const session = await verifySessionToken(token, secret);
     const userId = session ? session.userId : null;
+    const country = url.searchParams.get("country") || request.headers.get("CF-IPCountry") || (request.cf && request.cf.country) || "";
+    const tz = url.searchParams.get("tz") || "";
+    const region = url.searchParams.get("region") || getRegionFromCountryOrTz(country, tz);
 
-    const { top10, currentUser } = await getLeaderboard(env, userId);
+    const { top10, currentUser } = await getLeaderboard(env, userId, region);
     const headers = new Headers(cors);
 
     if (session) {
@@ -649,7 +714,7 @@ async function recordComputerMatch(env, { id, alias, avatar, isWinner, captures,
   });
 }
 
-async function getUserAndRank(env, userId) {
+async function getUserAndRank(env, userId, region = "southAsia") {
   let user = null;
   let stats = null;
 
@@ -676,7 +741,7 @@ async function getUserAndRank(env, userId) {
 
   // To ensure rank is 100% consistent with the active leaderboard (including fake fillers and computer players),
   // obtain user's true rank from getLeaderboard
-  const { currentUser } = await getLeaderboard(env, userId);
+  const { currentUser } = await getLeaderboard(env, userId, region);
   return {
     user: user || null,
     stats: stats || null,
@@ -684,7 +749,7 @@ async function getUserAndRank(env, userId) {
   };
 }
 
-async function getLeaderboard(env, currentUserId) {
+async function getLeaderboard(env, currentUserId, region = "southAsia") {
   if (env && env.DB) {
     // Check total real (human) users in system who have played games
     const realCountRow = await env.DB.prepare(`
@@ -734,7 +799,7 @@ async function getLeaderboard(env, currentUserId) {
         LIMIT 10
       `).all();
       // If not fully populated with 10 entries, fill in with fake entries; as real user entries are added, fake entries reduce
-      rows = populateWithFakeEntries(allRows.results || [], 10);
+      rows = populateWithFakeEntries(allRows.results || [], 10, region);
     }
 
     const top10 = rows.slice(0, 10).map((item, idx) => ({
@@ -807,7 +872,7 @@ async function getLeaderboard(env, currentUserId) {
 
   const filteredList = realHumanCount >= 10
     ? baseList.slice(0, 10)
-    : populateWithFakeEntries(baseList, 10);
+    : populateWithFakeEntries(baseList, 10, region);
 
   const top10 = filteredList.slice(0, 10).map((item, idx) => ({ ...item, rank: idx + 1 }));
 

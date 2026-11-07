@@ -321,7 +321,9 @@
     }
 
     try {
-      const res = await fetch(API_BASE + "/api/leaderboard", {
+      const tz = (typeof Intl !== "undefined" && Intl.DateTimeFormat) ? (Intl.DateTimeFormat().resolvedOptions().timeZone || "") : "";
+      const lbUrl = API_BASE + "/api/leaderboard" + (tz ? "?tz=" + encodeURIComponent(tz) : "");
+      const res = await fetch(lbUrl, {
         headers: getAuthHeaders(),
         credentials: "include"
       });

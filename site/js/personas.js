@@ -25,6 +25,12 @@
     {
       id: "kavitha",
       name: "Kavitha",
+      regionalNames: {
+        northAmerica: "Emma",
+        southAsia: "Kavitha",
+        southeastAsia: "Geetha",
+        global: "Chloe"
+      },
       gender: "female",
       avatar: "🪷",
       color: "#0d9488", // Lotus Teal
@@ -42,6 +48,12 @@
     {
       id: "ananya",
       name: "Ananya",
+      regionalNames: {
+        northAmerica: "Olivia",
+        southAsia: "Ananya",
+        southeastAsia: "Malar",
+        global: "Elena"
+      },
       gender: "female",
       avatar: "🌺",
       color: "#f59e0b", // Coral Gold
@@ -59,6 +71,12 @@
     {
       id: "rani",
       name: "Rani",
+      regionalNames: {
+        northAmerica: "Harper",
+        southAsia: "Rani",
+        southeastAsia: "Malaya",
+        global: "Zara"
+      },
       gender: "female",
       avatar: "🐆",
       color: "#e11d48", // Royal Ruby
@@ -76,6 +94,12 @@
     {
       id: "meera",
       name: "Meera",
+      regionalNames: {
+        northAmerica: "Maya",
+        southAsia: "Meera",
+        southeastAsia: "Mei",
+        global: "Aria"
+      },
       gender: "female",
       avatar: "🦚",
       color: "#0284c7", // Peacock Blue
@@ -93,6 +117,12 @@
     {
       id: "selvi",
       name: "Selvi",
+      regionalNames: {
+        northAmerica: "Sophia",
+        southAsia: "Selvi",
+        southeastAsia: "Nur",
+        global: "Amara"
+      },
       gender: "female",
       avatar: "🌾",
       color: "#16a34a", // Emerald Green
@@ -112,6 +142,12 @@
     {
       id: "murugan",
       name: "Murugan",
+      regionalNames: {
+        northAmerica: "Liam",
+        southAsia: "Murugan",
+        southeastAsia: "Siva",
+        global: "Kai"
+      },
       gender: "male",
       avatar: "🪔",
       color: "#d97706", // Golden Diya Amber
@@ -129,6 +165,12 @@
     {
       id: "kavin",
       name: "Kavin",
+      regionalNames: {
+        northAmerica: "Ethan",
+        southAsia: "Kavin",
+        southeastAsia: "Kavi",
+        global: "Lucas"
+      },
       gender: "male",
       avatar: "⚡",
       color: "#f97316", // Solar Orange
@@ -146,6 +188,12 @@
     {
       id: "arjun",
       name: "Arjun",
+      regionalNames: {
+        northAmerica: "Mason",
+        southAsia: "Arjun",
+        southeastAsia: "Dinesh",
+        global: "Leo"
+      },
       gender: "male",
       avatar: "🏹",
       color: "#dc2626", // Crimson Flame
@@ -163,6 +211,12 @@
     {
       id: "mani",
       name: "Mani",
+      regionalNames: {
+        northAmerica: "Logan",
+        southAsia: "Mani",
+        southeastAsia: "Kumaran",
+        global: "Felix"
+      },
       gender: "male",
       avatar: "🐅",
       color: "#c2410c", // Copper Bronze
@@ -180,6 +234,12 @@
     {
       id: "vikram",
       name: "Vikram",
+      regionalNames: {
+        northAmerica: "Noah",
+        southAsia: "Vikram",
+        southeastAsia: "Wei",
+        global: "Gabriel"
+      },
       gender: "male",
       avatar: "🦅",
       color: "#2563eb", // Sapphire Blue
@@ -198,6 +258,11 @@
 
   // Localized Name Banks for GeoIP / Timezone Seed
   const LOCALIZED_NAMES = {
+    northAmerica: [
+      "Liam", "Emma", "Noah", "Olivia", "Ethan",
+      "Sophia", "Mason", "Maya", "Logan", "Harper",
+      "Lucas", "Chloe", "James", "Evelyn", "Oliver"
+    ],
     southAsia: [
       "Aarav", "Diya", "Kavin", "Ananya", "Murugan",
       "Priya", "Thilak", "Selvi", "Ashwin", "Nithya",
@@ -214,46 +279,81 @@
   };
 
   /**
-   * Determine suggested names based on client's regional context
+   * Determine client regional context from timezone and locale
    */
-  function getSuggestedLocalizedNames() {
-    let region = "global";
+  function getClientRegion() {
+    let region = "northAmerica";
     try {
+      if (typeof window !== "undefined" && window.dhayamActiveLanguage === "ta") {
+        return "southAsia";
+      }
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-      if (tz.includes("Kolkata") || tz.includes("Colombo") || tz.includes("India")) {
-        region = "southAsia";
-      } else if (tz.includes("Singapore") || tz.includes("Kuala_Lumpur") || tz.includes("Bangkok")) {
-        region = "southeastAsia";
+      const lang = (typeof navigator !== "undefined" && (navigator.language || (navigator.languages && navigator.languages[0]))) || "";
+      if (tz.includes("Kolkata") || tz.includes("Colombo") || tz.includes("India") || lang.startsWith("ta") || lang.startsWith("hi")) {
+        return "southAsia";
+      }
+      if (tz.includes("Singapore") || tz.includes("Kuala_Lumpur") || tz.includes("Bangkok") || tz.includes("Jakarta")) {
+        return "southeastAsia";
+      }
+      if (tz.startsWith("America/") || tz.startsWith("US/") || tz.startsWith("Canada/") || lang.startsWith("en-US") || lang.startsWith("en-CA")) {
+        return "northAmerica";
+      }
+      if (tz.startsWith("Europe/") || tz.startsWith("Australia/") || tz.startsWith("Pacific/")) {
+        return "global";
       }
     } catch (e) {}
-
-    return LOCALIZED_NAMES[region] || LOCALIZED_NAMES.global;
+    return region;
   }
 
   /**
-   * Select a random computer persona excluding specified names
+   * Determine suggested names based on client's regional context
    */
-  function getRandomComputerPersona(excludeNames = []) {
-    const pool = COMPUTER_PERSONAS.filter(
-      (p) => !excludeNames.includes(p.name) && !excludeNames.includes(p.id)
-    );
-    const candidates = pool.length ? pool : COMPUTER_PERSONAS;
-    return candidates[Math.floor(Math.random() * candidates.length)];
+  function getSuggestedLocalizedNames(requestedRegion) {
+    const region = requestedRegion || getClientRegion();
+    return LOCALIZED_NAMES[region] || LOCALIZED_NAMES.northAmerica || LOCALIZED_NAMES.global;
   }
 
   /**
-   * Retrieve a persona by name or ID
+   * Select a random computer persona excluding specified names, adapted for region
+   */
+  function getRandomComputerPersona(excludeNames = [], requestedRegion) {
+    const region = requestedRegion || getClientRegion();
+    const pool = COMPUTER_PERSONAS.filter((p) => {
+      const locName = (p.regionalNames && p.regionalNames[region]) || p.name;
+      return !excludeNames.includes(p.name) &&
+             !excludeNames.includes(p.id) &&
+             !excludeNames.includes(locName);
+    });
+    const candidates = pool.length ? pool : COMPUTER_PERSONAS;
+    const base = candidates[Math.floor(Math.random() * candidates.length)];
+    const localizedName = (base.regionalNames && base.regionalNames[region]) || base.name;
+    const intro = base.commentaryIntro ? base.commentaryIntro.replace(base.name, localizedName) : "";
+
+    return {
+      ...base,
+      displayName: localizedName,
+      commentaryIntro: intro
+    };
+  }
+
+  /**
+   * Retrieve a persona by name or ID (supports canonical, id, and regional names)
    */
   function getPersonaByName(nameOrId) {
     if (!nameOrId) return null;
     const clean = String(nameOrId).trim().toLowerCase();
-    return COMPUTER_PERSONAS.find(
-      (p) => p.name.toLowerCase() === clean || p.id.toLowerCase() === clean
-    ) || null;
+    return COMPUTER_PERSONAS.find((p) => {
+      if (p.name.toLowerCase() === clean || p.id.toLowerCase() === clean) return true;
+      if (p.regionalNames) {
+        return Object.values(p.regionalNames).some((rn) => rn.toLowerCase() === clean);
+      }
+      return false;
+    }) || null;
   }
 
   // Exports to window
   window.COMPUTER_PERSONAS = COMPUTER_PERSONAS;
+  window.getClientRegion = getClientRegion;
   window.getRandomComputerPersona = getRandomComputerPersona;
   window.getPersonaByName = getPersonaByName;
   window.getSuggestedLocalizedNames = getSuggestedLocalizedNames;

@@ -121,7 +121,30 @@ test("getSuggestedLocalizedNames provides regional names", () => {
   const names = ctx.getSuggestedLocalizedNames();
   assert.ok(Array.isArray(names));
   assert.ok(names.length >= 8);
-  assert.ok(names.includes("Aarav") || names.includes("Maya") || names.includes("Siva"));
+  assert.ok(names.includes("Aarav") || names.includes("Maya") || names.includes("Siva") || names.includes("Liam"));
+
+  // Check specific regional requests
+  const naNames = ctx.getSuggestedLocalizedNames("northAmerica");
+  assert.ok(naNames.includes("Liam") && naNames.includes("Emma"));
+
+  const saNames = ctx.getSuggestedLocalizedNames("southAsia");
+  assert.ok(saNames.includes("Kavitha") && saNames.includes("Murugan"));
+});
+
+test("getRandomComputerPersona resolves regional display names", () => {
+  const ctx = loadBrowserScript("personas.js");
+  // Select for North America
+  const naPersona = ctx.getRandomComputerPersona([], "northAmerica");
+  assert.ok(naPersona);
+  assert.ok(naPersona.displayName);
+  const naNames = ["Emma", "Olivia", "Harper", "Maya", "Sophia", "Liam", "Ethan", "Mason", "Logan", "Noah"];
+  assert.ok(naNames.includes(naPersona.displayName), `Expected NA display name, got ${naPersona.displayName}`);
+
+  // Select for South Asia
+  const saPersona = ctx.getRandomComputerPersona([], "southAsia");
+  assert.ok(saPersona);
+  const saNames = ["Kavitha", "Ananya", "Rani", "Meera", "Selvi", "Murugan", "Kavin", "Arjun", "Mani", "Vikram"];
+  assert.ok(saNames.includes(saPersona.displayName), `Expected SA display name, got ${saPersona.displayName}`);
 });
 
 test("escapeHtml prevents XSS injection in player and persona names", () => {

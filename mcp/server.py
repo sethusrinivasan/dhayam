@@ -858,18 +858,34 @@ TOOLS = [
 
 FEEDBACK_RECORDS = []
 
-FAKE_LEADERBOARD_ENTRIES = [
-    {"alias": "Kavitha", "avatar_url": "🪷", "total_score": 524, "games_won": 5, "games_played": 7, "total_captures": 9, "is_computer": 1, "is_fake": 1},
-    {"alias": "Murugan", "avatar_url": "🪔", "total_score": 462, "games_won": 4, "games_played": 6, "total_captures": 8, "is_computer": 1, "is_fake": 1},
-    {"alias": "Ananya", "avatar_url": "🌺", "total_score": 415, "games_won": 4, "games_played": 5, "total_captures": 6, "is_computer": 1, "is_fake": 1},
-    {"alias": "Kavin", "avatar_url": "⚡", "total_score": 358, "games_won": 3, "games_played": 5, "total_captures": 5, "is_computer": 1, "is_fake": 1},
-    {"alias": "Rani", "avatar_url": "🐆", "total_score": 312, "games_won": 3, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
-    {"alias": "Arjun", "avatar_url": "🏹", "total_score": 276, "games_won": 2, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
-    {"alias": "Meera", "avatar_url": "🦚", "total_score": 228, "games_won": 2, "games_played": 3, "total_captures": 3, "is_computer": 1, "is_fake": 1},
-    {"alias": "Mani", "avatar_url": "🐅", "total_score": 184, "games_won": 1, "games_played": 3, "total_captures": 2, "is_computer": 1, "is_fake": 1},
-    {"alias": "Selvi", "avatar_url": "🌾", "total_score": 142, "games_won": 1, "games_played": 2, "total_captures": 2, "is_computer": 1, "is_fake": 1},
-    {"alias": "Vikram", "avatar_url": "🦅", "total_score": 95, "games_won": 1, "games_played": 2, "total_captures": 1, "is_computer": 1, "is_fake": 1}
-]
+REGIONAL_LEADERBOARD_PERSONAS = {
+    "northAmerica": [
+        {"alias": "Liam", "avatar_url": "🪔", "total_score": 524, "games_won": 5, "games_played": 7, "total_captures": 9, "is_computer": 1, "is_fake": 1},
+        {"alias": "Emma", "avatar_url": "🪷", "total_score": 462, "games_won": 4, "games_played": 6, "total_captures": 8, "is_computer": 1, "is_fake": 1},
+        {"alias": "Noah", "avatar_url": "🦅", "total_score": 415, "games_won": 4, "games_played": 5, "total_captures": 6, "is_computer": 1, "is_fake": 1},
+        {"alias": "Olivia", "avatar_url": "🌺", "total_score": 358, "games_won": 3, "games_played": 5, "total_captures": 5, "is_computer": 1, "is_fake": 1},
+        {"alias": "Ethan", "avatar_url": "⚡", "total_score": 312, "games_won": 3, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
+        {"alias": "Sophia", "avatar_url": "🌾", "total_score": 276, "games_won": 2, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
+        {"alias": "Mason", "avatar_url": "🏹", "total_score": 228, "games_won": 2, "games_played": 3, "total_captures": 3, "is_computer": 1, "is_fake": 1},
+        {"alias": "Maya", "avatar_url": "🦚", "total_score": 184, "games_won": 1, "games_played": 3, "total_captures": 2, "is_computer": 1, "is_fake": 1},
+        {"alias": "Logan", "avatar_url": "🐅", "total_score": 142, "games_won": 1, "games_played": 2, "total_captures": 2, "is_computer": 1, "is_fake": 1},
+        {"alias": "Harper", "avatar_url": "🐆", "total_score": 95, "games_won": 1, "games_played": 2, "total_captures": 1, "is_computer": 1, "is_fake": 1}
+    ],
+    "southAsia": [
+        {"alias": "Kavitha", "avatar_url": "🪷", "total_score": 524, "games_won": 5, "games_played": 7, "total_captures": 9, "is_computer": 1, "is_fake": 1},
+        {"alias": "Murugan", "avatar_url": "🪔", "total_score": 462, "games_won": 4, "games_played": 6, "total_captures": 8, "is_computer": 1, "is_fake": 1},
+        {"alias": "Ananya", "avatar_url": "🌺", "total_score": 415, "games_won": 4, "games_played": 5, "total_captures": 6, "is_computer": 1, "is_fake": 1},
+        {"alias": "Kavin", "avatar_url": "⚡", "total_score": 358, "games_won": 3, "games_played": 5, "total_captures": 5, "is_computer": 1, "is_fake": 1},
+        {"alias": "Rani", "avatar_url": "🐆", "total_score": 312, "games_won": 3, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
+        {"alias": "Arjun", "avatar_url": "🏹", "total_score": 276, "games_won": 2, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
+        {"alias": "Meera", "avatar_url": "🦚", "total_score": 228, "games_won": 2, "games_played": 3, "total_captures": 3, "is_computer": 1, "is_fake": 1},
+        {"alias": "Mani", "avatar_url": "🐅", "total_score": 184, "games_won": 1, "games_played": 3, "total_captures": 2, "is_computer": 1, "is_fake": 1},
+        {"alias": "Selvi", "avatar_url": "🌾", "total_score": 142, "games_won": 1, "games_played": 2, "total_captures": 2, "is_computer": 1, "is_fake": 1},
+        {"alias": "Vikram", "avatar_url": "🦅", "total_score": 95, "games_won": 1, "games_played": 2, "total_captures": 1, "is_computer": 1, "is_fake": 1}
+    ]
+}
+
+FAKE_LEADERBOARD_ENTRIES = REGIONAL_LEADERBOARD_PERSONAS["southAsia"]
 
 def handle_tool_call(name: str, args: Dict[str, Any]) -> Any:
     global CURRENT_GAME
@@ -945,11 +961,13 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Any:
         }
 
     if name == "dhayam_get_leaderboard":
-        # Always return 10 entries with ranked fake entries if real entries < 10
-        leaderboard = [dict(item, rank=idx + 1) for idx, item in enumerate(FAKE_LEADERBOARD_ENTRIES[:10])]
+        region = args.get("region") or "northAmerica"
+        pool = REGIONAL_LEADERBOARD_PERSONAS.get(region, FAKE_LEADERBOARD_ENTRIES)
+        leaderboard = [dict(item, rank=idx + 1) for idx, item in enumerate(pool[:10])]
         return {
             "leaderboard": leaderboard,
             "currentUser": None,
+            "region": region,
             "totalEntries": len(leaderboard),
             "realUsersCount": 0,
             "fakeEntriesCount": len(leaderboard)

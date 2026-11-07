@@ -1064,7 +1064,8 @@ async function handleMcpToolCall(name, args = {}, env = null) {
       message: "Open this link in any modern desktop or mobile browser to view or play interactively."
     };
   } else if (name === "dhayam_get_leaderboard") {
-    const lb = await getLeaderboard(env, args.userId || null);
+    const region = args.region || "northAmerica";
+    const lb = await getLeaderboard(env, args.userId || null, region);
     result = {
       leaderboard: lb.top10,
       currentUser: lb.currentUser,

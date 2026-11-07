@@ -1066,6 +1066,42 @@ test("leaderboard: fictitious scores have variation and last-place player is ran
   assert.notEqual(userAndRank.rank, 1, "getUserAndRank must never report #1 for last-place player");
 });
 
+test("leaderboard: regional name alignment serves regionally common names for US visitors", async () => {
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+  IN_MEMORY_DB.users.clear();
+  IN_MEMORY_DB.stats.clear();
+  IN_MEMORY_DB.submissions.clear();
+
+  // 1. Visitor from USA (via CF-IPCountry header or America/Los_Angeles timezone)
+  const usReq = new Request("https://dhayam.cancun.workers.dev/api/leaderboard?tz=America/Los_Angeles", {
+    headers: {
+      "CF-IPCountry": "US"
+    }
+  });
+  const usRes = await handleAuthAndLeaderboard(usReq, env, new URL(usReq.url));
+  assert.ok(usRes);
+  const usData = await usRes.json();
+  assert.equal(usData.top10.length, 10);
+
+  // In unauthenticated view, aliases are masked ("Lia***", "Emm***", etc.)
+  const usAliases = usData.top10.map((u: any) => u.alias);
+  assert.ok(usAliases.includes("Lia***") || usAliases.includes("Emm***") || usAliases.includes("Noa***"),
+    "US visitor must see North American common filler names (Liam, Emma, Noah, etc.)");
+
+  // 2. Visitor from India (via CF-IPCountry: IN)
+  const inReq = new Request("https://dhayam.cancun.workers.dev/api/leaderboard", {
+    headers: {
+      "CF-IPCountry": "IN"
+    }
+  });
+  const inRes = await handleAuthAndLeaderboard(inReq, env, new URL(inReq.url));
+  assert.ok(inRes);
+  const inData = await inRes.json();
+  const inAliases = inData.top10.map((u: any) => u.alias);
+  assert.ok(inAliases.includes("Kav***") || inAliases.includes("Mur***"),
+    "Indian visitor must see South Asian common names (Kavitha, Murugan, etc.)");
+});
+
 test("feedback durable table: stores user feedback with timestamp, user details, and IP address", async () => {
   const env = { AUTH_JWT_SECRET: TEST_SECRET };
   IN_MEMORY_DB.feedback.clear();
