@@ -53,6 +53,18 @@ export const REGIONAL_LEADERBOARD_PERSONAS = {
     { alias: "Kumaran", avatar_url: "🐅", total_score: 142, games_won: 1, games_played: 2, total_captures: 2, is_computer: 1, is_fake: 1 },
     { alias: "Malaya", avatar_url: "🐆", total_score: 95, games_won: 1, games_played: 2, total_captures: 1, is_computer: 1, is_fake: 1 }
   ],
+  europe: [
+    { alias: "Antoine", avatar_url: "🪔", total_score: 524, games_won: 5, games_played: 7, total_captures: 9, is_computer: 1, is_fake: 1 },
+    { alias: "Camille", avatar_url: "🪷", total_score: 462, games_won: 4, games_played: 6, total_captures: 8, is_computer: 1, is_fake: 1 },
+    { alias: "Louis", avatar_url: "🦅", total_score: 415, games_won: 4, games_played: 5, total_captures: 6, is_computer: 1, is_fake: 1 },
+    { alias: "Manon", avatar_url: "🌺", total_score: 358, games_won: 3, games_played: 5, total_captures: 5, is_computer: 1, is_fake: 1 },
+    { alias: "Julien", avatar_url: "⚡", total_score: 312, games_won: 3, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+    { alias: "Elodie", avatar_url: "🌾", total_score: 276, games_won: 2, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+    { alias: "Theo", avatar_url: "🏹", total_score: 228, games_won: 2, games_played: 3, total_captures: 3, is_computer: 1, is_fake: 1 },
+    { alias: "Ines", avatar_url: "🦚", total_score: 184, games_won: 1, games_played: 3, total_captures: 2, is_computer: 1, is_fake: 1 },
+    { alias: "Maxime", avatar_url: "🐅", total_score: 142, games_won: 1, games_played: 2, total_captures: 2, is_computer: 1, is_fake: 1 },
+    { alias: "Clara", avatar_url: "🐆", total_score: 95, games_won: 1, games_played: 2, total_captures: 1, is_computer: 1, is_fake: 1 }
+  ],
   global: [
     { alias: "Kai", avatar_url: "🪔", total_score: 524, games_won: 5, games_played: 7, total_captures: 9, is_computer: 1, is_fake: 1 },
     { alias: "Chloe", avatar_url: "🪷", total_score: 462, games_won: 4, games_played: 6, total_captures: 8, is_computer: 1, is_fake: 1 },
@@ -82,7 +94,7 @@ export const FAKE_LEADERBOARD_ENTRIES = REGIONAL_LEADERBOARD_PERSONAS.southAsia;
 export function resolveRegionHeuristic(signals = {}) {
   // 1. Explicit user override takes absolute highest priority
   const req = String(signals.requestedRegion || signals.region || "").trim();
-  if (["northAmerica", "southAsia", "southeastAsia", "global"].includes(req)) {
+  if (["northAmerica", "southAsia", "southeastAsia", "europe", "global"].includes(req)) {
     return req;
   }
 
@@ -90,6 +102,7 @@ export function resolveRegionHeuristic(signals = {}) {
     southAsia: 0,
     northAmerica: 0,
     southeastAsia: 0,
+    europe: 0,
     global: 0
   };
 
@@ -103,11 +116,17 @@ export function resolveRegionHeuristic(signals = {}) {
   // Active game language
   if (activeLang === "ta" || activeLang.startsWith("ta-")) {
     scores.southAsia += 250;
+  } else if (activeLang.startsWith("fr")) {
+    scores.europe += 250;
   }
 
-  // Edge Network IP Country (VPN or ISP) - high weight (+200) to ensure VPN connection in India takes precedence
+  // Edge Network IP Country (VPN or ISP)
   if (["IN", "LK", "NP", "BD", "PK"].includes(country)) {
     scores.southAsia += 200;
+  } else if (["FR", "BE", "CH", "LU", "MC"].includes(country)) {
+    scores.europe += 220; // French/Western European VPN decisively resolves to europe
+  } else if (["DE", "IT", "ES", "NL", "SE", "NO", "DK", "FI", "AT", "PT", "PL", "GR", "CZ", "RO", "HU"].includes(country)) {
+    scores.europe += 160;
   } else if (["SG", "MY", "TH", "ID", "PH", "VN"].includes(country)) {
     scores.southeastAsia += 120;
   } else if (["US", "CA"].includes(country)) {
@@ -127,6 +146,8 @@ export function resolveRegionHeuristic(signals = {}) {
     scores.southAsia += 90; // Pakistan (UTC+5:00)
   } else if (offset === -480) {
     scores.southeastAsia += 80; // Singapore, Malaysia (UTC+8:00)
+  } else if (offset === -60 || offset === -120) {
+    scores.europe += 100; // Central European Time CET (UTC+1) / CEST (UTC+2)
   } else if (offset !== null && offset >= 240 && offset <= 600) {
     scores.northAmerica += 50; // North America (UTC-4 to UTC-10)
   }
@@ -142,6 +163,13 @@ export function resolveRegionHeuristic(signals = {}) {
     ) {
       scores.southAsia += 140;
     } else if (
+      t.includes("Paris") || t.includes("Brussels") || t.includes("Zurich") ||
+      t.includes("Geneva") || t.includes("Monaco")
+    ) {
+      scores.europe += 160;
+    } else if (t.startsWith("Europe/")) {
+      scores.europe += 110;
+    } else if (
       t.includes("Singapore") || t.includes("Kuala_Lumpur") || t.includes("Bangkok") ||
       t.includes("Jakarta") || t.includes("Manila") || t.includes("Ho_Chi_Minh")
     ) {
@@ -151,14 +179,22 @@ export function resolveRegionHeuristic(signals = {}) {
     ) {
       scores.northAmerica += 60;
     } else if (
-      t.startsWith("Europe/") || t.startsWith("Australia/") || t.startsWith("Pacific/")
+      t.startsWith("Australia/") || t.startsWith("Pacific/")
     ) {
       scores.global += 50;
     }
   }
 
-  // Client Languages (e.g. en-IN, ta, hi, etc.)
+  // Client Languages (e.g. fr, fr-FR, en-IN, ta, hi, etc.)
   if (
+    lang.startsWith("fr") || lang.includes("-fr")
+  ) {
+    scores.europe += 170; // French language preference strongly routes to europe
+  } else if (
+    lang.startsWith("de") || lang.startsWith("es") || lang.startsWith("it") || lang.startsWith("nl")
+  ) {
+    scores.europe += 110;
+  } else if (
     lang.startsWith("ta") || lang.startsWith("hi") || lang.startsWith("te") ||
     lang.startsWith("kn") || lang.startsWith("ml") || lang.startsWith("mr") ||
     lang.startsWith("bn") || lang.startsWith("gu") || lang.startsWith("pa") ||
@@ -172,20 +208,23 @@ export function resolveRegionHeuristic(signals = {}) {
   ) {
     scores.southeastAsia += 90;
   } else if (lang.startsWith("en-us") || lang.startsWith("en-ca")) {
-    scores.northAmerica += 30; // Modest weight so foreign OS language doesn't defeat Indian VPN
+    scores.northAmerica += 30; // Modest weight so foreign OS language doesn't defeat Indian/French VPN
   }
 
   // Virtual VPN Heuristics:
-  // Many Indian VPNs route virtually through Singapore or London/New Jersey datacenters.
   // If exit is SG/GB/US but client offset is IST (-330) or language is Indian, boost southAsia!
   if (["SG", "GB", "US"].includes(country) && (offset === -330 || scores.southAsia >= 100)) {
     scores.southAsia += 100;
+  }
+  // If exit is in datacenter or neighbor but language is French or timezone is Paris, boost europe!
+  if (["LU", "NL", "GB", "DE"].includes(country) && (scores.europe >= 100 || lang.startsWith("fr"))) {
+    scores.europe += 80;
   }
 
   // Traditional Dhayam cultural origin baseline
   let bestRegion = "southAsia";
   let maxScore = -1;
-  const regionOrder = ["southAsia", "northAmerica", "southeastAsia", "global"];
+  const regionOrder = ["southAsia", "europe", "northAmerica", "southeastAsia", "global"];
   for (const r of regionOrder) {
     if (scores[r] > maxScore) {
       maxScore = scores[r];

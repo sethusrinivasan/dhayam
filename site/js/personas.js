@@ -29,6 +29,7 @@
         northAmerica: "Emma",
         southAsia: "Kavitha",
         southeastAsia: "Geetha",
+        europe: "Camille",
         global: "Chloe"
       },
       gender: "female",
@@ -52,6 +53,7 @@
         northAmerica: "Olivia",
         southAsia: "Ananya",
         southeastAsia: "Malar",
+        europe: "Manon",
         global: "Elena"
       },
       gender: "female",
@@ -75,6 +77,7 @@
         northAmerica: "Harper",
         southAsia: "Rani",
         southeastAsia: "Malaya",
+        europe: "Elodie",
         global: "Zara"
       },
       gender: "female",
@@ -98,6 +101,7 @@
         northAmerica: "Maya",
         southAsia: "Meera",
         southeastAsia: "Mei",
+        europe: "Ines",
         global: "Aria"
       },
       gender: "female",
@@ -121,6 +125,7 @@
         northAmerica: "Sophia",
         southAsia: "Selvi",
         southeastAsia: "Nur",
+        europe: "Clara",
         global: "Amara"
       },
       gender: "female",
@@ -146,6 +151,7 @@
         northAmerica: "Liam",
         southAsia: "Murugan",
         southeastAsia: "Siva",
+        europe: "Antoine",
         global: "Kai"
       },
       gender: "male",
@@ -169,6 +175,7 @@
         northAmerica: "Ethan",
         southAsia: "Kavin",
         southeastAsia: "Kavi",
+        europe: "Louis",
         global: "Lucas"
       },
       gender: "male",
@@ -192,6 +199,7 @@
         northAmerica: "Mason",
         southAsia: "Arjun",
         southeastAsia: "Dinesh",
+        europe: "Julien",
         global: "Leo"
       },
       gender: "male",
@@ -215,6 +223,7 @@
         northAmerica: "Logan",
         southAsia: "Mani",
         southeastAsia: "Kumaran",
+        europe: "Theo",
         global: "Felix"
       },
       gender: "male",
@@ -238,6 +247,7 @@
         northAmerica: "Noah",
         southAsia: "Vikram",
         southeastAsia: "Wei",
+        europe: "Maxime",
         global: "Gabriel"
       },
       gender: "male",
@@ -272,6 +282,10 @@
       "Siva", "Malar", "Kumaran", "Geetha", "Dinesh",
       "Kavitha", "Ravi", "Suresh", "Letchumi", "Arumugam"
     ],
+    europe: [
+      "Antoine", "Camille", "Louis", "Manon", "Julien",
+      "Elodie", "Theo", "Ines", "Maxime", "Clara"
+    ],
     global: [
       "Maya", "Kai", "Elena", "Liam", "Zara",
       "Aria", "Noah", "Sofia", "Lucas", "Amara"
@@ -284,7 +298,7 @@
    * Set or update client region detected from server handshake
    */
   function setClientRegion(region, details = null) {
-    if (region && ["northAmerica", "southAsia", "southeastAsia", "global"].includes(region)) {
+    if (region && ["northAmerica", "southAsia", "southeastAsia", "europe", "global"].includes(region)) {
       serverDetectedRegion = region;
       if (typeof window !== "undefined") {
         window.DHAYAM_CLIENT_REGION = region;
@@ -304,6 +318,7 @@
       southAsia: 0,
       northAmerica: 0,
       southeastAsia: 0,
+      europe: 0,
       global: 0
     };
 
@@ -322,6 +337,8 @@
         scores.southAsia += 90;
       } else if (offset === -480) {
         scores.southeastAsia += 80;
+      } else if (offset === -60 || offset === -120) {
+        scores.europe += 100; // Central European Time CET (UTC+1) / CEST (UTC+2)
       } else if (offset >= 240 && offset <= 600) {
         scores.northAmerica += 50;
       }
@@ -338,6 +355,13 @@
       ) {
         scores.southAsia += 140;
       } else if (
+        tz.includes("Paris") || tz.includes("Brussels") || tz.includes("Zurich") ||
+        tz.includes("Geneva") || tz.includes("Monaco")
+      ) {
+        scores.europe += 160;
+      } else if (tz.startsWith("Europe/")) {
+        scores.europe += 110;
+      } else if (
         tz.includes("Singapore") || tz.includes("Kuala_Lumpur") || tz.includes("Bangkok") ||
         tz.includes("Jakarta") || tz.includes("Manila") || tz.includes("Ho_Chi_Minh")
       ) {
@@ -347,7 +371,7 @@
       ) {
         scores.northAmerica += 60;
       } else if (
-        tz.startsWith("Europe/") || tz.startsWith("Australia/") || tz.startsWith("Pacific/")
+        tz.startsWith("Australia/") || tz.startsWith("Pacific/")
       ) {
         scores.global += 50;
       }
@@ -364,6 +388,16 @@
       for (const rawLang of langs) {
         const l = String(rawLang || "").toLowerCase().trim();
         if (
+          l.startsWith("fr") || l.includes("-fr")
+        ) {
+          scores.europe += 170;
+          break;
+        } else if (
+          l.startsWith("de") || l.startsWith("es") || l.startsWith("it") || l.startsWith("nl")
+        ) {
+          scores.europe += 110;
+          break;
+        } else if (
           l.startsWith("ta") || l.startsWith("hi") || l.startsWith("te") ||
           l.startsWith("kn") || l.startsWith("ml") || l.startsWith("mr") ||
           l.startsWith("bn") || l.startsWith("gu") || l.startsWith("pa") ||
@@ -387,7 +421,7 @@
 
     let bestRegion = "southAsia"; // Cultural heritage baseline of Dhayam
     let maxScore = -1;
-    const regionOrder = ["southAsia", "northAmerica", "southeastAsia", "global"];
+    const regionOrder = ["southAsia", "europe", "northAmerica", "southeastAsia", "global"];
     for (const r of regionOrder) {
       if (scores[r] > maxScore) {
         maxScore = scores[r];
@@ -408,7 +442,7 @@
     try {
       if (typeof localStorage !== "undefined") {
         const userPref = localStorage.getItem("dhayam_user_region");
-        if (userPref && ["northAmerica", "southAsia", "southeastAsia", "global"].includes(userPref)) {
+        if (userPref && ["northAmerica", "southAsia", "southeastAsia", "europe", "global"].includes(userPref)) {
           return userPref;
         }
       }
@@ -424,7 +458,7 @@
     try {
       if (typeof sessionStorage !== "undefined") {
         const saved = sessionStorage.getItem("dhayam_detected_region");
-        if (saved && ["northAmerica", "southAsia", "southeastAsia", "global"].includes(saved)) {
+        if (saved && ["northAmerica", "southAsia", "southeastAsia", "europe", "global"].includes(saved)) {
           return saved;
         }
       }

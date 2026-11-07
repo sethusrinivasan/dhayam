@@ -882,6 +882,18 @@ REGIONAL_LEADERBOARD_PERSONAS = {
         {"alias": "Mani", "avatar_url": "🐅", "total_score": 184, "games_won": 1, "games_played": 3, "total_captures": 2, "is_computer": 1, "is_fake": 1},
         {"alias": "Selvi", "avatar_url": "🌾", "total_score": 142, "games_won": 1, "games_played": 2, "total_captures": 2, "is_computer": 1, "is_fake": 1},
         {"alias": "Vikram", "avatar_url": "🦅", "total_score": 95, "games_won": 1, "games_played": 2, "total_captures": 1, "is_computer": 1, "is_fake": 1}
+    ],
+    "europe": [
+        {"alias": "Antoine", "avatar_url": "🪔", "total_score": 524, "games_won": 5, "games_played": 7, "total_captures": 9, "is_computer": 1, "is_fake": 1},
+        {"alias": "Camille", "avatar_url": "🪷", "total_score": 462, "games_won": 4, "games_played": 6, "total_captures": 8, "is_computer": 1, "is_fake": 1},
+        {"alias": "Louis", "avatar_url": "🦅", "total_score": 415, "games_won": 4, "games_played": 5, "total_captures": 6, "is_computer": 1, "is_fake": 1},
+        {"alias": "Manon", "avatar_url": "🌺", "total_score": 358, "games_won": 3, "games_played": 5, "total_captures": 5, "is_computer": 1, "is_fake": 1},
+        {"alias": "Julien", "avatar_url": "⚡", "total_score": 312, "games_won": 3, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
+        {"alias": "Elodie", "avatar_url": "🌾", "total_score": 276, "games_won": 2, "games_played": 4, "total_captures": 4, "is_computer": 1, "is_fake": 1},
+        {"alias": "Theo", "avatar_url": "🏹", "total_score": 228, "games_won": 2, "games_played": 3, "total_captures": 3, "is_computer": 1, "is_fake": 1},
+        {"alias": "Ines", "avatar_url": "🦚", "total_score": 184, "games_won": 1, "games_played": 3, "total_captures": 2, "is_computer": 1, "is_fake": 1},
+        {"alias": "Maxime", "avatar_url": "🐅", "total_score": 142, "games_won": 1, "games_played": 2, "total_captures": 2, "is_computer": 1, "is_fake": 1},
+        {"alias": "Clara", "avatar_url": "🐆", "total_score": 95, "games_won": 1, "games_played": 2, "total_captures": 1, "is_computer": 1, "is_fake": 1}
     ]
 }
 

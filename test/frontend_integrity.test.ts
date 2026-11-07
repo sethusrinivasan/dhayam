@@ -357,6 +357,42 @@ test("headless Chrome loads site/index.html with zero runtime exceptions and res
     assert.equal(state.actionBtnDisabled, false, "Expected actionBtn to be enabled for player turn");
     assert.ok(state.statusTitle.length > 0, "Expected statusTitle to have non-empty turn announcement");
 
+    // Multi-Device Responsive Layout Verification across 7 target viewports
+    const targetViewports = [
+      { width: 360, height: 640, deviceScaleFactor: 2, mobile: true },
+      { width: 375, height: 667, deviceScaleFactor: 2, mobile: true },
+      { width: 390, height: 844, deviceScaleFactor: 3, mobile: true },
+      { width: 768, height: 1024, deviceScaleFactor: 2, mobile: false },
+      { width: 1024, height: 768, deviceScaleFactor: 2, mobile: false },
+      { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false },
+      { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false }
+    ];
+
+    for (const vp of targetViewports) {
+      await send("Emulation.setDeviceMetricsOverride", vp);
+      const metrics = await send("Runtime.evaluate", {
+        expression: `(() => {
+          return {
+            scrollWidth: document.documentElement.scrollWidth,
+            innerWidth: window.innerWidth,
+            boardExists: Boolean(document.getElementById('board')),
+            actionBtnExists: Boolean(document.getElementById('actionBtn'))
+          };
+        })()`,
+        returnByValue: true
+      });
+      const vResult = metrics.result.value;
+      assert.ok(
+        vResult.scrollWidth <= vResult.innerWidth + 1,
+        `Horizontal overflow at ${vp.width}x${vp.height}: scrollWidth ${vResult.scrollWidth} > innerWidth ${vResult.innerWidth}`
+      );
+      assert.ok(vResult.boardExists, `Board must be rendered at ${vp.width}x${vp.height}`);
+      assert.ok(vResult.actionBtnExists, `Action button must exist at ${vp.width}x${vp.height}`);
+    }
+
+    // Reset device metrics to default
+    await send("Emulation.clearDeviceMetricsOverride");
+
     await send("Runtime.evaluate", {
       expression: `(() => {
         const menu = document.querySelector('.action-menu');

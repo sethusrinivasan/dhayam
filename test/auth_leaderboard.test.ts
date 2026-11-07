@@ -1369,6 +1369,45 @@ test("regional heuristics: accurately handles Indian VPN connections from US lap
     requestedRegion: "southAsia"
   });
   assert.equal(overrideRegion, "southAsia", "Explicit user override must take highest priority");
+
+  // Case 5: French VPN connection
+  // - Edge IP Country is FR
+  // - Client timezone is Europe/Paris or offset is CET (-60)
+  // - Client language is fr-FR
+  const frRegion = resolveRegionHeuristic({
+    country: "FR",
+    clientTz: "Europe/Paris",
+    lang: "fr-FR",
+    offset: -60
+  });
+  assert.equal(frRegion, "europe", "French VPN with country FR must decisively resolve to europe");
+
+  // Case 6: French language preference on generic European/Global network
+  const frLangRegion = resolveRegionHeuristic({
+    country: "BE",
+    lang: "fr",
+    offset: -60
+  });
+  assert.equal(frLangRegion, "europe", "French language preference must resolve to europe");
+});
+
+test("leaderboard: serves authentic French / European personas for visitors connecting from France", async () => {
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+  IN_MEMORY_DB.users.clear();
+  IN_MEMORY_DB.stats.clear();
+  IN_MEMORY_DB.submissions.clear();
+
+  const frReq = new Request("https://dhayam.cancun.workers.dev/api/leaderboard?country=FR&tz=Europe/Paris&lang=fr-FR");
+  const frRes = await handleAuthAndLeaderboard(frReq, env, new URL(frReq.url));
+  assert.ok(frRes);
+  const frData = await frRes.json();
+  assert.equal(frData.top10.length, 10);
+  assert.equal(frData.detected.region, "europe");
+
+  // In unauthenticated view, aliases are masked ("Ant***", "Cam***", "Lou***", "Man***")
+  const frAliases = frData.top10.map((u: any) => u.alias);
+  assert.ok(frAliases.includes("Ant***") || frAliases.includes("Cam***") || frAliases.includes("Lou***") || frAliases.includes("Man***"),
+    "French visitor must see authentic French personas (Antoine, Camille, Louis, Manon, etc.)");
 });
 
 test("client personas & auth: setRegionPreference and edge handshake sync properly", () => {

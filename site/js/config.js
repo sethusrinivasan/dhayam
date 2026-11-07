@@ -130,10 +130,10 @@
 
       // Authoritative Application Build Metadata: Bumped on every release
       const BUILD_INFO = {
-        version: "0.4.1",
-        build: 7,
-        timestamp: "2026-11-06 13:40 UTC",
-        releaseName: "OAuth Resilient Cross-Origin Session & Leaderboard Polish",
+        version: "0.5.0",
+        build: 8,
+        timestamp: "2026-11-06 17:45 UTC",
+        releaseName: "European & Francophone Regional Personas & Security Polish",
       };
        // Global player-count limits — update here, never hardcode elsewhere
        const MIN_PLAYERS = 2;

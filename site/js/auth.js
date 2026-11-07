@@ -416,6 +416,7 @@
     if (badgeEl && detected) {
       const regionLabels = {
         southAsia: "South Asia (India)",
+        europe: "Europe / France",
         northAmerica: "North America (US/CA)",
         southeastAsia: "Southeast Asia (SG/MY)",
         global: "Global / International"
