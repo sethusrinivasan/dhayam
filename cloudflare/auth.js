@@ -12,8 +12,68 @@
 export const IN_MEMORY_DB = {
   users: new Map(),        // userId -> { id, oauth_provider, oauth_sub, alias, avatar_url, email, last_login }
   stats: new Map(),        // userId -> { user_id, games_played, games_won, total_captures, total_score, updated_at }
-  submissions: new Set()   // matchId
+  submissions: new Set(),  // matchId
+  feedback: new Map()      // feedbackId -> { id, user_id, user_alias, user_email, ip_address, user_agent, feedback_text, category, rating, metadata, created_at }
 };
+
+export const FAKE_LEADERBOARD_ENTRIES = [
+  { alias: "Kavitha", avatar_url: "🪷", total_score: 520, games_won: 5, games_played: 7, total_captures: 9, is_computer: 1, is_fake: 1 },
+  { alias: "Murugan", avatar_url: "🪔", total_score: 460, games_won: 4, games_played: 6, total_captures: 8, is_computer: 1, is_fake: 1 },
+  { alias: "Ananya", avatar_url: "🌺", total_score: 410, games_won: 4, games_played: 5, total_captures: 6, is_computer: 1, is_fake: 1 },
+  { alias: "Kavin", avatar_url: "⚡", total_score: 350, games_won: 3, games_played: 5, total_captures: 5, is_computer: 1, is_fake: 1 },
+  { alias: "Rani", avatar_url: "🐆", total_score: 310, games_won: 3, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+  { alias: "Arjun", avatar_url: "🏹", total_score: 270, games_won: 2, games_played: 4, total_captures: 4, is_computer: 1, is_fake: 1 },
+  { alias: "Meera", avatar_url: "🦚", total_score: 220, games_won: 2, games_played: 3, total_captures: 3, is_computer: 1, is_fake: 1 },
+  { alias: "Mani", avatar_url: "🐅", total_score: 180, games_won: 1, games_played: 3, total_captures: 2, is_computer: 1, is_fake: 1 },
+  { alias: "Selvi", avatar_url: "🌾", total_score: 140, games_won: 1, games_played: 2, total_captures: 2, is_computer: 1, is_fake: 1 },
+  { alias: "Vikram", avatar_url: "🦅", total_score: 90, games_won: 1, games_played: 2, total_captures: 1, is_computer: 1, is_fake: 1 }
+];
+
+export function populateWithFakeEntries(list, targetCount = 10) {
+  if (list.length >= targetCount) {
+    return list.slice(0, targetCount);
+  }
+
+  const existingAliases = new Set(list.map((item) => (item.alias || "").toLowerCase()));
+  const needed = targetCount - list.length;
+  const fillers = [];
+
+  const hasExisting = list.length > 0;
+  const minScore = hasExisting
+    ? Math.min(...list.map((item) => item.total_score || 0))
+    : 550;
+
+  let personaIdx = 0;
+  while (fillers.length < needed && personaIdx < FAKE_LEADERBOARD_ENTRIES.length) {
+    const candidate = FAKE_LEADERBOARD_ENTRIES[personaIdx];
+    personaIdx++;
+    if (existingAliases.has(candidate.alias.toLowerCase())) {
+      continue;
+    }
+
+    const assignedScore = hasExisting
+      ? Math.max(10, minScore - (fillers.length + 1) * 10)
+      : candidate.total_score;
+    const gamesWon = Math.max(1, Math.floor(assignedScore / 100));
+    const gamesPlayed = gamesWon + 1;
+    const totalCaptures = Math.max(1, Math.floor((assignedScore % 100) / 10) || 1);
+
+    fillers.push({
+      alias: candidate.alias,
+      avatar_url: candidate.avatar_url,
+      is_computer: 1,
+      is_fake: 1,
+      total_score: assignedScore,
+      games_won: gamesWon,
+      games_played: gamesPlayed,
+      total_captures: totalCaptures
+    });
+  }
+
+  const combined = [...list, ...fillers];
+  combined.sort((a, b) => (b.total_score - a.total_score) || (b.games_won - a.games_won));
+  return combined.slice(0, targetCount);
+}
 
 export function getAuthCorsHeaders(request) {
   const origin = (request && request.headers.get("Origin")) || "";
@@ -466,6 +526,63 @@ export async function handleAuthAndLeaderboard(request, env, url) {
     }
   }
 
+  // 10. User Feedback: /api/feedback
+  if (url.pathname === "/api/feedback") {
+    if (request.method === "POST") {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers: cors });
+      }
+
+      const feedbackText = String(body.feedback || body.feedback_text || "").trim();
+      if (!feedbackText) {
+        return new Response(JSON.stringify({ error: "Feedback text is required and cannot be empty" }), { status: 400, headers: cors });
+      }
+      if (feedbackText.length > 3000) {
+        return new Response(JSON.stringify({ error: "Feedback text is too long (maximum 3000 characters)" }), { status: 400, headers: cors });
+      }
+
+      const session = await verifySessionToken(token, secret);
+      const userId = session ? session.userId : (body.userId || null);
+      const userAlias = session ? session.alias : (body.userAlias || body.alias || "Anonymous Player");
+      const userEmail = session ? session.email : (body.userEmail || body.email || null);
+
+      const ipAddress = request.headers.get("CF-Connecting-IP") ||
+                        request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ||
+                        request.headers.get("X-Real-IP") ||
+                        "127.0.0.1";
+      const userAgent = request.headers.get("User-Agent") || "";
+
+      const result = await submitFeedback(env, {
+        userId,
+        userAlias,
+        userEmail,
+        feedbackText,
+        category: body.category || "general",
+        rating: body.rating,
+        metadata: body.metadata,
+        ipAddress,
+        userAgent
+      });
+
+      return new Response(JSON.stringify({
+        ok: true,
+        id: result.feedback.id,
+        message: "Thank you for your feedback!",
+        timestamp: result.feedback.created_at,
+        feedback: result.feedback
+      }), { status: 201, headers: cors });
+    }
+
+    if (request.method === "GET") {
+      const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+      const res = await getFeedback(env, limit);
+      return new Response(JSON.stringify(res), { headers: cors });
+    }
+  }
+
   return null; // Not an auth/leaderboard route, pass to next worker handler
 }
 
@@ -588,25 +705,50 @@ async function getLeaderboard(env, currentUserId) {
     `).first();
     const realHumanCount = realCountRow ? (realCountRow.count || 0) : 0;
 
-    // Only exception case: if total real users in system is less than 10, bring in computer's scores
-    const filterSql = realHumanCount >= 10 ? "WHERE (u.is_computer = 0 OR u.is_computer IS NULL)" : "";
+    let rows = [];
+    if (realHumanCount >= 10) {
+      // Real human users >= 10: strictly exclude computer players & fake entries
+      const topRows = await env.DB.prepare(`
+        SELECT 
+          u.alias,
+          u.avatar_url,
+          u.is_computer,
+          ps.total_score,
+          ps.games_won,
+          ps.games_played,
+          ps.total_captures
+        FROM player_stats ps
+        JOIN users u ON ps.user_id = u.id
+        WHERE (u.is_computer = 0 OR u.is_computer IS NULL) AND ps.games_played > 0
+        ORDER BY ps.total_score DESC, ps.games_won DESC
+        LIMIT 10
+      `).all();
+      rows = topRows.results || [];
+    } else {
+      // Real human users < 10: bring in real players and recorded computer players
+      const allRows = await env.DB.prepare(`
+        SELECT 
+          u.alias,
+          u.avatar_url,
+          u.is_computer,
+          ps.total_score,
+          ps.games_won,
+          ps.games_played,
+          ps.total_captures
+        FROM player_stats ps
+        JOIN users u ON ps.user_id = u.id
+        WHERE ps.games_played > 0
+        ORDER BY ps.total_score DESC, ps.games_won DESC
+        LIMIT 10
+      `).all();
+      // If not fully populated with 10 entries, fill in with fake entries; as real user entries are added, fake entries reduce
+      rows = populateWithFakeEntries(allRows.results || [], 10);
+    }
 
-    const topRows = await env.DB.prepare(`
-      SELECT 
-        u.alias,
-        u.avatar_url,
-        u.is_computer,
-        ps.total_score,
-        ps.games_won,
-        ps.games_played,
-        ps.total_captures,
-        ROW_NUMBER() OVER (ORDER BY ps.total_score DESC, ps.games_won DESC) AS rank
-      FROM player_stats ps
-      JOIN users u ON ps.user_id = u.id
-      ${filterSql}
-      ORDER BY ps.total_score DESC, ps.games_won DESC
-      LIMIT 10
-    `).all();
+    const top10 = rows.slice(0, 10).map((item, idx) => ({
+      ...item,
+      rank: idx + 1
+    }));
 
     let currentUser = null;
     if (currentUserId) {
@@ -616,7 +758,7 @@ async function getLeaderboard(env, currentUserId) {
                  ROW_NUMBER() OVER (ORDER BY total_score DESC, games_won DESC) AS global_rank
           FROM player_stats ps
           JOIN users u ON ps.user_id = u.id
-          ${filterSql}
+          ${realHumanCount >= 10 ? "WHERE (u.is_computer = 0 OR u.is_computer IS NULL)" : ""}
         )
         SELECT r.global_rank, r.total_score, r.games_won, r.total_captures, u.alias, u.avatar_url, u.is_computer
         FROM ranked r
@@ -626,14 +768,14 @@ async function getLeaderboard(env, currentUserId) {
       currentUser = userRank || null;
     }
 
-    return { top10: topRows.results || [], currentUser };
+    return { top10, currentUser };
   }
 
   // In-memory fallback
   const list = [];
   for (const [uid, stats] of IN_MEMORY_DB.stats.entries()) {
     const user = IN_MEMORY_DB.users.get(uid);
-    if (user) {
+    if (user && stats.games_played > 0) {
       list.push({
         alias: user.alias,
         avatar_url: user.avatar_url,
@@ -648,24 +790,29 @@ async function getLeaderboard(env, currentUserId) {
 
   // Check total real human users
   const realHumanCount = list.filter((item) => !item.is_computer && item.games_played > 0).length;
-  // If real users >= 10, bring ONLY human users. If < 10, bring in computer scores as well.
-  const filteredList = realHumanCount >= 10
+  // If real users >= 10, bring ONLY human users. If < 10, bring in computer scores and fill up to 10 with fake entries.
+  const baseList = realHumanCount >= 10
     ? list.filter((item) => !item.is_computer)
     : [...list];
 
-  filteredList.sort((a, b) => (b.total_score - a.total_score) || (b.games_won - a.games_won));
+  baseList.sort((a, b) => (b.total_score - a.total_score) || (b.games_won - a.games_won));
+
+  const filteredList = realHumanCount >= 10
+    ? baseList.slice(0, 10)
+    : populateWithFakeEntries(baseList, 10);
+
   const top10 = filteredList.slice(0, 10).map((item, idx) => ({ ...item, rank: idx + 1 }));
 
   let currentUser = null;
   if (currentUserId && IN_MEMORY_DB.users.has(currentUserId)) {
     const user = IN_MEMORY_DB.users.get(currentUserId);
     const stats = IN_MEMORY_DB.stats.get(currentUserId);
-    const rankIdx = filteredList.findIndex((item) => item.alias === user.alias);
+    const rankIdx = top10.findIndex((item) => item.alias === user.alias);
     currentUser = {
-      global_rank: rankIdx >= 0 ? rankIdx + 1 : filteredList.length + 1,
-      total_score: stats.total_score,
-      games_won: stats.games_won,
-      total_captures: stats.total_captures,
+      global_rank: rankIdx >= 0 ? rankIdx + 1 : (realHumanCount + 1),
+      total_score: stats ? stats.total_score : 0,
+      games_won: stats ? stats.games_won : 0,
+      total_captures: stats ? stats.total_captures : 0,
       alias: user.alias,
       avatar_url: user.avatar_url,
       is_computer: user.is_computer ? 1 : 0
@@ -673,6 +820,78 @@ async function getLeaderboard(env, currentUserId) {
   }
 
   return { top10, currentUser };
+}
+
+async function submitFeedback(env, {
+  userId = null,
+  userAlias = "Anonymous Player",
+  userEmail = null,
+  feedbackText,
+  category = "general",
+  rating = null,
+  metadata = null,
+  ipAddress = "127.0.0.1",
+  userAgent = ""
+}) {
+  const id = "fb_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+  const createdAt = Math.floor(Date.now() / 1000);
+  const cleanAlias = sanitizeAlias(userAlias);
+  const cleanText = String(feedbackText || "").trim();
+  const cleanCategory = String(category || "general").slice(0, 50);
+  const numRating = typeof rating === "number" && !isNaN(rating) ? Math.max(1, Math.min(5, Math.floor(rating))) : null;
+
+  const record = {
+    id,
+    user_id: userId || null,
+    user_alias: cleanAlias,
+    user_email: userEmail ? String(userEmail).slice(0, 120) : null,
+    ip_address: ipAddress || "127.0.0.1",
+    user_agent: userAgent ? String(userAgent).slice(0, 256) : "",
+    feedback_text: cleanText,
+    category: cleanCategory,
+    rating: numRating,
+    metadata: typeof metadata === "object" ? JSON.stringify(metadata) : (metadata ? String(metadata) : null),
+    created_at: createdAt
+  };
+
+  if (env && env.DB) {
+    await env.DB.prepare(`
+      INSERT INTO user_feedback (id, user_id, user_alias, user_email, ip_address, user_agent, feedback_text, category, rating, metadata, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      record.id,
+      record.user_id,
+      record.user_alias,
+      record.user_email,
+      record.ip_address,
+      record.user_agent,
+      record.feedback_text,
+      record.category,
+      record.rating,
+      record.metadata,
+      record.created_at
+    ).run();
+  }
+
+  IN_MEMORY_DB.feedback.set(id, record);
+  return { ok: true, feedback: record };
+}
+
+async function getFeedback(env, limit = 20) {
+  const maxLimit = Math.max(1, Math.min(100, parseInt(limit || 20, 10)));
+  if (env && env.DB) {
+    const rows = await env.DB.prepare(`
+      SELECT id, user_id, user_alias, user_email, ip_address, user_agent, feedback_text, category, rating, metadata, created_at
+      FROM user_feedback
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).bind(maxLimit).all();
+    return { ok: true, feedback: rows.results || [] };
+  }
+
+  const list = Array.from(IN_MEMORY_DB.feedback.values());
+  list.sort((a, b) => b.created_at - a.created_at);
+  return { ok: true, feedback: list.slice(0, maxLimit) };
 }
 
 async function recordMatch(env, { matchId, userId, isWinner, captures, turns, score }) {
@@ -736,6 +955,8 @@ export {
   upsertUser,
   recordComputerMatch,
   getLeaderboard,
+  submitFeedback,
+  getFeedback,
   recordMatch,
   getUserAndRank
 };

@@ -15,7 +15,11 @@ import {
   IN_MEMORY_DB,
   upsertUser,
   recordComputerMatch,
-  getLeaderboard
+  getLeaderboard,
+  submitFeedback,
+  getFeedback,
+  FAKE_LEADERBOARD_ENTRIES,
+  populateWithFakeEntries
 } from "../cloudflare/auth.js";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
@@ -291,12 +295,15 @@ function createClientSandbox(mockLocalStorage: any, fetchHandler?: Function) {
             remove(c: string) { this.classes.delete(c); },
             contains(c: string) { return this.classes.has(c); }
           },
+          style: {},
           setAttribute() {},
           removeAttribute() {},
           innerHTML: "",
           textContent: "",
+          value: "",
           appendChild() {},
-          addEventListener: () => {}
+          addEventListener: () => {},
+          focus: () => {}
         });
       }
       return elements.get(id);
@@ -307,20 +314,30 @@ function createClientSandbox(mockLocalStorage: any, fetchHandler?: Function) {
       innerHTML: "",
       style: {},
       setAttribute() {},
-      appendChild() {}
+      appendChild() {},
+      focus: () => {}
     }),
     addEventListener: () => {}
   };
+
+  const storageObj = mockLocalStorage && typeof mockLocalStorage.getItem === "function"
+    ? mockLocalStorage
+    : {
+        getItem: (key: string) => mockLocalStorage?.[key] ?? null,
+        setItem: (key: string, val: string) => { if (mockLocalStorage) mockLocalStorage[key] = String(val); },
+        removeItem: (key: string) => { if (mockLocalStorage) delete mockLocalStorage[key]; },
+        clear: () => { for (const k in mockLocalStorage) delete mockLocalStorage[k]; }
+      };
 
   const sandbox: any = {
     window: {
       location: { origin: "https://sethusrinivasan.github.io", pathname: "/dhayam/", search: "", hash: "" },
       history: { replaceState: () => {} },
       addEventListener: () => {},
-      localStorage: mockLocalStorage
+      localStorage: storageObj
     },
     document: documentMock,
-    localStorage: mockLocalStorage,
+    localStorage: storageObj,
     URLSearchParams: globalThis.URLSearchParams,
     fetch: fetchHandler || (async () => ({ ok: true, status: 200, json: async () => ({ user: null }) })),
     setTimeout: (fn: Function) => fn(),
@@ -842,8 +859,8 @@ test("leaderboard: brings in computer player scores when total real human users 
   // Query leaderboard
   const { top10 } = await getLeaderboard(env, null);
 
-  // Since total real human users = 3 (< 10), computer scores are included
-  assert.equal(top10.length, 5);
+  // Since total real human users = 3 (< 10), computer scores are included and filled to 10 entries with fake entries
+  assert.equal(top10.length, 10);
   const botAliases = top10.map((u) => u.alias);
   assert.ok(botAliases.includes("Maya"), "Maya bot should be in leaderboard when real users < 10");
   assert.ok(botAliases.includes("Ashwin"), "Ashwin bot should be in leaderboard when real users < 10");
@@ -943,4 +960,232 @@ test("curious non-tech copy: rolling status states 'rolling via global arbitrato
   assert.ok(appContent.includes("Local Game Simulation"));
   assert.ok(appContent.includes("Local Game"));
   assert.ok(!appContent.includes("Real Cloudflare Online Match"));
+});
+
+test("leaderboard: fills in with fake entries when < 10 and reduces fake entries as real users join", async () => {
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+
+  // Case 0: 0 real users in DB
+  IN_MEMORY_DB.users.clear();
+  IN_MEMORY_DB.stats.clear();
+  IN_MEMORY_DB.submissions.clear();
+
+  const emptyRes = await getLeaderboard(env, null);
+  assert.equal(emptyRes.top10.length, 10, "Leaderboard must be fully populated with 10 entries when empty");
+  assert.ok(emptyRes.top10.every((u) => u.is_computer === 1 || u.is_fake === 1), "All 10 must be fake entries");
+  assert.equal(emptyRes.top10[0].rank, 1);
+  assert.equal(emptyRes.top10[9].rank, 10);
+
+  // Progressive addition of real users: 1 to 10
+  for (let realCount = 1; realCount <= 10; realCount++) {
+    const uid = `human_player_${realCount}`;
+    await upsertUser(env, {
+      id: uid,
+      provider: "google",
+      sub: `sub_real_${realCount}`,
+      alias: `User${realCount}`,
+      avatarUrl: "👤",
+      isComputer: 0
+    });
+    IN_MEMORY_DB.stats.set(uid, {
+      user_id: uid,
+      games_played: 1,
+      games_won: 1,
+      total_captures: 2,
+      total_score: 500 + realCount * 10,
+      updated_at: Date.now()
+    });
+
+    const currentRes = await getLeaderboard(env, null);
+    assert.equal(currentRes.top10.length, 10, `Leaderboard must always have 10 entries at realCount=${realCount}`);
+
+    const realInLeaderboard = currentRes.top10.filter((u) => !u.is_computer && !u.is_fake);
+    const fakeInLeaderboard = currentRes.top10.filter((u) => u.is_computer === 1 || u.is_fake === 1);
+
+    assert.equal(realInLeaderboard.length, realCount, `Expected exactly ${realCount} real user entries`);
+    assert.equal(fakeInLeaderboard.length, 10 - realCount, `Expected fake entries reduced to ${10 - realCount}`);
+  }
+
+  // Once 10 real users are in, fake entries are 0
+  const fullRes = await getLeaderboard(env, null);
+  assert.equal(fullRes.top10.length, 10);
+  assert.equal(fullRes.top10.filter((u) => u.is_fake || u.is_computer).length, 0, "Fake entries must be completely reduced to 0");
+});
+
+test("feedback durable table: stores user feedback with timestamp, user details, and IP address", async () => {
+  const env = { AUTH_JWT_SECRET: TEST_SECRET };
+  IN_MEMORY_DB.feedback.clear();
+
+  // 1. Authenticated user feedback submission
+  const userId = "usr_feedback_tester";
+  const sessionToken = await createSessionToken({
+    userId,
+    alias: "Priya",
+    avatarUrl: "https://example.com/priya.png",
+    provider: "google",
+    email: "priya@example.com",
+    exp: Math.floor(Date.now() / 1000) + 3600
+  }, TEST_SECRET);
+
+  const req = new Request("https://dhayam.cancun.workers.dev/api/feedback", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`,
+      "CF-Connecting-IP": "198.51.100.42",
+      "User-Agent": "Mozilla/5.0 (DhayamTestBrowser)"
+    },
+    body: JSON.stringify({
+      feedback: "The 3D tumbling dice physics feel authentic and smooth! Love the Diwali theme.",
+      category: "general",
+      rating: 5
+    })
+  });
+
+  const res = await handleAuthAndLeaderboard(req, env, new URL(req.url));
+  assert.ok(res);
+  assert.equal(res.status, 201);
+  const data = await res.json();
+  assert.equal(data.ok, true);
+  assert.ok(data.id.startsWith("fb_"));
+  assert.ok(data.timestamp > 0);
+
+  // Verify durable storage record
+  const saved = IN_MEMORY_DB.feedback.get(data.id);
+  assert.ok(saved, "Feedback must be saved in durable table");
+  assert.equal(saved.user_id, userId);
+  assert.equal(saved.user_alias, "Priya");
+  assert.equal(saved.user_email, "priya@example.com");
+  assert.equal(saved.ip_address, "198.51.100.42");
+  assert.equal(saved.user_agent, "Mozilla/5.0 (DhayamTestBrowser)");
+  assert.equal(saved.category, "general");
+  assert.equal(saved.rating, 5);
+  assert.equal(saved.feedback_text, "The 3D tumbling dice physics feel authentic and smooth! Love the Diwali theme.");
+  assert.equal(saved.created_at, data.timestamp);
+
+  // 2. Anonymous feedback submission
+  const anonReq = new Request("https://dhayam.cancun.workers.dev/api/feedback", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Forwarded-For": "203.0.113.19",
+      "User-Agent": "MobileSafari/604.1"
+    },
+    body: JSON.stringify({
+      feedback: "Please add an option to play with 8 players on tablet view.",
+      category: "rules",
+      userAlias: "Gamer99"
+    })
+  });
+
+  const anonRes = await handleAuthAndLeaderboard(anonReq, env, new URL(anonReq.url));
+  assert.ok(anonRes);
+  assert.equal(anonRes.status, 201);
+  const anonData = await anonRes.json();
+  assert.equal(anonData.ok, true);
+
+  const anonSaved = IN_MEMORY_DB.feedback.get(anonData.id);
+  assert.ok(anonSaved);
+  assert.equal(anonSaved.user_id, null);
+  assert.equal(anonSaved.user_alias, "Gamer99");
+  assert.equal(anonSaved.ip_address, "203.0.113.19");
+  assert.equal(anonSaved.category, "rules");
+
+  // 3. Rejects empty feedback
+  const emptyReq = new Request("https://dhayam.cancun.workers.dev/api/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ feedback: "   " })
+  });
+  const emptyRes = await handleAuthAndLeaderboard(emptyReq, env, new URL(emptyReq.url));
+  assert.equal(emptyRes.status, 400);
+
+  // 4. GET /api/feedback retrieves stored feedback list
+  const getReq = new Request("https://dhayam.cancun.workers.dev/api/feedback?limit=10");
+  const getRes = await handleAuthAndLeaderboard(getReq, env, new URL(getReq.url));
+  assert.equal(getRes.status, 200);
+  const getJson = await getRes.json();
+  assert.equal(getJson.ok, true);
+  assert.ok(Array.isArray(getJson.feedback));
+  assert.equal(getJson.feedback.length, 2);
+});
+
+test("client auth: feedback modal interactions and form submission", async () => {
+  const mockStorage: Record<string, string> = {};
+  let postedPayload: any = null;
+
+  const mockFetch = async (url: string, options: any = {}) => {
+    if (url.includes("/api/feedback") && options.method === "POST") {
+      postedPayload = JSON.parse(options.body);
+      return {
+        ok: true,
+        status: 201,
+        json: async () => ({
+          ok: true,
+          id: "fb_mock_123",
+          message: "Thank you for your feedback!",
+          timestamp: Math.floor(Date.now() / 1000)
+        })
+      };
+    }
+    return { ok: true, json: async () => ({}) };
+  };
+
+  const sandbox = createClientSandbox(mockStorage, mockFetch);
+  const authCode = fs.readFileSync(AUTH_JS_PATH, "utf-8");
+  vm.createContext(sandbox);
+  vm.runInContext(authCode, sandbox);
+
+  const DhayamAuth = sandbox.DhayamAuth;
+  assert.ok(DhayamAuth);
+  assert.equal(typeof DhayamAuth.openFeedbackModal, "function");
+  assert.equal(typeof DhayamAuth.closeFeedbackModal, "function");
+  assert.equal(typeof DhayamAuth.submitFeedbackForm, "function");
+
+  // Open modal
+  DhayamAuth.openFeedbackModal();
+  const modalBack = sandbox.document.getElementById("feedbackModalBack");
+  assert.ok(modalBack.classList.contains("open"));
+
+  // Submit feedback
+  const textEl = sandbox.document.getElementById("feedbackText");
+  const catEl = sandbox.document.getElementById("feedbackCategory");
+  textEl.value = "Great multiplayer experience!";
+  catEl.value = "multiplayer";
+
+  await DhayamAuth.submitFeedbackForm();
+  assert.ok(postedPayload);
+  assert.equal(postedPayload.feedback, "Great multiplayer experience!");
+  assert.equal(postedPayload.category, "multiplayer");
+
+  // Close modal
+  DhayamAuth.closeFeedbackModal();
+  assert.equal(modalBack.classList.contains("open"), false);
+});
+
+test("social sharing: succinct, exciting text without meaningless player-specific phrases", () => {
+  const appJsPath = path.join(ROOT_DIR, "site", "js", "app.js");
+  const appContent = fs.readFileSync(appJsPath, "utf-8");
+
+  // Must NOT include player placeholder phrases
+  assert.ok(!appContent.includes("can you take the lead?"));
+  assert.ok(!appContent.includes("Ashiwin"));
+  assert.ok(!appContent.includes("${activePlayer.name}'s turn"));
+
+  // Must include meaningful, exciting text
+  assert.ok(appContent.includes("Roll the brass dice"));
+  assert.ok(appContent.includes("Strike rivals and race to victory"));
+
+  // Verify index.html Open Graph and Twitter Card tags
+  const indexHtmlPath = path.join(ROOT_DIR, "site", "index.html");
+  const htmlContent = fs.readFileSync(indexHtmlPath, "utf-8");
+
+  assert.ok(htmlContent.includes('property="og:image" content="https://sethusrinivasan.github.io/dhayam/assets/preview.png"'));
+  assert.ok(htmlContent.includes('name="twitter:image" content="https://sethusrinivasan.github.io/dhayam/assets/preview.png"'));
+  assert.ok(htmlContent.includes('name="twitter:card" content="summary_large_image"'));
+  assert.ok(htmlContent.includes('property="og:image:width" content="1200"'));
+  assert.ok(htmlContent.includes('property="og:image:height" content="630"'));
+  assert.ok(htmlContent.includes('rel="icon" type="image/svg+xml" href="favicon.svg"'));
+  assert.ok(htmlContent.includes('rel="shortcut icon" href="favicon.ico"'));
+  assert.ok(!htmlContent.includes("Dhayam (Dhayam (Dhayam))"));
 });

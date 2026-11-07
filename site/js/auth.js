@@ -634,23 +634,157 @@
     return { ok: true, stats: currentStats };
   }
 
+  // ─── User Feedback Handlers ──────────────────────────────────────────────────
+
+  function openFeedbackModal() {
+    const modalBack = document.getElementById("feedbackModalBack");
+    if (!modalBack) return;
+
+    modalBack.classList.add("open");
+    modalBack.removeAttribute("hidden");
+
+    const userHint = document.getElementById("feedbackUserHint");
+    if (userHint) {
+      userHint.textContent = currentUser
+        ? "Signed in as " + currentUser.alias
+        : "Submitting as Guest";
+    }
+
+    const statusEl = document.getElementById("feedbackStatus");
+    if (statusEl) {
+      if (statusEl.style) statusEl.style.display = "none";
+      statusEl.textContent = "";
+      statusEl.className = "";
+    }
+
+    const textEl = document.getElementById("feedbackText");
+    if (textEl && typeof textEl.focus === "function") {
+      textEl.focus();
+    }
+  }
+
+  function closeFeedbackModal() {
+    const modalBack = document.getElementById("feedbackModalBack");
+    if (modalBack) {
+      modalBack.classList.remove("open");
+      modalBack.setAttribute("hidden", "");
+    }
+  }
+
+  async function submitFeedback(payload) {
+    const res = await fetch(API_BASE + "/api/feedback", {
+      method: "POST",
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
+      credentials: "include",
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to submit feedback");
+    }
+    return data;
+  }
+
+  async function submitFeedbackForm() {
+    const textEl = document.getElementById("feedbackText");
+    const categoryEl = document.getElementById("feedbackCategory");
+    const statusEl = document.getElementById("feedbackStatus");
+    const submitBtn = document.getElementById("feedbackSubmitBtn");
+
+    const text = textEl ? textEl.value.trim() : "";
+    const category = categoryEl ? categoryEl.value : "general";
+
+    if (!text) {
+      if (statusEl) {
+        if (statusEl.style) {
+          statusEl.style.display = "block";
+          statusEl.style.color = "#f87171";
+        }
+        statusEl.textContent = "Please write a message before submitting.";
+      }
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Sending...";
+    }
+    if (statusEl && statusEl.style) {
+      statusEl.style.display = "none";
+    }
+
+    try {
+      await submitFeedback({
+        feedback: text,
+        category: category,
+        userAlias: currentUser ? currentUser.alias : "Anonymous Player",
+        userEmail: currentUser ? currentUser.email : null
+      });
+
+      if (statusEl) {
+        if (statusEl.style) {
+          statusEl.style.display = "block";
+          statusEl.style.color = "#4ade80";
+        }
+        statusEl.textContent = "✓ Thank you! Your feedback has been recorded.";
+      }
+      if (textEl) {
+        textEl.value = "";
+      }
+      const charCountEl = document.getElementById("feedbackCharCount");
+      if (charCountEl) {
+        charCountEl.textContent = "0 / 2000";
+      }
+
+      setTimeout(() => {
+        closeFeedbackModal();
+      }, 1200);
+    } catch (err) {
+      if (statusEl) {
+        statusEl.style.display = "block";
+        statusEl.style.color = "#f87171";
+        statusEl.textContent = err.message || "Failed to submit feedback. Please try again.";
+      }
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Send Feedback";
+      }
+    }
+  }
+
   // Initialize UI hooks on load
   function init() {
     const leaderboardBtn = document.getElementById("leaderboardBtn");
     const menuLeaderboardBtn = document.getElementById("menuLeaderboardBtn");
     const authPill = document.getElementById("authPill");
     const menuAuthBtn = document.getElementById("menuAuthBtn");
+    const feedbackBtn = document.getElementById("feedbackBtn");
+    const menuFeedbackBtn = document.getElementById("menuFeedbackBtn");
+    const feedbackText = document.getElementById("feedbackText");
 
     if (leaderboardBtn) leaderboardBtn.addEventListener("click", openLeaderboard);
     if (menuLeaderboardBtn) menuLeaderboardBtn.addEventListener("click", openLeaderboard);
     if (authPill) authPill.addEventListener("click", openAuthModal);
     if (menuAuthBtn) menuAuthBtn.addEventListener("click", openAuthModal);
+    if (feedbackBtn) feedbackBtn.addEventListener("click", openFeedbackModal);
+    if (menuFeedbackBtn) menuFeedbackBtn.addEventListener("click", openFeedbackModal);
+
+    if (feedbackText) {
+      feedbackText.addEventListener("input", function () {
+        const countEl = document.getElementById("feedbackCharCount");
+        if (countEl) {
+          countEl.textContent = feedbackText.value.length + " / 2000";
+        }
+      });
+    }
 
     // Escape key to close modals
     window.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
         closeLeaderboard();
         closeAuthModal();
+        closeFeedbackModal();
       }
     });
 
@@ -703,6 +837,10 @@
     closeLeaderboard: closeLeaderboard,
     openAuthModal: openAuthModal,
     closeAuthModal: closeAuthModal,
+    openFeedbackModal: openFeedbackModal,
+    closeFeedbackModal: closeFeedbackModal,
+    submitFeedbackForm: submitFeedbackForm,
+    submitFeedback: submitFeedback,
     signInGoogle: signInGoogle,
     signInGitHub: signInGitHub,
     logout: logout,

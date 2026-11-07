@@ -2,7 +2,7 @@
 
 [![Play live](https://img.shields.io/badge/Play%20live-Cloudflare-f38020?logo=cloudflare&logoColor=white)](https://dhayam.cancun.workers.dev)
 [![GitHub Pages mirror](https://img.shields.io/badge/GitHub%20Pages-mirror-d88a3e?logo=githubpages&logoColor=white)](https://sethusrinivasan.github.io/dhayam/)
-[![Tests](https://img.shields.io/badge/tests-82%20passing-brightgreen.svg)](https://github.com/sethusrinivasan/dhayam/actions)
+[![Tests](https://img.shields.io/badge/tests-146%20passing-brightgreen.svg)](https://github.com/sethusrinivasan/dhayam/actions)
 [![License](https://img.shields.io/badge/license-MIT-8a2be2)](LICENSE)
 
 An open-source web version of **Dhayam**, a Tamil race-and-capture board game. Play locally, against the computer, or online through Cloudflare Durable Objects and WebSockets.
@@ -16,10 +16,13 @@ The browser client is a static, zero-runtime-dependency application. The authori
 - Solo, pass-and-play, and synchronized online matches for **2–32 players**
 - 14 dynamic themes with festival aesthetics, custom tokens, and motifs (Diwali, Pongal, Dasara, Holi, Eid, Christmas, Hanukkah, Halloween, Heritage Wood, Royal Bronze, Midnight Nebula, Wall Street, and US Elections)
 - Cryptographic dice randomness with optional user-supplied roll secret salt
+- Global Hall of Champions leaderboard with Google/GitHub OAuth, automatic 10-player population with realistic computer entries and dynamic reduction as real players join
+- In-game player feedback dialog and durable database table capturing feedback text, timestamp, user details, and IP address
+- Optimized social media sharing preview cards with rich board thumbnail and succinct messaging
 - White-label single-script embed integration (`/embed/v1/embed.js`) for partner sites
 - Reconnection grace period, automatic retry, turn auto-pass, and WebSocket join rate limiting
 - Accessible responsive UI, full keyboard controls (Space/R to roll, M/Enter to move, 1–6 for piece selection, N for solo match, Esc/X to exit), optional hands-free voice command recognition, animated 3D brass dice, piece destination highlights, voice commentary, scoring, and ordered audit events
-- Full MCP catalog for legal moves, summaries, audit logs, tactical evaluation, AI turns, and headless simulations
+- Full MCP catalog across Cloudflare Edge HTTP and Python stdio for state inspection, tactical evaluation, automated AI turns, leaderboard rankings, and feedback auditing
 
 ## How to Play & Controls
 

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3b281c"/>
+      <stop offset="100%" stop-color="#1f140e"/>
+    </radialGradient>
+    <linearGradient id="brass1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe699"/>
+      <stop offset="50%" stop-color="#d4af37"/>
+      <stop offset="100%" stop-color="#aa8214"/>
+    </linearGradient>
+    <linearGradient id="brass2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd56b"/>
+      <stop offset="50%" stop-color="#b8860b"/>
+      <stop offset="100%" stop-color="#8c6206"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Badge -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)" stroke="#d4af37" stroke-width="16"/>
+  <circle cx="256" cy="256" r="216" fill="none" stroke="#8c6239" stroke-width="4" stroke-dasharray="8 6"/>
+
+  <!-- Left Brass Die -->
+  <rect x="160" y="90" width="70" height="330" rx="18" fill="url(#brass1)" stroke="#ffe699" stroke-width="6"/>
+  <!-- Pips -->
+  <circle cx="195" cy="140" r="10" fill="#251a14"/>
+  <circle cx="195" cy="200" r="10" fill="#251a14"/>
+  <circle cx="195" cy="260" r="10" fill="#251a14"/>
+  <circle cx="195" cy="320" r="10" fill="#251a14"/>
+  <circle cx="195" cy="380" r="10" fill="#251a14"/>
+
+  <!-- Right Brass Die -->
+  <rect x="282" y="90" width="70" height="330" rx="18" fill="url(#brass2)" stroke="#ffd56b" stroke-width="6"/>
+  <!-- Pips (Center single pip = Dhayam / 1) -->
+  <circle cx="317" cy="170" r="10" fill="#251a14"/>
+  <circle cx="317" cy="255" r="12" fill="#e11d48" stroke="#ffe699" stroke-width="2"/>
+  <circle cx="317" cy="340" r="10" fill="#251a14"/>
+</svg>

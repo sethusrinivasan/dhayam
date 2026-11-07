@@ -333,15 +333,12 @@
       window.requestWithdrawal = requestWithdrawal;
       window.executeWithdrawal = executeWithdrawal;
       function openShareModal() {
-        const shareUrl = window.location.href.split("#")[0];
-        const currentGame = typeof game !== "undefined" ? game : null;
-        const activePlayer = currentGame?.players?.[currentGame.current];
+        let shareUrl = window.location.href.split("#")[0];
+        if (!shareUrl.startsWith("http://") && !shareUrl.startsWith("https://") || shareUrl.includes("localhost") || shareUrl.includes("127.0.0.1")) {
+          shareUrl = "https://sethusrinivasan.github.io/dhayam/";
+        }
         const shareTitle = "🪔 Dhayam — Ancient Tamil Board Game";
-        const shareCaption = [
-          "🪔 Dhayam — an ancient Tamil race-and-capture game.",
-          "Roll. Capture. Reach the center.",
-          activePlayer ? `🎲 ${activePlayer.name}'s turn — can you take the lead?` : "Play solo or challenge your friends.",
-        ].join("\n");
+        const shareCaption = "🎲 Roll the brass dice. Strike rivals and race to victory in Dhayam — the ancient Tamil strategy game!";
         const shareText = `${shareCaption}\nPlay now: ${shareUrl}`;
         const shareMessage = shareText;
         const encodedText = encodeURIComponent(shareCaption);
@@ -367,6 +364,7 @@
             '<div class="share-secondary-actions">' +
               '<button type="button" class="btn secondary" id="nativeShareBtn">📤 Share from device</button>' +
               '<button type="button" class="btn secondary" id="copyShareTextBtn">📋 Copy text</button>' +
+              '<button type="button" class="btn secondary" id="shareFeedbackBtn">💬 Send feedback</button>' +
             '</div>' +
             '<p class="share-note" id="shareFeedback" aria-live="polite">Instagram does not support prefilled web posts, so its button copies the preview and opens Instagram.</p>' +
             '<textarea class="share-copy-source" aria-hidden="true" tabindex="-1">' + preview + '</textarea>' +
@@ -408,6 +406,15 @@
           window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
         };
         $("copyShareTextBtn").onclick = () => copyShareText();
+        const shareFeedbackBtn = $("shareFeedbackBtn");
+        if (shareFeedbackBtn) {
+          shareFeedbackBtn.onclick = () => {
+            $("modalCancel")?.click();
+            if (window.DhayamAuth && typeof window.DhayamAuth.openFeedbackModal === "function") {
+              window.DhayamAuth.openFeedbackModal();
+            }
+          };
+        }
         $("nativeShareBtn").onclick = async () => {
           if (!navigator.share) {
             setFeedback("Device sharing is unavailable here. Use a social button or copy the text.");

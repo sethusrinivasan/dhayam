@@ -7,7 +7,8 @@
 
 /* Header Topnav Leaderboard & Profile Buttons */
 .topnav .leaderboard-trigger,
-.topnav .auth-pill {
+.topnav .auth-pill,
+.topnav .feedback-pill {
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -17,8 +18,15 @@
 }
 
 .topnav .leaderboard-trigger:hover,
-.topnav .auth-pill:hover {
+.topnav .auth-pill:hover,
+.topnav .feedback-pill:hover {
   transform: translateY(-1px);
+}
+
+.topnav .feedback-pill:hover {
+  background: #3b281c;
+  border-color: #ffd166;
+  color: #fff2db;
 }
 
 .topnav .auth-pill-signed-in {
@@ -52,6 +60,18 @@
 .leaderboard-modal {
   max-width: 580px;
   width: 100%;
+}
+
+.feedback-modal {
+  max-width: 500px;
+  width: 100%;
+}
+
+.feedback-input:focus,
+#feedbackText:focus {
+  outline: none;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
 }
 
 .leaderboard-header {

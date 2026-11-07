@@ -74,6 +74,9 @@ The included MCP server implements the following tools:
 | `dhayam_play_ai_turn` | `strategy?: string` | Executes a full automated turn for the current computer/AI player, resolving bonus dice cascades and heuristic moves. |
 | `dhayam_simulate_ai_match` | `player_names?: string[]`, `strategies?: string[]`, `max_turns?: int` | Simulates a full Computer vs Computer or AI vs AI match, returning winner, stats, captures, and turn highlights. |
 | `dhayam_simulate_online_match` | `room_code: string`, `turns?: int`, `strategy?: string` | Advances AI turns in a live Cloudflare room so spectators can watch live via WebSockets. |
+| `dhayam_get_leaderboard` | `userId?: string` | Fetches the top 10 global leaderboard, auto-populated with realistic computer entries when fewer than 10 players exist, with dynamic reduction as real users join. |
+| `dhayam_submit_feedback` | `feedback: string`, `category?: string`, `rating?: number`, `user_alias?: string`, `user_email?: string` | Stores player feedback durably with timestamp, user details, and IP address. |
+| `dhayam_get_feedback` | `limit?: number` | Inspects stored player feedback entries from durable storage with timestamps, user details, and IP address. |
 | `dhayam_pass` | *none* | Passes remaining rolls to transition turn. |
 | `dhayam_get_audit_log` | *none* | Fetches the tamper-evident audit history of all game actions. |
 | `dhayam_get_share_url` | `base_url?: string` | Returns the GitHub Pages URL to launch or inspect the game in a web browser. |

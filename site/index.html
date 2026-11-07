@@ -7,17 +7,30 @@
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
     <meta name="theme-color" content="#251a14" />
-    <meta name="description" content="Play Dhayam (Dhayam) — authentic ancient Tamil race-and-capture board game with 3D brass dice and real-time online multiplayer!" />
+    <meta name="description" content="Play Dhayam — authentic ancient Tamil race-and-capture board game with 3D brass dice and real-time online multiplayer!" />
+    <!-- Favicon & App Icons -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <meta name="msapplication-TileColor" content="#251a14" />
     <!-- Open Graph / Social Sharing -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://dhayam.cancun.workers.dev/" />
-    <meta property="og:title" content="Dhayam (Dhayam (Dhayam)) — Ancient Tamil Board Game" />
-    <meta property="og:description" content="Play Dhayam live with 3D tumbling brass dice, real-time multiplayer, and intelligent computer opponents!" />
-    <meta property="og:image" content="https://dhayam.cancun.workers.dev/assets/preview.png" />
+    <meta property="og:url" content="https://sethusrinivasan.github.io/dhayam/" />
+    <meta property="og:title" content="Dhayam — Ancient Tamil Strategy Board Game" />
+    <meta property="og:description" content="Roll the 3D brass dice, capture rival coins, and race to victory in Dhayam — the authentic ancient Tamil strategy board game." />
+    <meta property="og:image" content="https://sethusrinivasan.github.io/dhayam/assets/preview.png" />
+    <meta property="og:image:secure_url" content="https://sethusrinivasan.github.io/dhayam/assets/preview.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Dhayam board game with 3D brass dice" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Dhayam (Dhayam (Dhayam)) — Ancient Tamil Board Game" />
-    <meta name="twitter:description" content="Play Dhayam live with 3D tumbling brass dice, real-time multiplayer, and intelligent computer opponents!" />
-    <meta name="twitter:image" content="https://dhayam.cancun.workers.dev/assets/preview.png" />
+    <meta name="twitter:title" content="Dhayam — Ancient Tamil Strategy Board Game" />
+    <meta name="twitter:description" content="Roll the 3D brass dice, capture rival coins, and race to victory in Dhayam — the authentic ancient Tamil strategy board game." />
+    <meta name="twitter:image" content="https://sethusrinivasan.github.io/dhayam/assets/preview.png" />
+    <meta name="twitter:image:alt" content="Dhayam board game with 3D brass dice" />
     <title>Dhayam</title>
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/board.css" />
@@ -50,6 +63,7 @@
               <button class="menu-item" id="guideBtn" role="menuitem">? How to play</button>
               <button class="menu-item" id="menuLeaderboardBtn" role="menuitem">🏆 Global Leaderboard</button>
               <button class="menu-item" id="menuAuthBtn" role="menuitem">👤 Sign in / Profile</button>
+              <button class="menu-item" id="menuFeedbackBtn" role="menuitem">💬 Feedback &amp; suggestions</button>
               <button class="menu-item" id="menuWithdrawBtn" role="menuitem" hidden>🏳️ Withdraw from match (-100 pts)</button>
               <button class="menu-item" id="demoBtn" role="menuitem">✦ Demo</button>
               <button class="menu-item" id="qrBtn" role="menuitem" aria-label="Show QR code to scan and play on phone">📱 Scan QR</button>
@@ -63,6 +77,7 @@
           </details>
           <button class="pill leaderboard-trigger" id="leaderboardBtn" aria-label="Open Global Leaderboard" title="View global top 10 and player rankings">🏆 Leaderboard</button>
           <button class="pill auth-pill" id="authPill" aria-label="Sign in to save scores" title="Sign in with Google or GitHub">👤 Sign In</button>
+          <button class="pill feedback-pill" id="feedbackBtn" aria-label="Send feedback" title="Share suggestions, bugs, or feedback">💬 Feedback</button>
           <button class="pill audio-toggle" id="audioToggle" aria-label="Toggle voice commentary" title="Toggle voice commentary">🔇 Voice commentary: Off</button>
           <button class="pill voice-toggle" id="voiceToggle" aria-label="Toggle voice control" aria-pressed="false" title="Optional voice commands: Roll, Move, New game, Exit">🎤 Voice: Off</button>
           <span class="pill timer-pill" id="gameTimer" role="timer" aria-label="Game liveliness timer" title="Page liveliness: updates every 30s with second-level accuracy">⏱️ 00:00</span>
@@ -330,6 +345,43 @@
           <button type="button" class="btn secondary" style="padding:4px 10px;font-size:12px;" onclick="DhayamAuth.closeAuthModal()">✕</button>
         </div>
         <div id="authModalContent"></div>
+      </div>
+    </div>
+    <!-- User Feedback Modal -->
+    <div class="modalback auth-modal-back" id="feedbackModalBack" role="presentation" hidden>
+      <div class="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+        <div class="leaderboard-header">
+          <h2 id="feedbackModalTitle">💬 Player Feedback</h2>
+          <button type="button" class="btn secondary" style="padding:4px 10px;font-size:12px;" onclick="DhayamAuth.closeFeedbackModal()">✕</button>
+        </div>
+        <p style="color:#d8c4ab;font-size:13px;line-height:1.5;margin:0 0 12px 0;">
+          Help us improve Dhayam! Share gameplay suggestions, report issues, or send your thoughts.
+        </p>
+        <form id="feedbackForm" onsubmit="event.preventDefault(); DhayamAuth.submitFeedbackForm();">
+          <div style="margin-bottom:12px;">
+            <label for="feedbackCategory" style="display:block;color:#e2e8f0;font-size:12px;margin-bottom:4px;font-weight:600;">Category</label>
+            <select id="feedbackCategory" class="feedback-input" style="width:100%;padding:8px 10px;border-radius:6px;background:#1e293b;border:1px solid #475569;color:#f8fafc;font-size:13px;">
+              <option value="general">💡 General Feedback</option>
+              <option value="rules">🎲 Rules &amp; Gameplay</option>
+              <option value="bug">🐛 Bug Report</option>
+              <option value="multiplayer">🌐 Online / Multiplayer</option>
+              <option value="accessibility">♿ Accessibility &amp; Theme</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label for="feedbackText" style="display:block;color:#e2e8f0;font-size:12px;margin-bottom:4px;font-weight:600;">Your Message <span style="color:#f87171;">*</span></label>
+            <textarea id="feedbackText" required rows="4" maxlength="2000" placeholder="Type your feedback here..." style="width:100%;padding:10px;border-radius:6px;background:#1e293b;border:1px solid #475569;color:#f8fafc;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+            <div style="display:flex;justify-content:space-between;color:#94a3b8;font-size:11px;margin-top:4px;">
+              <span id="feedbackCharCount">0 / 2000</span>
+              <span id="feedbackUserHint">Submitting as Guest</span>
+            </div>
+          </div>
+          <div id="feedbackStatus" style="font-size:13px;margin-bottom:12px;display:none;"></div>
+          <div style="display:flex;justify-content:flex-end;gap:10px;">
+            <button type="button" class="btn secondary" onclick="DhayamAuth.closeFeedbackModal()">Cancel</button>
+            <button type="submit" id="feedbackSubmitBtn" class="btn">Send Feedback</button>
+          </div>
+        </form>
       </div>
     </div>
     <!-- Modular Dhayam Architecture: Separation of Concerns -->

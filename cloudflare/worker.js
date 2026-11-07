@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { handleAuthAndLeaderboard } from "./auth.js";
+import { handleAuthAndLeaderboard, getLeaderboard, submitFeedback, getFeedback } from "./auth.js";
 
 /**
  * Dhayam Cloudflare Worker & Streamable HTTP MCP Server
@@ -921,6 +921,41 @@ const MCP_TOOLS = [
       },
       required: ["room_code"]
     }
+  },
+  {
+    name: "dhayam_get_leaderboard",
+    description: "Retrieve the global Dhayam top 10 leaderboard, populated with real players and realistic computer filler entries when fewer than 10 real players exist.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        userId: { type: "string", description: "Optional user ID to get rank for" }
+      }
+    }
+  },
+  {
+    name: "dhayam_submit_feedback",
+    description: "Submit user or player feedback into the durable table with feedback text, user details, category, rating, and IP address.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        feedback: { type: "string", description: "Feedback text from user" },
+        category: { type: "string", description: "Feedback category: 'general', 'rules', 'bug', 'multiplayer', 'accessibility'" },
+        rating: { type: "number", description: "Optional 1-5 rating" },
+        user_alias: { type: "string", description: "Optional player alias" },
+        user_email: { type: "string", description: "Optional user email" }
+      },
+      required: ["feedback"]
+    }
+  },
+  {
+    name: "dhayam_get_feedback",
+    description: "Retrieve stored feedback entries from the durable table with timestamps, user details, IP address, and feedback content.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max feedback entries to retrieve (default 20)" }
+      }
+    }
   }
 ];
 
@@ -1028,6 +1063,30 @@ async function handleMcpToolCall(name, args = {}, env = null) {
       webUrl: base,
       message: "Open this link in any modern desktop or mobile browser to view or play interactively."
     };
+  } else if (name === "dhayam_get_leaderboard") {
+    const lb = await getLeaderboard(env, args.userId || null);
+    result = {
+      leaderboard: lb.top10,
+      currentUser: lb.currentUser,
+      totalEntries: lb.top10.length,
+      realUsersCount: lb.top10.filter((u) => !u.is_computer && !u.is_fake).length,
+      fakeEntriesCount: lb.top10.filter((u) => u.is_computer || u.is_fake).length
+    };
+  } else if (name === "dhayam_submit_feedback") {
+    const res = await submitFeedback(env, {
+      userId: args.userId || null,
+      userAlias: args.user_alias || "MCP Agent",
+      userEmail: args.user_email || null,
+      feedbackText: args.feedback,
+      category: args.category || "general",
+      rating: args.rating || null,
+      ipAddress: "127.0.0.1 (MCP)",
+      userAgent: "Dhayam-MCP/1.0.0"
+    });
+    result = res;
+  } else if (name === "dhayam_get_feedback") {
+    const res = await getFeedback(env, args.limit || 20);
+    result = res;
   } else {
     result = { error: "Unknown tool: " + name };
   }
@@ -1639,14 +1698,14 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
-      if (url.pathname.startsWith("/api/auth") || url.pathname === "/api/leaderboard" || url.pathname === "/api/stats/record") {
+      if (url.pathname.startsWith("/api/auth") || url.pathname === "/api/leaderboard" || url.pathname === "/api/stats/record" || url.pathname === "/api/feedback") {
         return handleAuthAndLeaderboard(request, env, url);
       }
       return new Response(null, { headers: CORS_HEADERS });
     }
 
-    // 0. Auth & Leaderboard endpoints (/api/auth/*, /api/leaderboard, /api/stats/record)
-    if (url.pathname.startsWith("/api/auth") || url.pathname === "/api/leaderboard" || url.pathname === "/api/stats/record") {
+    // 0. Auth, Leaderboard, & Feedback endpoints (/api/auth/*, /api/leaderboard, /api/stats/record, /api/feedback)
+    if (url.pathname.startsWith("/api/auth") || url.pathname === "/api/leaderboard" || url.pathname === "/api/stats/record" || url.pathname === "/api/feedback") {
       const authResponse = await handleAuthAndLeaderboard(request, env, url);
       if (authResponse) return authResponse;
     }
@@ -1785,6 +1844,32 @@ export default {
         "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: https://*.workers.dev; font-src 'self' data:; object-src 'none'; frame-ancestors https: http://localhost:*",
       );
       return new Response(asset.body, { status: asset.status, headers });
+    }
+
+    // Favicon & Icon handler: guarantees proper image/x-icon MIME and edge caching for social crawlers
+    if (url.pathname === "/favicon.ico" && env && env.ASSETS) {
+      const icoRes = await env.ASSETS.fetch(new Request(new URL("/favicon.ico", request.url)));
+      if (icoRes.status === 200) {
+        const headers = new Headers(icoRes.headers);
+        headers.set("Content-Type", "image/x-icon");
+        headers.set("Cache-Control", "public, max-age=86400, s-maxage=604800");
+        headers.set("Access-Control-Allow-Origin", "*");
+        return new Response(icoRes.body, { status: 200, headers });
+      }
+    }
+
+    // Dynamic Open Graph and Twitter Card tags for HTML requests
+    if ((url.pathname === "/" || url.pathname === "/index.html") && env && env.ASSETS) {
+      const asset = await env.ASSETS.fetch(new Request(new URL("/index.html", request.url)));
+      if (asset.status === 200) {
+        let html = await asset.text();
+        const origin = url.origin;
+        // Dynamically match Open Graph & Twitter image URLs to this exact environment
+        html = html.replace(/https:\/\/sethusrinivasan\.github\.io\/dhayam\//g, origin + "/");
+        const headers = new Headers(asset.headers);
+        headers.set("Content-Type", "text/html; charset=utf-8");
+        return new Response(html, { status: 200, headers });
+      }
     }
 
     // 3. Static asset delivery (if configured in Cloudflare Pages / Workers static assets)

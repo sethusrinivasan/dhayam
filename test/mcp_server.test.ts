@@ -296,3 +296,80 @@ test("MCP Server on Cloudflare: JSON-RPC error handling", async () => {
   const malformedJson = await malformedRes.json();
   assert.equal(malformedJson.error.code, -32700);
 });
+
+test("MCP Python stdio server: lists and executes dhayam_get_leaderboard, dhayam_submit_feedback, dhayam_get_feedback", async () => {
+  const { spawn } = await import("node:child_process");
+
+  async function callPythonMcp(method: string, params: Record<string, any> = {}) {
+    return new Promise<any>((resolve, reject) => {
+      const proc = spawn("python3", ["mcp/server.py"], { stdio: ["pipe", "pipe", "inherit"] });
+      let output = "";
+      proc.stdout.on("data", (chunk) => {
+        output += chunk.toString();
+      });
+      proc.on("close", (code) => {
+        if (code !== 0) {
+          return reject(new Error(`Python process exited with code ${code}`));
+        }
+        try {
+          const parsed = JSON.parse(output.trim());
+          resolve(parsed);
+        } catch (err) {
+          reject(err);
+        }
+      });
+      const req = { jsonrpc: "2.0", id: Date.now(), method, params };
+      proc.stdin.write(JSON.stringify(req) + "\n");
+      proc.stdin.end();
+    });
+  }
+
+  // 1. tools/list must include new tools
+  const listResp = await callPythonMcp("tools/list");
+  assert.ok(listResp.result?.tools);
+  const toolNames = listResp.result.tools.map((t: any) => t.name);
+  assert.ok(toolNames.includes("dhayam_get_leaderboard"));
+  assert.ok(toolNames.includes("dhayam_submit_feedback"));
+  assert.ok(toolNames.includes("dhayam_get_feedback"));
+
+  // 2. dhayam_get_leaderboard returns 10 populated entries
+  const lbResp = await callPythonMcp("tools/call", {
+    name: "dhayam_get_leaderboard",
+    arguments: {}
+  });
+  assert.ok(lbResp.result?.content?.[0]?.text);
+  const lbData = JSON.parse(lbResp.result.content[0].text);
+  assert.ok(Array.isArray(lbData.leaderboard));
+  assert.equal(lbData.leaderboard.length, 10, "Leaderboard must be fully populated with 10 entries");
+  assert.equal(lbData.leaderboard[0].rank, 1);
+  assert.equal(lbData.leaderboard[9].rank, 10);
+
+  // 3. dhayam_submit_feedback saves feedback with timestamp, user details, IP address
+  const fbResp = await callPythonMcp("tools/call", {
+    name: "dhayam_submit_feedback",
+    arguments: {
+      feedback: "Spectacular Dayakattai AI and UI!",
+      category: "praise",
+      rating: 5,
+      user_alias: "Agent007"
+    }
+  });
+  const fbData = JSON.parse(fbResp.result.content[0].text);
+  assert.equal(fbData.ok, true);
+  assert.ok(fbData.id.startsWith("fb_"));
+  assert.ok(fbData.timestamp > 0);
+  assert.equal(fbData.feedback.user_alias, "Agent007");
+  assert.equal(fbData.feedback.ip_address, "127.0.0.1 (MCP stdio)");
+  assert.equal(fbData.feedback.feedback_text, "Spectacular Dayakattai AI and UI!");
+
+  // 4. dhayam_get_feedback retrieves saved entries
+  const getFbResp = await callPythonMcp("tools/call", {
+    name: "dhayam_get_feedback",
+    arguments: { limit: 5 }
+  });
+  const getFbData = JSON.parse(getFbResp.result.content[0].text);
+  assert.equal(getFbData.ok, true);
+  assert.ok(Array.isArray(getFbData.feedback));
+  assert.ok(getFbData.feedback.length >= 1);
+  assert.equal(getFbData.feedback[0].id, fbData.id);
+});

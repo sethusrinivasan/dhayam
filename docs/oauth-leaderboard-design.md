@@ -239,16 +239,56 @@ The Leaderboard Modal displays:
 
 ---
 
-## 7. Story Points & Effort Estimation
+## 8. Dynamic Leaderboard Auto-Population & Reduction Algorithm
 
-- **Total Story Points:** **8 Points** (High-Impact Epic)
-- **Estimated Calendar Duration:** 4 engineering days
+To ensure a vibrant, populated community appearance from Day 1 without manual database seeding or empty states:
+1. **Guaranteed 10-Player Leaderboard**: When querying `/api/leaderboard`, if the total number of real human player entries is fewer than 10, the remaining slots up to 10 are automatically populated with realistic computer player entries drawn from `FAKE_LEADERBOARD_ENTRIES` (derived from the canonical `COMPUTER_PERSONAS` roster: Kavitha, Murugan, Ananya, Kavin, Rani, Arjun, Meera, Mani, Selvi, Vikram).
+2. **Dynamic Reduction**: As real human players play and record victories, the number of fake entries automatically reduces in real time:
+   - 0 real players $\rightarrow$ 10 fake entries
+   - 1 real player $\rightarrow$ 1 real player + 9 fake entries = 10 total
+   - 5 real players $\rightarrow$ 5 real players + 5 fake entries = 10 total
+   - 9 real players $\rightarrow$ 9 real players + 1 fake entry = 10 total
+   - $\ge$ 10 real players $\rightarrow$ 10 real players + 0 fake entries (all fake entries completely eliminated)
+3. **Score Invariance & Fair Standing**: Fake entry scores scale dynamically below the lowest real player score, ensuring authentic user accomplishments are never unfairly overshadowed by generated filler entries.
 
-### Sub-Milestone Breakdown
+---
 
-| Milestone | Scope | Deliverables | Points |
-|---|---|---|---|
-| **M1: Cloudflare D1 & OAuth Backend** | D1 database migration, Google & GitHub OAuth endpoints, CSRF validation, session cookie minting. | `migrations/0001_auth_leaderboard.sql`, `/api/auth/*` endpoints in `cloudflare/worker.js`. | **3 pts** |
-| **M2: Stats Recording & Leaderboard API** | Tamper-resistant game completion endpoint, Top 10 + Current User global rank SQL query, edge caching. | `/api/leaderboard`, `/api/stats/record` in worker. | **2 pts** |
-| **M3: Frontend Menu, Modal & Profile Pill** | Header button, responsive Leaderboard modal, Top 10 list, sticky personal rank card, guest fallback. | `site/index.html`, `site/css/style.css`, `site/js/auth.js`. | **2 pts** |
-| **M4: Automated Tests & Security Verification** | Unit tests for auth session, SQL rank query tests, CSRF rejection tests, documentation updates. | `test/auth.test.ts`, updated `README.md`. | **1 pt** |
+## 9. Durable User Feedback Architecture
+
+Dhayam features an integrated player feedback system backed by a durable storage table in Cloudflare D1 (and persistent SQLite in local/MCP mode).
+
+### Data Schema (`migrations/0003_user_feedback.sql`)
+```sql
+CREATE TABLE IF NOT EXISTS user_feedback (
+  id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  user_alias TEXT,
+  user_email TEXT,
+  ip_address TEXT NOT NULL,
+  user_agent TEXT,
+  feedback_text TEXT NOT NULL,
+  category TEXT DEFAULT 'general',
+  rating INTEGER,
+  metadata TEXT,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_user_feedback_created ON user_feedback(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_feedback_user ON user_feedback(user_id);
+```
+
+### Feedback Ingestion Flow (`POST /api/feedback`)
+- **Authentication**: Supports both authenticated users (automatically associating `user_id`, `user_alias`, and `user_email` via session cookie / Bearer token) and anonymous guest visitors.
+- **Auditing & Origin**: Captures client `ip_address` (via `CF-Connecting-IP` / `X-Forwarded-For`), client `user_agent`, and second-level unix `timestamp`.
+- **Validation**: Strict enforcement of non-empty text, 3000-character upper bound, category classification (`general`, `rules`, `bug`, `multiplayer`, `accessibility`), and optional 1–5 star rating.
+- **UI Experience**: Instant modal invocation via the top navigation `💬 Feedback` pill or menu item, with real-time character counting, signed-in identity recognition, inline validation, and dismissable status notifications.
+
+---
+
+## 10. Social Media & Twitter / X Thumbnail Preview
+
+Open Graph and Twitter Card metadata are optimized for rich visual previews and impactful messaging across Twitter / X, WhatsApp, and Facebook:
+- **Card Type**: `summary_large_image`
+- **Canonical Preview Image**: Absolute HTTPS URL `https://sethusrinivasan.github.io/dhayam/assets/preview.png` (1280×840 PNG rendering the authentic wooden 7×7 board, 3D brass dice, and floral safe squares).
+- **Succinct, Exciting Copy**: Replaced placeholder phrases with compelling, focused messaging:
+  > *"🎲 Roll the brass dice. Strike rivals and race to victory in Dhayam — the ancient Tamil strategy game!"*
+
