@@ -85,7 +85,7 @@ export function getRegionFromCountryOrTz(country = "", tz = "") {
   return c ? "global" : "southAsia";
 }
 
-export function populateWithFakeEntries(list, targetCount = 10, region = "southAsia") {
+export function populateWithFakeEntries(list, targetCount = 10, region = "southAsia", candidatePoolOverride = null) {
   if (list.length >= targetCount) {
     return list.slice(0, targetCount);
   }
@@ -94,7 +94,9 @@ export function populateWithFakeEntries(list, targetCount = 10, region = "southA
   const needed = targetCount - list.length;
   const fillers = [];
 
-  const candidatePool = REGIONAL_LEADERBOARD_PERSONAS[region] || REGIONAL_LEADERBOARD_PERSONAS.southAsia;
+  const candidatePool = (candidatePoolOverride && candidatePoolOverride.length > 0)
+    ? [...candidatePoolOverride, ...(REGIONAL_LEADERBOARD_PERSONAS[region] || REGIONAL_LEADERBOARD_PERSONAS.southAsia)]
+    : (REGIONAL_LEADERBOARD_PERSONAS[region] || REGIONAL_LEADERBOARD_PERSONAS.southAsia);
 
   let personaIdx = 0;
   while (fillers.length < needed && personaIdx < candidatePool.length) {
@@ -798,8 +800,25 @@ async function getLeaderboard(env, currentUserId, region = "southAsia") {
         ORDER BY ps.total_score DESC, ps.games_won DESC, ps.total_captures DESC
         LIMIT 10
       `).all();
+
+      // Retrieve regionally cached personas from durable D1 table; fallback cleanly to in-memory if not available
+      let candidatePool = null;
+      try {
+        const regionalResult = await env.DB.prepare(`
+          SELECT alias, avatar_url, total_score, games_won, games_played, total_captures, 1 AS is_computer, 1 AS is_fake
+          FROM regional_personas
+          WHERE region = ?
+          ORDER BY total_score DESC
+        `).bind(region).all();
+        if (regionalResult && regionalResult.results && regionalResult.results.length > 0) {
+          candidatePool = regionalResult.results;
+        }
+      } catch (_) {
+        // Fall back gracefully if table does not exist or in mock environments
+      }
+
       // If not fully populated with 10 entries, fill in with fake entries; as real user entries are added, fake entries reduce
-      rows = populateWithFakeEntries(allRows.results || [], 10, region);
+      rows = populateWithFakeEntries(allRows.results || [], 10, region, candidatePool);
     }
 
     const top10 = rows.slice(0, 10).map((item, idx) => ({

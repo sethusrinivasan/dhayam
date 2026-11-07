@@ -1279,3 +1279,54 @@ test("social sharing: succinct, exciting text without meaningless player-specifi
   assert.ok(htmlContent.includes('rel="shortcut icon" href="favicon.ico"'));
   assert.ok(!htmlContent.includes("Dhayam (Dhayam (Dhayam))"));
 });
+
+test("regional_personas D1 table: queries frugal table for regional fake personas without external APIs", async () => {
+  // Mock D1 environment with regional_personas table
+  const mockRows = [
+    { alias: "D1Liam", avatar_url: "🪔", total_score: 550, games_won: 6, games_played: 8, total_captures: 10 }
+  ];
+
+  const env = {
+    AUTH_JWT_SECRET: TEST_SECRET,
+    DB: {
+      prepare(sql: string) {
+        return {
+          bind(...args: any[]) {
+            return {
+              async first() {
+                if (sql.includes("COUNT(*)")) return { count: 0 };
+                return null;
+              },
+              async all() {
+                if (sql.includes("regional_personas")) {
+                  return { results: mockRows };
+                }
+                return { results: [] };
+              }
+            };
+          },
+          async first() {
+            if (sql.includes("COUNT(*)")) return { count: 0 };
+            return null;
+          },
+          async all() {
+            if (sql.includes("regional_personas")) {
+              return { results: mockRows };
+            }
+            return { results: [] };
+          }
+        };
+      }
+    }
+  };
+
+  const req = new Request("https://dhayam.cancun.workers.dev/api/leaderboard?region=northAmerica");
+  const res = await handleAuthAndLeaderboard(req, env, new URL(req.url));
+  assert.ok(res);
+  const data = await res.json();
+  assert.equal(data.top10.length, 10);
+  // First item must be masked D1Liam from the D1 table
+  assert.equal(data.top10[0].alias, "D1L***", "Leaderboard must populate from regional_personas D1 table");
+  assert.equal(data.top10[0].total_score, 550);
+});
+

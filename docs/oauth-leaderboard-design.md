@@ -292,3 +292,41 @@ Open Graph and Twitter Card metadata are optimized for rich visual previews and 
 - **Succinct, Exciting Copy**: Replaced placeholder phrases with compelling, focused messaging:
   > *"🎲 Roll the brass dice. Strike rivals and race to victory in Dhayam — the ancient Tamil strategy game!"*
 
+---
+
+## 11. Self-Contained Regional Persona Alignment & Frugal D1 Persona Storage
+
+To provide a relatable, immersive experience without any cultural mismatch (such as a visitor connecting from the USA seeing only South Asian computer personas), Dhayam implements a self-contained, regionally aligned persona system with **zero reliance on 3rd-party geolocation or identity APIs**.
+
+### Zero 3rd-Party APIs Architecture
+1. **Edge-Native Geolocation**: Cloudflare Workers runtime automatically exposes edge routing headers (`CF-IPCountry` and `request.cf.country` ISO 3166-1 alpha-2) at 0 network and monetary cost.
+2. **Browser Native Timezone**: In the frontend, the client detects the local timezone via standard `Intl.DateTimeFormat().resolvedOptions().timeZone` (e.g., `America/New_York`, `Asia/Kolkata`, `Asia/Singapore`) and language preferences without any external network calls.
+3. **Region Partitioning**:
+   - `northAmerica`: USA (`US`), Canada (`CA`), Great Britain (`GB`), Australia (`AU`), New Zealand (`NZ`), Ireland (`IE`), or `America/*` timezones.
+   - `southAsia`: India (`IN`), Sri Lanka (`LK`), Nepal (`NP`), Bangladesh (`BD`), Pakistan (`PK`), or `Asia/Kolkata` timezones.
+   - `southeastAsia`: Singapore (`SG`), Malaysia (`MY`), Thailand (`TH`), Indonesia (`ID`), Philippines (`PH`), Vietnam (`VN`), or `Asia/Singapore` timezones.
+   - `global`: Default international fallback for European and global locales.
+
+### Frugal Cloudflare D1 Storage (`migrations/0004_regional_personas.sql`)
+Regional personas are durably stored and indexed directly in Cloudflare D1:
+```sql
+CREATE TABLE IF NOT EXISTS regional_personas (
+  id TEXT PRIMARY KEY,
+  region TEXT NOT NULL,
+  alias TEXT NOT NULL,
+  avatar_url TEXT NOT NULL,
+  archetype TEXT NOT NULL,
+  gender TEXT NOT NULL,
+  total_score INTEGER NOT NULL,
+  games_won INTEGER NOT NULL,
+  games_played INTEGER NOT NULL,
+  total_captures INTEGER NOT NULL,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_regional_personas_region ON regional_personas(region, total_score DESC);
+```
+
+- **Varied Realistic Scoring**: Leaderboard fillers feature authentic score distributions (from 524 down to 95) with proportional win rates, games played, and captures.
+- **Defensive Fallback**: When operating offline, in test mocks, or during database migrations, the engine cleanly falls back to compile-time regional definitions (`REGIONAL_LEADERBOARD_PERSONAS`).
+
+
